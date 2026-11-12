@@ -18,6 +18,9 @@ runs a payload against it, and tears it down with SIGINT.
 
 * passes_nvme(be_opts): whether the combination carries NVMe commands to the device
 
+* oncs(cijoe, uri, be_opts): whether the controller lists Dataset Management and
+  Write Zeroes in ONCS
+
 Three things the session-script must get right, each of which has bitten before:
 
 * The lines are joined by newline, not by ';'. The background launch already ends in
@@ -31,6 +34,8 @@ Three things the session-script must get right, each of which has bitten before:
   failed mkfs followed by a successful mount would pass. The subshell keeps 'set -e'
   away from the teardown, which must run regardless.
 """
+
+import re
 
 import pytest
 
@@ -102,6 +107,24 @@ def passes_nvme(be_opts):
         return be_opts["sync"] in ("nvme", "spdk", "libvfn", "upcie")
 
     return False
+
+
+def oncs(cijoe, uri, be_opts):
+    """
+    Whether the controller behind 'uri' lists Dataset Management and Write
+    Zeroes in ONCS, as (dsm, write_zeroes), asked with the same URI and --be
+    as qublk opens it; call it only for a combination passes_nvme() accepts
+    """
+
+    err, state = cijoe.run(f"xnvme test adm idfy-ctrlr {uri} --be {be_opts['be']}")
+    assert not err, f"idfy-ctrlr failed, so ONCS is unknown: {state.output()}"
+
+    flags = re.findall(r"^\s+(dsm|write_zeroes): (\d+)$", state.output(), re.MULTILINE)
+    found = {name: bool(int(value)) for name, value in flags}
+    missing = [name for name in ("dsm", "write_zeroes") if name not in found]
+    assert not missing, f"idfy-ctrlr output lacks the ONCS line(s) {missing}"
+
+    return found["dsm"], found["write_zeroes"]
 
 
 def require_mkfs_xfs(cijoe):

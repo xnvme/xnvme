@@ -114,10 +114,78 @@ geo_type_rejection(enum xnvme_geo_type type)
 	}
 }
 
+/*
+ * DISCARD is served as Dataset Management deallocate when the backend passes
+ * NVMe commands through, ONCS lists it, and the namespace is not zoned. The
+ * limit follows the kernel's nvme_config_discard(): DMRSL when it fits 32-bit
+ * sectors, else UINT32_MAX sectors rounded down to whole blocks.
+ */
+static void
+dev_init_discard(struct qublk_dev *dev, const struct xnvme_spec_idfy_ctrlr *ctrlr,
+		 uint8_t passes_nvme)
+{
+	const struct xnvme_spec_nvm_idfy_ctrlr *nvm =
+		(const struct xnvme_spec_nvm_idfy_ctrlr *)xnvme_dev_get_ctrlr_css(dev->xdev);
+	uint8_t sect_shift = dev->lba_shift - XNVME_UNIVERSAL_SECT_SH;
+	uint64_t max_lbas = UINT32_MAX >> sect_shift;
+
+	dev->has_dsm = passes_nvme && ctrlr && dev->geo->type != XNVME_GEO_ZONED &&
+		       xnvme_bits_get(ctrlr->oncs, XNVME_SPEC_IDFY_CTRLR_ONCS_DSM);
+	if (!dev->has_dsm) {
+		return;
+	}
+
+	// Zero when not reported, or when the NVM identify was not answered
+	if (nvm->dmrsl && ((uint64_t)nvm->dmrsl << sect_shift) <= UINT32_MAX) {
+		max_lbas = nvm->dmrsl;
+	}
+
+	dev->max_discard_sectors = (uint32_t)(max_lbas << sect_shift);
+}
+
+/*
+ * WRITE_ZEROES is gated as DISCARD. The limit follows the kernel's
+ * nvme_init_non_mdts_limits(): the MDTS transfer cap, or WZSL when reported,
+ * and at most the 16-bit block count. WZSL is counted in 4 KiB pages, since
+ * xNVMe does not expose CAP.MPSMIN; a larger page only allows more.
+ */
+static void
+dev_init_write_zeroes(struct qublk_dev *dev, const struct xnvme_spec_idfy_ctrlr *ctrlr,
+		      uint8_t passes_nvme, uint32_t cap_max)
+{
+	const struct xnvme_spec_nvm_idfy_ctrlr *nvm =
+		(const struct xnvme_spec_nvm_idfy_ctrlr *)xnvme_dev_get_ctrlr_css(dev->xdev);
+	const struct xnvme_spec_idfy_ns *ns = xnvme_dev_get_ns(dev->xdev);
+	uint8_t sect_shift = dev->lba_shift - XNVME_UNIVERSAL_SECT_SH;
+	uint64_t max_lbas = cap_max >> dev->lba_shift;
+
+	dev->has_write_zeroes =
+		passes_nvme && ctrlr && dev->geo->type != XNVME_GEO_ZONED &&
+		xnvme_bits_get(ctrlr->oncs, XNVME_SPEC_IDFY_CTRLR_ONCS_WRITE_ZEROES);
+	if (!dev->has_write_zeroes) {
+		return;
+	}
+
+	// 4 KiB << 20 already exceeds the 16-bit block count at any LBA size
+	if (nvm->wzsl >= 20) {
+		max_lbas = QUBLK_WRITE_ZEROES_MAX_LBAS;
+	} else if (nvm->wzsl) {
+		max_lbas = (4096ull << nvm->wzsl) >> dev->lba_shift;
+	}
+	max_lbas = XNVME_MIN_U64(max_lbas, QUBLK_WRITE_ZEROES_MAX_LBAS);
+	dev->max_write_zeroes_sectors = (uint32_t)(max_lbas << sect_shift);
+
+	// The kernel's NVME_NS_DEAC: deallocated blocks read as zeroes, and
+	// Write Zeroes may deallocate
+	dev->wz_deac = (ns->dlfeat & XNVME_SPEC_IDFY_NS_DLFEAT_READ_VALUE) == 1 &&
+		       (ns->dlfeat & XNVME_SPEC_IDFY_NS_DLFEAT_WRITE_ZERO_DEALLOCATE);
+}
+
 static int
 dev_init(struct qublk_dev *dev, uint32_t want_max_io)
 {
 	const struct xnvme_spec_idfy_ctrlr *ctrlr;
+	uint8_t passes_nvme;
 	uint32_t cap_max;
 
 	dev->geo = xnvme_dev_get_geo(dev->xdev);
@@ -137,18 +205,21 @@ dev_init(struct qublk_dev *dev, uint32_t want_max_io)
 	}
 
 	ctrlr = xnvme_dev_get_ctrlr(dev->xdev);
+	passes_nvme = backend_passes_nvme(dev->xdev);
 	dev->has_vwc =
 		ctrlr ? (uint8_t)xnvme_bits_get(ctrlr->vwc, XNVME_SPEC_IDFY_CTRLR_VWC_PRESENT) : 1;
 	dev->has_fua = backend_honours_fua(dev->xdev);
+	dev_init_discard(dev, ctrlr, passes_nvme);
 
 	cap_max = dev->geo->mdts_nbytes ? dev->geo->mdts_nbytes : QUBLK_DEFAULT_MAX_IO_CAP;
+	dev_init_write_zeroes(dev, ctrlr, passes_nvme, cap_max);
 	dev->max_io_buf = (uint32_t)XNVME_MIN_U64(
 		want_max_io ? want_max_io : QUBLK_DEFAULT_MAX_IO_CAP, cap_max);
 	dev->max_io_buf &= ~(uint32_t)(sysconf(_SC_PAGESIZE) - 1);
 
 	// After max_io_buf: the append limit and the report buffer depend on it
 	if (dev->geo->type == XNVME_GEO_ZONED) {
-		return qublk_zoned_init(dev, backend_passes_nvme(dev->xdev));
+		return qublk_zoned_init(dev, passes_nvme);
 	}
 
 	return 0;
@@ -194,9 +265,10 @@ dev_add(struct qublk_dev *dev, const char *be)
 
 	dev->added = 1;
 	fprintf(stderr,
-		"qublk: added ublk dev id=%d nqueues=%u qdepth=%u max_io=%u backend=%s uri=%s\n",
-		dev->dev_id, dev->nqueues, dev->qdepth, dev->max_io_buf, be ? be : "(auto)",
-		dev->uri);
+		"qublk: added ublk dev id=%d nqueues=%u qdepth=%u max_io=%u discard=%u "
+		"write_zeroes=%u backend=%s uri=%s\n",
+		dev->dev_id, dev->nqueues, dev->qdepth, dev->max_io_buf, dev->max_discard_sectors,
+		dev->max_write_zeroes_sectors, be ? be : "(auto)", dev->uri);
 	qublk_zoned_print_info(dev);
 
 	rc = qublk_ctrl_set_params(dev);

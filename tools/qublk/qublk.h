@@ -21,6 +21,11 @@
  */
 #define QUBLK_MAX_RING_ENTRIES 32768
 
+/**
+ * The most blocks one Write Zeroes covers: its block count is 16-bit, 0-based
+ */
+#define QUBLK_WRITE_ZEROES_MAX_LBAS (1u << 16)
+
 // User copy (kernel 6.5) ABI for older headers; GET_FEATURES says whether the kernel has it
 #ifndef UBLK_F_USER_COPY
 #define UBLK_F_USER_COPY (1UL << 7)
@@ -78,6 +83,11 @@ struct qublk_dev {
 	uint8_t lba_shift;
 	uint8_t has_vwc;
 	uint8_t has_fua;
+	uint8_t has_dsm;              ///< DISCARD is served as Dataset Management deallocate
+	uint32_t max_discard_sectors; ///< Largest DISCARD advertised, in 512 B sectors
+	uint8_t has_write_zeroes;     ///< WRITE_ZEROES is served as Write Zeroes
+	uint8_t wz_deac;              ///< Write Zeroes sets DEAC, as the kernel's NVME_NS_DEAC
+	uint32_t max_write_zeroes_sectors; ///< Largest WRITE_ZEROES advertised, in 512 B sectors
 	uint8_t user_copy; ///< UBLK_F_USER_COPY: data moves via pread()/pwrite() on ublkc_fd
 	uint8_t added;
 	uint8_t started;
