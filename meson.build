@@ -136,10 +136,13 @@ cuda_dep = dependency(
   required: get_option('with-cuda'),
 )
 conf_data.set('XNVME_CUDA_ENABLED', is_linux and cuda_dep.found() and get_option('with-cuda').allowed())
-conf_data.set('XNVME_BE_UPCIE_CUDA_ENABLED', be_upcie and conf_data.get('XNVME_CUDA_ENABLED'))
+be_upcie_cuda = be_upcie and conf_data.get('XNVME_CUDA_ENABLED')
+if be_upcie_cuda
+  be_upcie_cuda = add_languages('cuda', required: get_option('with-cuda').enabled(), native: false)
+endif
+conf_data.set('XNVME_BE_UPCIE_CUDA_ENABLED', be_upcie_cuda)
 cuda_arch_args = []
-if conf_data.get('XNVME_BE_UPCIE_CUDA_ENABLED')
-  add_languages('cuda', required: true, native: false)
+if be_upcie_cuda
   # libxnvme is linked by g++, not nvcc: nvcc moves the SPDK archives out of
   # their --whole-archive, dropping SPDK's transports, which only register
   # themselves, and the .cu object needs the libstdc++ that g++ links. This
