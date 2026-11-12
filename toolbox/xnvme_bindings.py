@@ -26,7 +26,7 @@ from pathlib import Path
 
 INCLUDE = Path(__file__).resolve().parents[1] / "include"
 UMBRELLA = "libxnvme.h"
-EXCLUDED = ["libxnvme_cli.h", "libxnvme_compat.h", "libxnvme_pp.h"]
+EXCLUDED = ["libxnvme_cli.h", "libxnvme_pp.h"]
 
 # The system headers the API headers use without including them
 PRELUDE = [

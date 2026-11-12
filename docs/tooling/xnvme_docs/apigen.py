@@ -67,7 +67,6 @@ NAMESPACES: dict[str, set[str]] = {
     },
     "util": {
         "xnvme_be",
-        "xnvme_compat",
         "xnvme_libconf",
         "xnvme_pp",
         "xnvme_util",
