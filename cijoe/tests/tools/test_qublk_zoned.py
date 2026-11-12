@@ -136,6 +136,19 @@ def test_serve_zoned_report(cijoe, device, be_opts, cli_args):
 
 
 @xnvme_parametrize(labels=["zns"], opts=["be"])
+def test_serve_zoned_no_discard_write_zeroes(cijoe, device, be_opts, cli_args):
+    """Neither discard nor write zeroes is advertised for a zoned namespace"""
+
+    payload = [
+        f"test $(cat {QUEUE}/discard_max_bytes) -eq 0",
+        f"test $(cat {QUEUE}/write_zeroes_max_bytes) -eq 0",
+    ]
+
+    err, _ = qublk_session(cijoe, device["uri"], be_opts["be"], payload)
+    assert not err
+
+
+@xnvme_parametrize(labels=["zns"], opts=["be"])
 def test_serve_zoned_mgmt(cijoe, device, be_opts, cli_args):
     """Zone open, a write advancing the write pointer, close, finish and reset via blkzone"""
 
