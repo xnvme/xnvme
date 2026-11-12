@@ -51,7 +51,7 @@ The typical flow for doing asynchronous IO can be reduced to the following:
 - Initialize the command queue with ``xnvme_queue_init()``
 - Set the queue callback with ``xnvme_queue_set_cb()``
 - Get a command context from the queue with ``xnvme_queue_get_cmd_ctx()``
-- Submit an I/O command, such as with ``xnvme_nvm_read()`` (see :ref:`sec-api-c-xnvme_nvm` for more options)
+- Prepare an I/O command, such as with ``xnvme_cmd_prep_nvm_read()``, and submit it with ``xnvme_cmd_pass()`` (see :ref:`sec-api-c-xnvme_cmd_prep_nvm` for the other commands)
 - Get completion with ``xnvme_queue_poke()``
 - Terminate the command queue with ``xnvme_queue_term()``
 
