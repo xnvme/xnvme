@@ -6,7 +6,6 @@ xnvmelib_source += files(
   'xnvme_cmd_prep.c',
   'xnvme_pi.c',
   'xnvme_spec.c',
-  'xnvme_spec_pp.c',
   'xnvme_topology.c',
   'xnvme_znd.c',
 )
