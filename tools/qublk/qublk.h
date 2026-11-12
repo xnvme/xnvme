@@ -78,6 +78,8 @@ struct qublk_dev {
 	uint8_t lba_shift;
 	uint8_t has_vwc;
 	uint8_t has_fua;
+	uint8_t has_dsm;              ///< DISCARD is served as Dataset Management deallocate
+	uint32_t max_discard_sectors; ///< Largest DISCARD advertised, in 512 B sectors
 	uint8_t user_copy; ///< UBLK_F_USER_COPY: data moves via pread()/pwrite() on ublkc_fd
 	uint8_t added;
 	uint8_t started;
