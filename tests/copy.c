@@ -123,17 +123,38 @@ test_copy(struct xnvme_cli *cli)
 	nsid = xnvme_dev_get_nsid(dev);
 	xnvme_dev_get_cmd_ctx(dev, &ctx);
 
-	err = xnvme_nvm_write(&ctx, nsid, slba, (nlb - 1), wbuf, NULL);
+	struct xnvme_cmd_prep_nvm_write_args wr = {
+		.args_nbytes = sizeof(wr),
+		.nsid = nsid,
+		.slba = slba,
+		.nlb = (nlb - 1),
+	};
+
+	err = xnvme_cmd_prep_nvm_write(&ctx.cmd, &wr);
+	if (!err) {
+		err = xnvme_cmd_pass(
+			&ctx, wbuf,
+			(size_t)xnvme_dev_get_geo(ctx.dev)->lba_nbytes * ((nlb - 1) + 1), NULL, 0);
+	}
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		xnvme_cli_pinf("xnvme_nvm_write(): "
+		xnvme_cli_pinf("write: "
 			       "{err: 0x%x, slba: 0x%016lx}",
 			       err, slba);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		goto exit;
 	}
 
-	// Copy LBA's
-	err = xnvme_nvm_scopy(&ctx, nsid, sdlba, source_range, 0, XNVME_NVM_SCOPY_FMT_ZERO);
+	// Copy LBA's, one source range of format 0h
+	struct xnvme_cmd_prep_nvm_copy_args cp = {
+		.args_nbytes = sizeof(cp),
+		.nsid = nsid,
+		.sdlba = sdlba,
+	};
+
+	err = xnvme_cmd_prep_nvm_copy(&ctx.cmd, &cp);
+	if (!err) {
+		err = xnvme_cmd_pass(&ctx, source_range, sizeof(*source_range), NULL, 0);
+	}
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		xnvme_cli_pinf("xnvme_nvm_copy(): "
 			       "{err: 0x%x, slba: 0x%016lx}",
@@ -143,9 +164,21 @@ test_copy(struct xnvme_cli *cli)
 	}
 
 	// Read back LBA's
-	err = xnvme_nvm_read(&ctx, nsid, sdlba, nlb - 1, rbuf, NULL);
+	struct xnvme_cmd_prep_nvm_read_args rd = {
+		.args_nbytes = sizeof(rd),
+		.nsid = nsid,
+		.slba = sdlba,
+		.nlb = nlb - 1,
+	};
+
+	err = xnvme_cmd_prep_nvm_read(&ctx.cmd, &rd);
+	if (!err) {
+		err = xnvme_cmd_pass(
+			&ctx, rbuf, (size_t)xnvme_dev_get_geo(ctx.dev)->lba_nbytes * (nlb - 1 + 1),
+			NULL, 0);
+	}
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		xnvme_cli_pinf("xnvme_nvm_read(): "
+		xnvme_cli_pinf("read: "
 			       "{err: 0x%x, slba: 0x%016lx}",
 			       err, slba);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);

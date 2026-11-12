@@ -47,7 +47,18 @@ on_completion(struct xnvme_cmd_ctx *ctx, void *cb_arg)
 		goto stop;
 	}
 
-	err = xnvme_nvm_read(ctx, 0x1, 0x1, 0x0, ioctx->buf, NULL);
+	struct xnvme_cmd_prep_nvm_read_args rd = {
+		.args_nbytes = sizeof(rd),
+		.nsid = 0x1,
+		.slba = 0x1,
+	};
+
+	err = xnvme_cmd_prep_nvm_read(&ctx->cmd, &rd);
+	if (!err) {
+		err = xnvme_cmd_pass(ctx, ioctx->buf,
+				     (size_t)xnvme_dev_get_geo(ctx->dev)->lba_nbytes * (0x0 + 1),
+				     NULL, 0);
+	}
 	if (err) {
 		xnvme_cli_pinf("Stopping... due to submisson-error.");
 		goto stop;
@@ -92,7 +103,18 @@ test_randr(struct xnvme_cli *cli)
 		ioctx->ctx->async.cb = on_completion;
 		ioctx->ctx->async.cb_arg = ioctx;
 
-		err = xnvme_nvm_read(ioctx->ctx, 0x1, 0x0, 0x0, ioctx->buf, NULL);
+		struct xnvme_cmd_prep_nvm_read_args rd = {
+			.args_nbytes = sizeof(rd),
+			.nsid = 0x1,
+		};
+
+		err = xnvme_cmd_prep_nvm_read(&ioctx->ctx->cmd, &rd);
+		if (!err) {
+			err = xnvme_cmd_pass(
+				ioctx->ctx, ioctx->buf,
+				(size_t)xnvme_dev_get_geo(ioctx->ctx->dev)->lba_nbytes * (0x0 + 1),
+				NULL, 0);
+		}
 		if (err) {
 			XNVME_DEBUG("FAILED: populating queue");
 			return -EIO;

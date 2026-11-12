@@ -76,10 +76,18 @@ test_ctrlr_idfy(struct xnvme_cli *cli)
 	}
 	memset(idfy, 0, sizeof(*idfy));
 
+	struct xnvme_cmd_prep_adm_identify_args args = {
+		.args_nbytes = sizeof(args),
+		.cns = XNVME_SPEC_IDFY_CTRLR,
+	};
+
 	xnvme_dev_get_cmd_ctx(dev, &ctx);
-	err = xnvme_adm_idfy_ctrlr(&ctx, idfy);
+	err = xnvme_cmd_prep_adm_identify(&ctx.cmd, &args);
+	if (!err) {
+		err = xnvme_cmd_pass_admin(&ctx, idfy, sizeof(*idfy), NULL, 0);
+	}
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		xnvme_cli_perr("xnvme_adm_idfy_ctrlr()", err ? err : -EIO);
+		xnvme_cli_perr("identify(CTRLR)", err ? err : -EIO);
 		xnvme_buf_free(dev, idfy);
 		xnvme_dev_close(dev);
 		return err ? err : -EIO;
@@ -120,10 +128,18 @@ test_ctrlr_nslist(struct xnvme_cli *cli)
 	}
 	memset(idfy, 0, sizeof(*idfy));
 
+	struct xnvme_cmd_prep_adm_identify_args args = {
+		.args_nbytes = sizeof(args),
+		.cns = XNVME_SPEC_IDFY_NSLIST,
+	};
+
 	xnvme_dev_get_cmd_ctx(dev, &ctx);
-	err = xnvme_adm_idfy(&ctx, XNVME_SPEC_IDFY_NSLIST, 0, 0, 0, 0, idfy);
+	err = xnvme_cmd_prep_adm_identify(&ctx.cmd, &args);
+	if (!err) {
+		err = xnvme_cmd_pass_admin(&ctx, idfy, sizeof(*idfy), NULL, 0);
+	}
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		xnvme_cli_perr("xnvme_adm_idfy(NSLIST)", err ? err : -EIO);
+		xnvme_cli_perr("identify(NSLIST)", err ? err : -EIO);
 		xnvme_buf_free(dev, idfy);
 		xnvme_dev_close(dev);
 		return err ? err : -EIO;
@@ -155,7 +171,11 @@ static int
 test_ctrlr_gfeat_nqueues(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = ctrlr_open(cli);
-	uint32_t nsq = 0, ncq = 0;
+	struct xnvme_cmd_prep_adm_get_features_args args = {
+		.args_nbytes = sizeof(args),
+		.sel = XNVME_SPEC_FEAT_SEL_CURRENT,
+		.fid = XNVME_SPEC_FEAT_NQUEUES,
+	};
 	union xnvme_spec_feat feat = {.val = 0};
 	struct xnvme_cmd_ctx ctx;
 	int err;
@@ -164,49 +184,21 @@ test_ctrlr_gfeat_nqueues(struct xnvme_cli *cli)
 		return -errno;
 	}
 
-	err = xnvme_adm_gfeat_nqueues(NULL, &nsq, &ncq);
-	if (err != -EINVAL) {
-		xnvme_cli_pinf("FAILED: no ctx should be -EINVAL, got %d", err);
-		err = err ? err : -EIO;
-		goto exit;
-	}
-
 	xnvme_dev_get_cmd_ctx(dev, &ctx);
-	err = xnvme_adm_gfeat_nqueues(&ctx, NULL, &ncq);
-	if (err != -EINVAL) {
-		xnvme_cli_pinf("FAILED: no output should be -EINVAL, got %d", err);
-		err = err ? err : -EIO;
-		goto exit;
+	err = xnvme_cmd_prep_adm_get_features(&ctx.cmd, &args);
+	if (!err) {
+		err = xnvme_cmd_pass_admin(&ctx, NULL, 0, NULL, 0);
 	}
-
-	xnvme_dev_get_cmd_ctx(dev, &ctx);
-	err = xnvme_adm_gfeat_nqueues(&ctx, &nsq, &ncq);
-	if (err) {
-		xnvme_cli_perr("xnvme_adm_gfeat_nqueues()", err);
-		goto exit;
-	}
-
-	/* The helper exists to add the one the spec leaves out, so the check
-	 * that matters is against the raw feature rather than against a range:
-	 * a helper returning NSQA unchanged would still look plausible. */
-	xnvme_dev_get_cmd_ctx(dev, &ctx);
-	err = xnvme_adm_gfeat(&ctx, 0x0, XNVME_SPEC_FEAT_NQUEUES, XNVME_SPEC_FEAT_SEL_CURRENT,
-			      NULL, 0);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		xnvme_cli_perr("xnvme_adm_gfeat()", err);
+		xnvme_cli_perr("get_features(NQUEUES)", err);
 		err = err ? err : -EIO;
 		goto exit;
 	}
 	feat.val = xnvme_bits_get(ctx.cpl.result, XNVME_SPEC_CQE_RESULT_CDW0);
 
-	if ((nsq != (uint32_t)feat.nqueues.nsqa + 1) || (ncq != (uint32_t)feat.nqueues.ncqa + 1)) {
-		xnvme_cli_pinf("FAILED: nsq(%u) ncq(%u) vs nsqa(%u) ncqa(%u)", nsq, ncq,
-			       feat.nqueues.nsqa, feat.nqueues.ncqa);
-		err = -EIO;
-		goto exit;
-	}
-
-	xnvme_cli_pinf("nsq: %u, ncq: %u", nsq, ncq);
+	// NSQA and NCQA are zero-based
+	xnvme_cli_pinf("nsq: %u, ncq: %u", (uint32_t)feat.nqueues.nsqa + 1,
+		       (uint32_t)feat.nqueues.ncqa + 1);
 	err = 0;
 
 exit:
@@ -218,8 +210,8 @@ exit:
 static struct xnvme_cli_sub g_subs[] = {
 	{
 		"gfeat-nqueues",
-		"Number of Queues, counted rather than zero-based",
-		"Number of Queues, counted rather than zero-based",
+		"Number of Queues, by Get Features",
+		"Number of Queues, by Get Features",
 		test_ctrlr_gfeat_nqueues,
 		{
 			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},

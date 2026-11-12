@@ -39,9 +39,19 @@ cmd_transition(struct xnvme_cli *cli)
 
 		xnvme_dev_get_cmd_ctx(dev, &ctx);
 
-		err = xnvme_znd_mgmt_send(&ctx, nsid, slba, false, actions[i].action, 0x0, NULL);
+		struct xnvme_cmd_prep_zns_zone_management_send_args zms = {
+			.args_nbytes = sizeof(zms),
+			.nsid = nsid,
+			.slba = slba,
+			.zsa = actions[i].action,
+		};
+
+		err = xnvme_cmd_prep_zns_zone_management_send(&ctx.cmd, &zms);
+		if (!err) {
+			err = xnvme_cmd_pass(&ctx, NULL, 0, NULL, 0);
+		}
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-			xnvme_cli_perr("xnvme_znd_mgmt_send()", err);
+			xnvme_cli_perr("zone_management_send", err);
 			xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 			err = err ? err : -EIO;
 			goto exit;

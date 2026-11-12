@@ -56,9 +56,20 @@ kvs_io(struct xnvme_cli *cli)
 		goto exit;
 	}
 
-	err = xnvme_kvs_store(&ctx, nsid, kv_key, kv_key_nbytes, dbuf, kv_val_nbytes, 0);
+	struct xnvme_cmd_prep_kv_store_args st = {
+		.args_nbytes = sizeof(st),
+		.nsid = nsid,
+		.vs = (uint32_t)kv_val_nbytes,
+		.kl = (uint8_t)kv_key_nbytes,
+	};
+
+	memcpy(st.kv_key, kv_key, XNVME_MIN(kv_key_nbytes, sizeof(st.kv_key)));
+	err = xnvme_cmd_prep_kv_store(&ctx.cmd, &st);
+	if (!err) {
+		err = xnvme_cmd_pass(&ctx, dbuf, kv_val_nbytes, NULL, 0);
+	}
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		xnvme_cli_perr("xnvme_kvs_store()", err);
+		xnvme_cli_perr("store", err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;
@@ -79,10 +90,21 @@ kvs_io(struct xnvme_cli *cli)
 		goto exit;
 	}
 
-	xnvme_cli_pinf("Sending xnvme_kvs_retrieve command");
-	err = xnvme_kvs_retrieve(&ctx, nsid, kv_key, kv_key_nbytes, rbuf, kv_val_nbytes, 0);
+	struct xnvme_cmd_prep_kv_retrieve_args rt = {
+		.args_nbytes = sizeof(rt),
+		.nsid = nsid,
+		.hbs = (uint32_t)kv_val_nbytes,
+		.kl = (uint8_t)kv_key_nbytes,
+	};
+
+	memcpy(rt.kv_key, kv_key, XNVME_MIN(kv_key_nbytes, sizeof(rt.kv_key)));
+	xnvme_cli_pinf("Sending the Retrieve command");
+	err = xnvme_cmd_prep_kv_retrieve(&ctx.cmd, &rt);
+	if (!err) {
+		err = xnvme_cmd_pass(&ctx, rbuf, kv_val_nbytes, NULL, 0);
+	}
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		xnvme_cli_perr("xnvme_kvs_retrieve()", err);
+		xnvme_cli_perr("retrieve", err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;

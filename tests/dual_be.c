@@ -73,9 +73,20 @@ sub_io_cmp(struct xnvme_cli *cli)
 	}
 
 	xnvme_dev_get_cmd_ctx(dev, &ctx);
-	err = xnvme_nvm_write(&ctx, nsid, 0, nlb, write_buf, NULL);
+	struct xnvme_cmd_prep_nvm_write_args wr = {
+		.args_nbytes = sizeof(wr),
+		.nsid = nsid,
+		.nlb = nlb,
+	};
+
+	err = xnvme_cmd_prep_nvm_write(&ctx.cmd, &wr);
+	if (!err) {
+		err = xnvme_cmd_pass(&ctx, write_buf,
+				     (size_t)xnvme_dev_get_geo(ctx.dev)->lba_nbytes * (nlb + 1),
+				     NULL, 0);
+	}
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		xnvme_cli_perr("xnvme_nvm_write()", err);
+		xnvme_cli_perr("write", err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;
@@ -95,9 +106,20 @@ sub_io_cmp(struct xnvme_cli *cli)
 	}
 
 	xnvme_dev_get_cmd_ctx(alt_dev, &ctx);
-	err = xnvme_nvm_read(&ctx, nsid, 0, nlb, read_buf, NULL);
+	struct xnvme_cmd_prep_nvm_read_args rd = {
+		.args_nbytes = sizeof(rd),
+		.nsid = nsid,
+		.nlb = nlb,
+	};
+
+	err = xnvme_cmd_prep_nvm_read(&ctx.cmd, &rd);
+	if (!err) {
+		err = xnvme_cmd_pass(&ctx, read_buf,
+				     (size_t)xnvme_dev_get_geo(ctx.dev)->lba_nbytes * (nlb + 1),
+				     NULL, 0);
+	}
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		xnvme_cli_perr("xnvme_nvm_read()", err);
+		xnvme_cli_perr("read", err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;
@@ -154,19 +176,30 @@ sub_idfy_cmp(struct xnvme_cli *cli)
 	}
 	xnvme_buf_clear(alt_idfy, sizeof(*alt_idfy));
 
+	struct xnvme_cmd_prep_adm_identify_args id = {
+		.args_nbytes = sizeof(id),
+		.cns = XNVME_SPEC_IDFY_CTRLR,
+	};
+
 	xnvme_dev_get_cmd_ctx(dev, &ctx);
-	err = xnvme_adm_idfy_ctrlr(&ctx, idfy);
+	err = xnvme_cmd_prep_adm_identify(&ctx.cmd, &id);
+	if (!err) {
+		err = xnvme_cmd_pass_admin(&ctx, idfy, sizeof(*idfy), NULL, 0);
+	}
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		xnvme_cli_perr("xnvme_adm_idfy_ctrlr(--be)", err);
+		xnvme_cli_perr("identify(--be)", err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;
 	}
 
 	xnvme_dev_get_cmd_ctx(alt_dev, &ctx);
-	err = xnvme_adm_idfy_ctrlr(&ctx, alt_idfy);
+	err = xnvme_cmd_prep_adm_identify(&ctx.cmd, &id);
+	if (!err) {
+		err = xnvme_cmd_pass_admin(&ctx, alt_idfy, sizeof(*alt_idfy), NULL, 0);
+	}
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		xnvme_cli_perr("xnvme_adm_idfy_ctrlr(--alt-be)", err);
+		xnvme_cli_perr("identify(--alt-be)", err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;

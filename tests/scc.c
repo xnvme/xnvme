@@ -98,7 +98,7 @@ cb_status(struct xnvme_cmd_ctx *ctx, void *cb_arg)
 	int *err = cb_arg;
 
 	if (xnvme_cmd_ctx_cpl_status(ctx)) {
-		xnvme_cli_perr("xnvme_nvm_scopy()", EIO);
+		xnvme_cli_perr("copy", EIO);
 		xnvme_cmd_ctx_pr(ctx, XNVME_PR_DEF);
 		*err = -EIO;
 	}
@@ -126,7 +126,6 @@ _scopy_helper(struct xnvme_cli *cli, uint64_t tlbas)
 	const struct xnvme_geo *geo = xnvme_dev_get_geo(dev);
 	uint32_t nsid = cli->args.nsid;
 	struct xnvme_spec_idfy_ns *ns;
-	enum xnvme_nvm_scopy_fmt copy_fmt;
 	char *dbuf = NULL, *vbuf = NULL;
 	size_t buf_nbytes;
 	uint64_t sdlba;
@@ -226,9 +225,6 @@ _scopy_helper(struct xnvme_cli *cli, uint64_t tlbas)
 		xnvme_bits_get(range->entry[nr].rpars, XNVME_SPEC_NVM_SCOPY_FMT_ZERO_RPARS_NLB) +
 		1;
 
-	// NVMe-struct copy format
-	copy_fmt = XNVME_NVM_SCOPY_FMT_ZERO;
-
 	// Write the dbuf to source LBAs
 	for (uint64_t i = 0; i < tlbas; ++i) {
 		struct xnvme_cmd_ctx ctx = {0};
@@ -236,12 +232,26 @@ _scopy_helper(struct xnvme_cli *cli, uint64_t tlbas)
 
 		xnvme_dev_get_cmd_ctx(dev, &ctx);
 
-		err = xnvme_nvm_write(&ctx, nsid, range->entry[i].slba,
-				      xnvme_bits_get(range->entry[i].rpars,
-						     XNVME_SPEC_NVM_SCOPY_FMT_ZERO_RPARS_NLB),
-				      dbuf + ofz, NULL);
+		struct xnvme_cmd_prep_nvm_write_args wr = {
+			.args_nbytes = sizeof(wr),
+			.nsid = nsid,
+			.slba = range->entry[i].slba,
+			.nlb = xnvme_bits_get(range->entry[i].rpars,
+					      XNVME_SPEC_NVM_SCOPY_FMT_ZERO_RPARS_NLB),
+		};
+
+		err = xnvme_cmd_prep_nvm_write(&ctx.cmd, &wr);
+		if (!err) {
+			err = xnvme_cmd_pass(
+				&ctx, dbuf + ofz,
+				(size_t)xnvme_dev_get_geo(ctx.dev)->lba_nbytes *
+					(xnvme_bits_get(range->entry[i].rpars,
+							XNVME_SPEC_NVM_SCOPY_FMT_ZERO_RPARS_NLB) +
+					 1),
+				NULL, 0);
+		}
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-			xnvme_cli_perr("xnvme_nvm_write()", err);
+			xnvme_cli_perr("write", err);
 			xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 			err = err ? err : -EIO;
 			goto exit;
@@ -255,9 +265,20 @@ _scopy_helper(struct xnvme_cli *cli, uint64_t tlbas)
 
 		xnvme_dev_get_cmd_ctx(dev, &ctx);
 
-		err = xnvme_nvm_write(&ctx, nsid, sdlba + i, 0, vbuf + ofz, NULL);
+		struct xnvme_cmd_prep_nvm_write_args wr = {
+			.args_nbytes = sizeof(wr),
+			.nsid = nsid,
+			.slba = sdlba + i,
+		};
+
+		err = xnvme_cmd_prep_nvm_write(&ctx.cmd, &wr);
+		if (!err) {
+			err = xnvme_cmd_pass(&ctx, vbuf + ofz,
+					     (size_t)xnvme_dev_get_geo(ctx.dev)->lba_nbytes, NULL,
+					     0);
+		}
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-			xnvme_cli_perr("xnvme_nvm_read()", err);
+			xnvme_cli_perr("read", err);
 			xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 			err = err ? err : -EIO;
 			goto exit;
@@ -270,15 +291,27 @@ _scopy_helper(struct xnvme_cli *cli, uint64_t tlbas)
 	xnvme_cli_pinf("To:");
 	printf("sdlba: 0x%016" PRIx64 "\n", sdlba);
 
+	// The source ranges are of format 0h, the Descriptor Format left zero
+	struct xnvme_cmd_prep_nvm_copy_args cp = {
+		.args_nbytes = sizeof(cp),
+		.nsid = nsid,
+		.sdlba = sdlba,
+		.nr = nr,
+	};
+	size_t ranges_nbytes = (size_t)(nr + 1) * sizeof(range->entry[0]);
+
 	if (cli->args.clear) {
 		struct xnvme_cmd_ctx ctx = {0};
 
 		xnvme_dev_get_cmd_ctx(dev, &ctx);
 
 		xnvme_cli_pinf("Using XNVME_CMD_SYNC mode");
-		err = xnvme_nvm_scopy(&ctx, nsid, sdlba, range->entry, nr, copy_fmt);
+		err = xnvme_cmd_prep_nvm_copy(&ctx.cmd, &cp);
+		if (!err) {
+			err = xnvme_cmd_pass(&ctx, range->entry, ranges_nbytes, NULL, 0);
+		}
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-			xnvme_cli_perr("xnvme_nvm_scopy()", err);
+			xnvme_cli_perr("copy", err);
 			xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 			err = err ? err : -EIO;
 			goto exit;
@@ -298,9 +331,12 @@ _scopy_helper(struct xnvme_cli *cli, uint64_t tlbas)
 		xnvme_queue_set_cb(queue, cb_status, &cpl_err);
 		ctx = xnvme_queue_get_cmd_ctx(queue);
 
-		err = xnvme_nvm_scopy(ctx, nsid, sdlba, range->entry, nr, copy_fmt);
+		err = xnvme_cmd_prep_nvm_copy(&ctx->cmd, &cp);
+		if (!err) {
+			err = xnvme_cmd_pass(ctx, range->entry, ranges_nbytes, NULL, 0);
+		}
 		if (err) {
-			xnvme_cli_perr("xnvme_nvm_scopy()", err);
+			xnvme_cli_perr("copy", err);
 			xnvme_queue_put_cmd_ctx(queue, ctx);
 			xnvme_queue_term(queue);
 			goto exit;
@@ -325,9 +361,20 @@ _scopy_helper(struct xnvme_cli *cli, uint64_t tlbas)
 
 		xnvme_dev_get_cmd_ctx(dev, &ctx);
 
-		err = xnvme_nvm_read(&ctx, nsid, sdlba + i, 0, vbuf + ofz, NULL);
+		struct xnvme_cmd_prep_nvm_read_args rd = {
+			.args_nbytes = sizeof(rd),
+			.nsid = nsid,
+			.slba = sdlba + i,
+		};
+
+		err = xnvme_cmd_prep_nvm_read(&ctx.cmd, &rd);
+		if (!err) {
+			err = xnvme_cmd_pass(&ctx, vbuf + ofz,
+					     (size_t)xnvme_dev_get_geo(ctx.dev)->lba_nbytes, NULL,
+					     0);
+		}
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-			xnvme_cli_perr("xnvme_nvm_read()", err);
+			xnvme_cli_perr("read", err);
 			xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 			err = err ? err : -EIO;
 			goto exit;
