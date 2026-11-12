@@ -2,6 +2,6 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-xnvmelib_source += files(
+xnvme_cli_source += files(
   'xnvme_cli.c',
 )
