@@ -2519,31 +2519,9 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_nvm_write_zeroes) == 64, "Incorrect
 /** Logical Block Tags Upper; bits 47:00 of 'cdw02_03', LBTU (NVM Command Set 1.3, Figure 81) */
 #define XNVME_SPEC_NVM_WRITE_ZEROES_CDW02_03_LBTU 0xffffffffffff
 
-/** Number of Logical Blocks, zero-based; bits 15:00 of 'cdw12', NLB (NVM Command Set 1.3, Figure
- * 83) */
-#define XNVME_SPEC_NVM_WRITE_ZEROES_CDW12_NLB 0xffff
-/** Command Extension Type; bits 19:16 of 'cdw12', CETYPE (NVM Command Set 1.3, Figure 83) */
-#define XNVME_SPEC_NVM_WRITE_ZEROES_CDW12_CETYPE 0xf0000
-/** Directive Type; bits 22:20 of 'cdw12', DTYPE (NVM Command Set 1.3, Figure 83) */
-#define XNVME_SPEC_NVM_WRITE_ZEROES_CDW12_DTYPE 0x700000
-/** Namespace Zeroes; bit 23 of 'cdw12', NSZ (NVM Command Set 1.3, Figure 83) */
-#define XNVME_SPEC_NVM_WRITE_ZEROES_CDW12_NSZ 0x800000
-/** Storage Tag Check; bit 24 of 'cdw12', STC (NVM Command Set 1.3, Figure 83) */
-#define XNVME_SPEC_NVM_WRITE_ZEROES_CDW12_STC 0x1000000
-/** Deallocate; bit 25 of 'cdw12', DEAC (NVM Command Set 1.3, Figure 83) */
-#define XNVME_SPEC_NVM_WRITE_ZEROES_CDW12_DEAC 0x2000000
-/** Protection Information; bits 29:26 of 'cdw12', PRINFO (NVM Command Set 1.3, Figure 83) */
-#define XNVME_SPEC_NVM_WRITE_ZEROES_CDW12_PRINFO 0x3c000000
-/** Force Unit Access; bit 30 of 'cdw12', FUA (NVM Command Set 1.3, Figure 83) */
-#define XNVME_SPEC_NVM_WRITE_ZEROES_CDW12_FUA 0x40000000
-/** Limited Retry; bit 31 of 'cdw12', LR (NVM Command Set 1.3, Figure 83) */
-#define XNVME_SPEC_NVM_WRITE_ZEROES_CDW12_LR 0x80000000
-
 /** Command Extension Value, if CETYPE is non-zero; bits 15:00 of 'cdw13', CEV (NVM Command Set
  * 1.3, Figure 85) */
 #define XNVME_SPEC_NVM_WRITE_ZEROES_CDW13_CEV 0xffff
-/** Directive Specific; bits 31:16 of 'cdw13', DSPEC (NVM Command Set 1.3, Figure 84) */
-#define XNVME_SPEC_NVM_WRITE_ZEROES_CDW13_DSPEC 0xffff0000
 
 /**
  * Command-set specific status codes related to Logical Block Namespaces
@@ -3098,24 +3076,6 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_nvm_compare) == 64, "Incorrect size
 /** Expected Logical Block Tags Upper; bits 47:00 of 'cdw02_03', ELBTU (NVM Command Set 1.3,
  * Figure 25) */
 #define XNVME_SPEC_NVM_COMPARE_CDW02_03_ELBTU 0xffffffffffff
-
-/** Number of Logical Blocks, zero-based; bits 15:00 of 'cdw12', NLB (NVM Command Set 1.3, Figure
- * 27) */
-#define XNVME_SPEC_NVM_COMPARE_CDW12_NLB 0xffff
-/** Command Extension Type; bits 19:16 of 'cdw12', CETYPE (NVM Command Set 1.3, Figure 27) */
-#define XNVME_SPEC_NVM_COMPARE_CDW12_CETYPE 0xf0000
-/** Storage Tag Check; bit 24 of 'cdw12', STC (NVM Command Set 1.3, Figure 27) */
-#define XNVME_SPEC_NVM_COMPARE_CDW12_STC 0x1000000
-/** Protection Information; bits 29:26 of 'cdw12', PRINFO (NVM Command Set 1.3, Figure 27) */
-#define XNVME_SPEC_NVM_COMPARE_CDW12_PRINFO 0x3c000000
-/** Force Unit Access; bit 30 of 'cdw12', FUA (NVM Command Set 1.3, Figure 27) */
-#define XNVME_SPEC_NVM_COMPARE_CDW12_FUA 0x40000000
-/** Limited Retry; bit 31 of 'cdw12', LR (NVM Command Set 1.3, Figure 27) */
-#define XNVME_SPEC_NVM_COMPARE_CDW12_LR 0x80000000
-
-/** Command Extension Value, if CETYPE is non-zero; bits 15:00 of 'cdw13', CEV (NVM Command Set
- * 1.3, Figure 28) */
-#define XNVME_SPEC_NVM_COMPARE_CDW13_CEV 0xffff
 
 /**
  * Submission Queue Entry
