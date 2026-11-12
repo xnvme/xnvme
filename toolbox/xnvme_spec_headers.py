@@ -57,28 +57,34 @@ that no field covers, and masks for the bits of the fields. The option
 writes the entries that follow a struct as a flexible array member, which yace
 reports; by default the doc of the struct names the entries.
 
-Some fields have no bits in the data model, but a description that says that
-another figure defines the field; Command Dword 0 of the Common Command Format
-refers to Figure 92 in this way. Such a field gets the masks of the layout of
+Some fields have no bits in the data model, but a link, 'structure', to the
+figure that defines the field; Command Dword 0 of the Common Command Format
+links to Figure 92 in this way. Such a field gets the masks of the layout of
 that figure. Some entries have no byte layout in the data model, only layouts
 of their dwords and of the fields of the dwords; the completion queue entry of
 Base is one. Such an entry is a packed struct as well. Each half of a dword is
 a 16-bit member named by its widest field, and the masks of the layout of that
 field come before the masks of the dword.
 
-An array whose entries another figure defines, such as LBAF of Identify
-Namespace, which refers to the LBA Format of Figure 125, takes the layout of
-that figure when the figure is as wide as an entry. An entry of 1, 2, 4 or 8
-bytes keeps its integer type, and the masks are named by the entry, such as
-XNVME_SPEC_NVM_LBA_FORMAT_LBADS. A larger entry, such as the Power State
-Descriptor, is a packed struct of its own: a field of 1, 2, 4 or 8 bytes at
-a byte is a member, and the fields that share the smallest aligned unit that
-holds them are a member with masks.
+The fields that the data model marks as the entries of one array, 'array', are
+an array member of the struct, of as many entries as the figure gives, or a
+flexible array where the data gives the number. A run of fields that the
+figure lists in full, named by their index, such as Temperature Sensor 1 to 8,
+is an array as well. An array whose entries another figure defines, such as
+LBAF of Identify Namespace, which links to the LBA Format of Figure 125, takes
+the layout of that figure when the figure is as wide as an entry. An entry of
+1, 2, 4 or 8 bytes keeps its integer type, and the masks are named by the
+entry, such as XNVME_SPEC_NVM_LBA_FORMAT_LBADS. A larger entry, such as the
+Power State Descriptor, is a packed struct of its own: a field of 1, 2, 4 or 8
+bytes at a byte is a member, and the fields that share the smallest aligned
+unit that holds them are a member with masks.
 
 A field of a command, of a structure or of an entry, whose values the
 specification names, gets an enum of the values, as a field of a register
 does. A name is the value's name without what it adds in parentheses; a value
-for which the data model has only a sentence gets no constant. The operations
+for which the data model has only a sentence gets no constant. A field whose
+values are in a table of another figure, as 'values_in' links CNS of Identify
+to Figure 336, gets the values of that table. The operations
 of a command that two fields select, such as DTYPE and DOPER of Directive
 Send, are an enum of the second field for each value of the first.
 
@@ -88,6 +94,16 @@ the description that has no condition, or of the first description when every
 description has a condition. The doc of the member names the other
 descriptions. A field gets no mask when it has no acronym, or when an earlier
 field covers its bits.
+
+A field whose meaning depends on the value of another field, as ZRAS of Zone
+Management Receive depends on ZRA, has cases in the data model. The doc of its
+mask names each case, a field of a case gets a mask at its bits in the field,
+such as XNVME_SPEC_ZNS_ZONE_MANAGEMENT_SEND_CDW13_ZM_DL, and the values of the
+one case that names values are the enum of the field.
+
+The fields of the protection information formats are big-endian: their
+figures mark byte 0 as the most significant, which the data model does not
+record. A field of more than one byte of these formats is an array of bytes.
 
 "I/O" is one word, "io", in names, such as XNVME_SPEC_IO_FLUSH_OPCODE.
 """
@@ -101,8 +117,10 @@ from types import SimpleNamespace
 from typing import Dict, List, Optional, Tuple, Union
 
 import senfd.query
+from pydantic import BaseModel
 from senfd.documents.spec import (
     Bits,
+    Case,
     Command,
     Dwords,
     Entry,
@@ -111,6 +129,7 @@ from senfd.documents.spec import (
     Source,
     SpecDocument,
     Structure,
+    Values,
 )
 from senfd.documents.spec import alias as senfd_alias
 from senfd.documents.spec import value_names
@@ -186,6 +205,46 @@ def generated(headers: List[Path], sources: List[Path]):
         return Generated(headers=headers, sources=sources)
     except ImportError:
         return SimpleNamespace(headers=headers, sources=sources)
+
+
+def figure_of(source: Source) -> Tuple[str, int]:
+    """The key of the figure 'source' names: its document and its number"""
+
+    return (source.document, source.figure_nr)
+
+
+def fields_in(node, seen: Optional[set] = None):
+    """Every field in 'node', a part of the data model, and in the fields and
+    cases of each field"""
+
+    seen = set() if seen is None else seen
+    if id(node) in seen:
+        return
+    seen.add(id(node))
+    if isinstance(node, Bits):
+        yield node
+    if isinstance(node, BaseModel):
+        for name in type(node).model_fields:
+            yield from fields_in(getattr(node, name), seen)
+    elif isinstance(node, (list, tuple)):
+        for item in node:
+            yield from fields_in(item, seen)
+    elif isinstance(node, dict):
+        for item in node.values():
+            yield from fields_in(item, seen)
+
+
+def link_values(spec: SpecDocument) -> None:
+    """Gives each field whose description refers to the table of its values,
+    as 'values_in' says, such as CNS of Identify, the entries of that table"""
+
+    tables: Dict[Tuple[str, int], Values] = {}
+    for table in spec.values:
+        tables.setdefault(figure_of(table.source), table)
+    for field in fields_in(spec):
+        table = tables.get(figure_of(field.values_in)) if field.values_in else None
+        if table and not field.values:
+            field.values = list(table.entries)
 
 
 def members_of(command: Command) -> List[Tuple[str, int, int, str]]:
@@ -272,8 +331,43 @@ def masks_of(
             what = field.name or field.acronym
             of = member if member.startswith("Command Dword") else f"'{member}'"
             doc = f"{what} ({senfd.query.cite(source)}); {where} of {of}"
+            for case in field.cases:
+                if case.role == "field" and (case.name or case.acronym):
+                    doc += f"; {case_name(case)} when {condition_of(case)}"
             masks.append((name, value, doc))
+            for case in field.cases:
+                for sub in case.fields:
+                    if not sub.acronym or sub.lower is None or sub.upper is None:
+                        continue
+                    lower, upper = field.lower + sub.lower, field.lower + sub.upper
+                    if upper > field.upper:
+                        continue
+                    part = ((1 << (upper + 1)) - 1) ^ ((1 << lower) - 1)
+                    bits = f"bit {lower}" if lower == upper else f"bits {upper}:{lower}"
+                    masks.append(
+                        (
+                            f"{name}_{identifier(sub.acronym)}",
+                            part,
+                            f"{sub.name or sub.acronym} ({senfd.query.cite(source)}),"
+                            f" when {condition_of(case)}; {bits} of {of}",
+                        )
+                    )
     return masks
+
+
+def case_name(case: Case) -> str:
+    """The name of the field in 'case', with its acronym where it has one"""
+
+    if case.name and case.acronym:
+        return f"{case.name} ({case.acronym})"
+    return case.name or case.acronym or ""
+
+
+def condition_of(case: Case) -> str:
+    """When 'case' applies, as "ZRA is Report Zones or Extended Report Zones" """
+
+    named = [w.name for w in case.when]
+    return f"{case.selector} is {' or '.join(named)}" if named else "otherwise"
 
 
 # The documents and command sets by the abbreviations the specifications use
@@ -315,7 +409,20 @@ def structure_name(structure: Structure) -> str:
     its abbreviation: "Identify Controller" for "Identify - Identify
     Controller", and "PDU Common Header" for "PDU Common Header (CH)" """
 
-    return re.sub(r"\s*\([^)]*\)$", "", structure.name.rsplit(" - ", 1)[-1])
+    name = re.split(r"\s+-\s+(?=[A-Z0-9])", structure.name)[-1]
+    return re.sub(r"\s*\([^)]*\)$", "", name)
+
+
+# The layouts whose fields are big-endian. The figures of the protection
+# information formats mark byte 0 as the most significant, which the data model
+# does not record
+BIG_ENDIAN = re.compile(r"^\d+b Guard Protection Information Format\b")
+
+
+def big_endian(structure: Structure) -> bool:
+    """Whether the fields of 'structure' are big-endian"""
+
+    return bool(BIG_ENDIAN.match(structure.name))
 
 
 def layouts_of_bits(spec: SpecDocument) -> Dict[Tuple[str, int], Structure]:
@@ -325,18 +432,8 @@ def layouts_of_bits(spec: SpecDocument) -> Dict[Tuple[str, int], Structure]:
     layouts: Dict[Tuple[str, int], Structure] = {}
     for structure in spec.structures:
         if structure.unit == "bits" and structure.kind != "register":
-            key = (document_key(structure.source.document), structure.source.figure_nr)
-            layouts.setdefault(key, structure)
+            layouts.setdefault(figure_of(structure.source), structure)
     return layouts
-
-
-# How the description of a field says that another figure defines its layout,
-# such as "is defined in Figure 92", or a description that is only "Refer to
-# Figure 24". A description that merely mentions a figure does not match.
-DEFINED_BY = re.compile(
-    r"^\s*Refer to Figure\s+(\d+)\s*\.|\bdefined (?:in|by) Figure\s+(\d+)\b",
-    re.IGNORECASE,
-)
 
 
 def width_of(structure: Structure) -> int:
@@ -345,14 +442,6 @@ def width_of(structure: Structure) -> int:
     return 1 + max(
         (f.upper for f in structure.fields if f.upper is not None), default=-1
     )
-
-
-def figure_referred(description: str) -> Optional[int]:
-    """The figure that 'description' says defines the layout of the field, if
-    'description' names exactly one"""
-
-    figures = {a or b for a, b in DEFINED_BY.findall(description)}
-    return int(figures.pop()) if len(figures) == 1 else None
 
 
 def size_of(structure: Structure) -> Optional[int]:
@@ -439,6 +528,8 @@ class Member:
     whole: Optional[Bits] = None
     # The bytes of one element of an array of a run of fields
     stride: int = 0
+    # The field of the member, or the first entry of its array
+    field: Optional[Bits] = None
 
 
 # The name of the layout of one dword of an entry, such as "Completion Queue
@@ -612,6 +703,7 @@ def layout_of(structure: Structure, element_of) -> Tuple[List[Member], List[str]
     fields = [
         f for f in structure.fields if not (f.union is not None and f.alternative)
     ]
+    msb_first = big_endian(structure)
     others: Dict[int, List[str]] = {}
     for f in structure.fields:
         if f.union is not None and f.alternative and f.name and f.acronym:
@@ -626,11 +718,14 @@ def layout_of(structure: Structure, element_of) -> Tuple[List[Member], List[str]
         names[name] = lower
         return name
 
-    def array(base: str, size: Optional[int]) -> Tuple[str, Optional[int]]:
+    def array(
+        base: str, size: Optional[int], link: Optional[Source] = None
+    ) -> Tuple[str, Optional[int]]:
         """The element type of an array of 'base', and the number of bytes per
-        element: the struct of the structure named 'base', or else bytes"""
+        element: the struct of the structure that 'link' names or that is named
+        'base', or else bytes"""
 
-        element = element_of(base, size)
+        element = element_of(base, size, link)
         if element:
             return f"struct {element}", 1
         if size in TYPES:
@@ -671,6 +766,52 @@ def layout_of(structure: Structure, element_of) -> Tuple[List[Member], List[str]
             )
             offset = f.lower
         size = f.upper - f.lower + 1
+        array_of = f.array
+        if array_of and array_of.lower == f.lower and array_of.stride:
+            following = index + 1
+            while (
+                following < len(fields)
+                and fields[following].array is not None
+                and (
+                    fields[following].array.name,
+                    fields[following].array.lower,
+                )
+                == (array_of.name, array_of.lower)
+            ):
+                following += 1
+            stride = array_of.stride
+            run_name = (
+                identifier(array_of.acronym).lower()
+                if array_of.acronym
+                else alias(array_of.name)
+            )
+            ctype, per = array(array_of.name, stride, f.structure)
+            if array_of.count is None:
+                members.append(
+                    Member(named(run_name, offset), ctype, 0, offset, array_of.name)
+                )
+                left += [
+                    f"{g.name or g.range}: at an offset the data gives, in '{run_name}'"
+                    for g in fields[following:]
+                    if g.name
+                ]
+                break
+            members.append(
+                Member(
+                    named(run_name, offset),
+                    ctype,
+                    array_of.count * (per or 1),
+                    offset,
+                    f"{array_of.name}, {array_of.count} of {stride} bytes",
+                    size=array_of.count * stride,
+                    description=f.description,
+                    stride=stride,
+                    field=f,
+                )
+            )
+            offset += array_of.count * stride
+            index = following
+            continue
         if base and first is not None:
             # The documents leave out the rows between the first entries and
             # the last entry, so the next entry of a run can be at the offset
@@ -720,6 +861,7 @@ def layout_of(structure: Structure, element_of) -> Tuple[List[Member], List[str]
                         size=length * size,
                         description=f.description,
                         stride=size,
+                        field=f,
                     )
                 )
                 offset += length * size
@@ -736,8 +878,11 @@ def layout_of(structure: Structure, element_of) -> Tuple[List[Member], List[str]
         if f.union is not None and others.get(f.union):
             doc += "; or, in the same bytes, " + ", or ".join(others[f.union])
         # A string is an array of bytes whatever its size, such as the Firmware
-        # Revision
-        scalar = size in TYPES and "ASCII" not in f.description
+        # Revision, and so is a big-endian field
+        swapped = msb_first and size > 1
+        scalar = size in TYPES and "ASCII" not in f.description and not swapped
+        if swapped:
+            doc += ", big-endian"
         ctype = TYPES[size] if scalar else "uint8_t"
         members.append(
             Member(
@@ -752,6 +897,7 @@ def layout_of(structure: Structure, element_of) -> Tuple[List[Member], List[str]
                 size,
                 f.description,
                 f if scalar else None,
+                field=f,
             )
         )
         offset = f.upper + 1
@@ -909,7 +1055,28 @@ def value_enums(
         named_masks.add(prefix)
     lines: List[str] = []
     for fields, source in figures:
-        for field in fields:
+        # A field of a case, such as DL of ZM, is named by its mask, as the
+        # field and the part of it
+        parts = [
+            sub.model_copy(update={"acronym": f"{field.acronym}_{sub.acronym}"})
+            for field in fields
+            if getattr(field, "acronym", None)
+            for case in getattr(field, "cases", None) or []
+            for sub in case.fields
+            if sub.acronym and sub.values
+        ]
+        for field in [*fields, *parts]:
+            valued = [c for c in getattr(field, "cases", None) or [] if c.values]
+            what = getattr(field, "name", None) or getattr(field, "acronym", None)
+            if (
+                getattr(field, "acronym", None)
+                and len(valued) == 1
+                and not field.values
+            ):
+                # The values of the one case that names them are the field's,
+                # such as the Reporting Options of ZRAS when ZRA is Report Zones
+                field = field.model_copy(update={"values": valued[0].values})
+                what = f"{case_name(valued[0])} when {condition_of(valued[0])}"
             if not getattr(field, "acronym", None) or not getattr(
                 field, "values", None
             ):
@@ -921,6 +1088,7 @@ def value_enums(
                 ):
                     continue
                 mask = prefix
+            cited = senfd.query.cite(field.values_in or source)
             constants = []
             for entry in field.values:
                 value = number_of(entry)
@@ -928,15 +1096,11 @@ def value_enums(
                 if value is None or not named or alias(named) == "reserved":
                     continue
                 constants.append(
-                    (
-                        f"{mask}_{identifier(named)}",
-                        value,
-                        f"{named} ({senfd.query.cite(source)})",
-                    )
+                    (f"{mask}_{identifier(named)}", value, f"{named} ({cited})")
                 )
             lines += enum_lines(
                 mask.lower(),
-                f"The values of {field.name or field.acronym} ({senfd.query.cite(source)})",
+                f"The values of {what} ({cited})",
                 constants,
             )
             named_masks.discard(mask)
@@ -1003,6 +1167,9 @@ class SpecHeaders:
         an element comes before the structs that use it"""
 
         by_name: Dict[Tuple[str, str], List[Structure]] = {}
+        by_figure: Dict[Tuple[str, int], Structure] = {
+            figure_of(s.source): s for s in spec.structures if s.unit == "bytes"
+        }
         bit_layouts = layouts_of_bits(spec)
         for structure in spec.structures:
             if structure.unit == "bytes":
@@ -1013,6 +1180,7 @@ class SpecHeaders:
                 by_name.setdefault(key, []).append(structure)
         flexible = self.options.get("flexible", "0") not in ("0", "", "no", "false")
         written: Dict[int, str] = {}
+        entries_written: set = set()
         layouts: Dict[Tuple[str, ...], str] = {}
         # The names of the structs, whatever the order they are written in
         planned = {
@@ -1125,7 +1293,13 @@ class SpecHeaders:
                 return written[id(structure)]
             doc = document_key(structure.source.document)
 
-            def element_of(base: str, size: Optional[int]) -> Optional[str]:
+            def element_of(
+                base: str, size: Optional[int], link: Optional[Source] = None
+            ) -> Optional[str]:
+                linked = by_figure.get(figure_of(link)) if link else None
+                if linked is not None and linked is not structure:
+                    if size is None or size_of(linked) == size:
+                        return write(linked)
                 for key in (
                     alias(base),
                     alias(re.sub(r"\s+Data Structure$", "", base)),
@@ -1181,8 +1355,8 @@ class SpecHeaders:
                     )
                 )
                 figures = [(m.fields, structure.source)]
-                referred = figure_referred(m.description)
-                described_by = bit_layouts.get((doc, referred)) if referred else None
+                link = m.field.structure if m.field else None
+                described_by = bit_layouts.get(figure_of(link)) if link else None
                 if not m.fields and m.count is None and described_by:
                     figures = [(described_by.fields, described_by.source)]
                 if m.stride and described_by and width_of(described_by) == 8 * m.stride:
@@ -1193,21 +1367,25 @@ class SpecHeaders:
                         named = f"{stem}_{doc}_{alias(structure_name(described_by))}"
                         if named in taken or named in planned:
                             named = f"{named}_figure{described_by.source.figure_nr}"
+                        prefix = identifier(named)
                         entry_masks = masks_of(
                             structure_name(described_by),
-                            identifier(named),
+                            prefix,
                             [(described_by.fields, described_by.source)],
                             8 * m.stride,
                         )
-                        masks += entry_masks
-                        prefix = identifier(named)
                         if entry_masks:
                             m = replace(m, doc=f"{m.doc} of {prefix}_*")
-                        values += value_enums(
-                            prefix,
-                            [(described_by.fields, described_by.source)],
-                            entry_masks,
-                        )
+                        # Arrays of one entry, as ACS and IOCS of the Commands
+                        # Supported and Effects log page, share its masks
+                        if prefix not in entries_written:
+                            entries_written.add(prefix)
+                            masks += entry_masks
+                            values += value_enums(
+                                prefix,
+                                [(described_by.fields, described_by.source)],
+                                entry_masks,
+                            )
                         figures = []
                     else:
                         element = write_bits(described_by, m.stride)
@@ -1490,6 +1668,9 @@ class SpecHeaders:
                 )
                 masks += these
                 for field in register.fields:
+                    cited = (
+                        senfd.query.cite(field.values_in) if field.values_in else cite
+                    )
                     constants = []
                     for entry in field.values:
                         value = number_of(entry)
@@ -1501,7 +1682,7 @@ class SpecHeaders:
                                 f"{upper}_{identifier(name)}_"
                                 f"{identifier(field.acronym or '')}_{identifier(named)}",
                                 value,
-                                f"{named} ({cite})",
+                                f"{named} ({cited})",
                             )
                         )
                     if field.acronym and constants:
@@ -1533,6 +1714,7 @@ class SpecHeaders:
     def generate(self):
         path = self.options.get("spec")
         spec = senfd.query.load(Path(path) if path else None)
+        link_values(spec)
         stem = alias(self.options.get("prefix", "xnvme_spec"))
 
         enums: Dict[str, List[str]] = {}

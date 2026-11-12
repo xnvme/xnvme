@@ -235,7 +235,7 @@ jobs:
     - name: Test the cijoe scripts, those not needing a target, and the toolbox
       run: |
         python3 -m venv /tmp/selftest
-        /tmp/selftest/bin/pip install -q pytest ./cijoe
+        /tmp/selftest/bin/pip install -q pytest ./cijoe senfd==0.19.0
         /tmp/selftest/bin/pytest -q -p no:cacheprovider cijoe/tests/selftest toolbox/tests
 
     # The 'publish-release' workflow releases when the merged pull-request ends on the

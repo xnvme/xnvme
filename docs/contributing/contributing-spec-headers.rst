@@ -32,7 +32,7 @@ Prerequisites
      python3 -m venv ~/venvs/spec
      ~/venvs/spec/bin/pip install senfd yace
 
-  The generator needs senfd 0.18.0 or later and yace 0.9.0 or later. yace
+  The generator needs senfd 0.19.0 or later and yace 0.9.0 or later. yace
   0.9.0 is the first release that runs a generator from its file.
   ``senfd --version`` and ``yace --version`` say what you have.
 
@@ -103,11 +103,13 @@ The options of the generator, each given as
   ``base:identify_controller``. The default is every byte layout except the
   examples. ``none`` writes no structures. A field whose values the
   specification names gets an enum of them, as for the commands. An array
-  whose entries another figure defines, such as the Power State Descriptors of
-  Identify Controller, takes the layout of that figure: an entry of 1, 2, 4 or
-  8 bytes keeps its integer type and gets masks named by the entry, such as
-  ``XNVME_SPEC_NVM_LBA_FORMAT_*`` for ``lbaf``, and a larger entry is a struct
-  of its own.
+  whose entries the data model links to another figure, such as the Power
+  State Descriptors of Identify Controller, takes the layout of that figure:
+  an entry of 1, 2, 4 or 8 bytes keeps its integer type and gets masks named
+  by the entry, such as ``XNVME_SPEC_NVM_LBA_FORMAT_*`` for ``lbaf``, and a
+  larger entry is a struct of its own. The fields of the protection
+  information formats are big-endian, so a field of more than one byte is an
+  array of bytes.
 * ``registers`` set to ``none`` leaves out the registers. Otherwise the
   generator writes the registers of each document as one struct, such as
   ``struct xnvme_spec_base_registers``, with each register at its offset. The

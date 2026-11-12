@@ -30,9 +30,12 @@ def bits(
     fields=(),
     description="",
     formula=None,
+    **links,
 ):
     """A field whose range is 'range_': a range as the documents write it, such
-    as "07:00", or a formula together with the 'formula' that senfd makes of it"""
+    as "07:00", or a formula together with the 'formula' that senfd makes of it.
+    'links' are what senfd links the field to: 'structure', 'array',
+    'values_in' and 'cases'"""
 
     upper, _, lower = range_.partition(":")
     try:
@@ -52,6 +55,7 @@ def bits(
         range=range_,
         description=description,
         fields=list(fields),
+        **links,
     )
 
 
@@ -136,7 +140,47 @@ def model(tmp_path):
                     bits("31:24", "Foo Step", "FSTEP", unit="bits"),
                 ],
                 source=source(figure_nr=3),
-            )
+            ),
+            spec_model.Dwords(
+                lower=11,
+                upper=11,
+                fields=[
+                    bits(
+                        "07:00",
+                        "Foo Selector",
+                        "FSEL",
+                        unit="bits",
+                        description="Refer to Figure 23.",
+                        values_in=source(figure_nr=23),
+                    ),
+                    bits(
+                        "15:08",
+                        "Foo Mode",
+                        "FMODE",
+                        unit="bits",
+                        cases=[
+                            spec_model.Case(
+                                selector="FACT",
+                                when=[spec_model.Selected(name="Foo Start", value=0)],
+                                name="Foo Options",
+                                values=[value("1h", 1, "Foo Quick")],
+                                fields=[
+                                    bits("07:06", "Reserved", unit="bits"),
+                                    bits(
+                                        "05:00", "Foo Level", "FLVL", unit="bits"
+                                    ).model_copy(
+                                        update={"values": [value("3Fh", 63, "Foo Top")]}
+                                    ),
+                                ],
+                            ),
+                            spec_model.Case(
+                                selector="FACT", otherwise=True, role="reserved"
+                            ),
+                        ],
+                    ),
+                ],
+                source=source(figure_nr=19),
+            ),
         ],
         operations=[
             spec_model.Operation(
@@ -181,6 +225,60 @@ def model(tmp_path):
                 ],
             ),
             structure(
+                "Foo Table",
+                [
+                    bits("03:00", "Foo Count", "FCNT"),
+                    bits(
+                        "07:04",
+                        "Foo Table Entry 0",
+                        "FTE0",
+                        structure=source(figure_nr=20),
+                        array=spec_model.Array(
+                            name="Foo Table Entry",
+                            acronym="FTE",
+                            index=0,
+                            first=0,
+                            count=3,
+                            stride=4,
+                            lower=4,
+                        ),
+                    ),
+                    bits(
+                        "15:12",
+                        "Foo Table Entry 2",
+                        "FTE2",
+                        structure=source(figure_nr=20),
+                        array=spec_model.Array(
+                            name="Foo Table Entry",
+                            acronym="FTE",
+                            index=2,
+                            first=0,
+                            count=3,
+                            stride=4,
+                            lower=4,
+                        ),
+                    ),
+                ],
+                figure_nr=21,
+            ),
+            structure(
+                "Foo Cell",
+                [
+                    bits("01:00", "Foo Cell Id", "FCID"),
+                    bits("03:02", "Foo Cell Size", "FCSZ"),
+                ],
+                figure_nr=20,
+            ),
+            structure(
+                "16b Guard Protection Information Format when FS field is non - zero",
+                [
+                    bits("01:00", "Guard", "GRD"),
+                    bits("03:02", "Application Tag", "AT"),
+                    bits("04", "Foo Flag", "FFLG"),
+                ],
+                figure_nr=22,
+            ),
+            structure(
                 "Foo Entry",
                 [
                     bits("07:00", "Foo Entry Key", "FEK").model_copy(
@@ -202,24 +300,40 @@ def model(tmp_path):
                         "Foo Format 0",
                         "FFMT0",
                         description="The format is defined in Figure 15.",
+                        structure=source(figure_nr=15),
                     ),
                     bits(
                         "03:02",
                         "Foo Format 1",
                         "FFMT1",
                         description="The format is defined in Figure 15.",
+                        structure=source(figure_nr=15),
                     ),
                     bits(
                         "19:04",
                         "Foo Power Descriptor 0",
                         "FPD0",
                         description="The format is defined in Figure 14.",
+                        structure=source(figure_nr=14),
                     ),
                     bits(
                         "35:20",
                         "Foo Power Descriptor 1",
                         "FPD1",
                         description="The format is defined in Figure 14.",
+                        structure=source(figure_nr=14),
+                    ),
+                    bits(
+                        "37:36",
+                        "Foo Spare Format 0",
+                        "FSF0",
+                        structure=source(figure_nr=15),
+                    ),
+                    bits(
+                        "39:38",
+                        "Foo Spare Format 1",
+                        "FSF1",
+                        structure=source(figure_nr=15),
                     ),
                 ],
                 figure_nr=18,
@@ -302,6 +416,7 @@ def model(tmp_path):
                         "Foo Dword 0",
                         "FDW0",
                         description="Defined in Figure 11.",
+                        structure=source(figure_nr=11),
                     ),
                     bits(
                         "07:04",
@@ -373,6 +488,13 @@ def model(tmp_path):
             ),
         ],
         values=[
+            spec_model.Values(
+                kind="other",
+                name="Foo Selector",
+                columns=["value", "description"],
+                entries=[value("0h", 0, "Foo Near"), value("1h", 1, "Foo Far")],
+                source=source(figure_nr=23),
+            ),
             status("Generic Command", None, "C0h", "Foo Invalid", 4),
             status("Generic Command", "Foo Admin Commands", "C0h", "Foo Clash", 5),
         ],
@@ -700,3 +822,67 @@ def test_an_array_takes_the_layout_of_its_entry_from_the_figure_named(model, tmp
     assert "\tuint8_t val; ///< Valid, bit 7 of byte 14" in text
     assert "_VAL_VAL" not in text
     assert "\tuint8_t rsvd15[1]; ///< Reserved" in text
+
+
+def test_a_field_takes_its_values_from_the_table_it_refers_to(model, tmp_path):
+    text = text_of(generate(model, tmp_path / "out"), "libxnvme_spec_foo.h")
+
+    assert "enum xnvme_spec_foo_ding_cdw11_fsel {" in text
+    assert (
+        "\tXNVME_SPEC_FOO_DING_CDW11_FSEL_FOO_FAR = 0x1, ///< Foo Far (Foo 1.0, 1,"
+        " Figure 23)" in text
+    )
+
+
+def test_an_array_that_senfd_links_is_an_array_of_its_entry(model, tmp_path):
+    text = text_of(generate(model, tmp_path / "out"), "libxnvme_spec_foo.h")
+
+    # The figure leaves out the entries between the first and the last, and
+    # the entry is the structure that the field links to
+    assert (
+        "\tstruct xnvme_spec_foo_foo_cell fte[3]; ///< Foo Table Entry, 3 of 4 bytes,"
+        " bytes 15:4" in text
+    )
+    assert text.index("struct __attribute__((packed)) xnvme_spec_foo_foo_cell {") < (
+        text.index("struct __attribute__((packed)) xnvme_spec_foo_foo_table {")
+    )
+
+
+def test_a_field_with_cases_gets_their_masks_and_values(model, tmp_path):
+    text = text_of(generate(model, tmp_path / "out"), "libxnvme_spec_foo.h")
+
+    assert (
+        "/** Foo Mode (Foo 1.0, 1, Figure 19); bits 15:8 of Command Dword 11;"
+        " Foo Options when FACT is Foo Start */" in text
+    )
+    # A field of a case is a mask at its bits in the dword
+    assert "#define XNVME_SPEC_FOO_DING_CDW11_FMODE_FLVL 0x3f00" in text
+    # The values of the one case that names them are an enum of the field
+    assert "\tXNVME_SPEC_FOO_DING_CDW11_FMODE_FOO_QUICK = 0x1," in text
+    assert "\tXNVME_SPEC_FOO_DING_CDW11_FMODE_FLVL_FOO_TOP = 0x3f," in text
+
+
+def test_a_protection_information_format_is_big_endian_bytes(model, tmp_path):
+    text = text_of(generate(model, tmp_path / "out"), "libxnvme_spec_foo.h")
+
+    # The name keeps "non - zero", which is no command before a dash
+    assert (
+        "struct __attribute__((packed))"
+        " xnvme_spec_foo_16b_guard_protection_information_format_when_fs_field_is_non_zero {"
+        in text
+    )
+    assert "\tuint8_t grd[2]; ///< Guard, big-endian, bytes 1:0" in text
+    assert "\tuint8_t at[2]; ///< Application Tag, big-endian, bytes 3:2" in text
+    # A byte has no order
+    assert "\tuint8_t fflg; ///< Foo Flag, byte 4" in text
+
+
+def test_arrays_of_one_entry_share_its_masks(model, tmp_path):
+    text = text_of(generate(model, tmp_path / "out"), "libxnvme_spec_foo.h")
+
+    assert (
+        "\tuint16_t fsf[2]; ///< Foo Spare Format, 2 of 2 bytes of"
+        " XNVME_SPEC_FOO_FOO_FORMAT_FIGURE15_*, bytes 39:36" in text
+    )
+    assert text.count("#define XNVME_SPEC_FOO_FOO_FORMAT_FIGURE15_FDS ") == 1
+    assert text.count("enum xnvme_spec_foo_foo_format_figure15_") == 0
