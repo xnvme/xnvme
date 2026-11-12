@@ -83,6 +83,26 @@ exit:
 	return err;
 }
 
+/**
+ * Get the log page 'args' describe into 'buf', cleared first; sets 'args->numd' from 'buf_nbytes'
+ */
+static int
+get_log_page(struct xnvme_cmd_ctx *ctx, struct xnvme_cmd_prep_adm_get_log_page_args *args,
+	     void *buf, uint32_t buf_nbytes)
+{
+	int err;
+
+	memset(buf, 0, buf_nbytes);
+	args->numd = buf_nbytes / sizeof(uint32_t) - 1;
+
+	err = xnvme_cmd_prep_adm_get_log_page(&ctx->cmd, args);
+	if (err) {
+		return err;
+	}
+
+	return xnvme_cmd_pass_admin(ctx, buf, buf_nbytes, NULL, 0);
+}
+
 static int
 sub_idfy(struct xnvme_cli *cli)
 {
@@ -169,9 +189,15 @@ sub_log_health(struct xnvme_cli *cli)
 	}
 
 	xnvme_cli_pinf("Retrieving SMART / health log page ...");
-	err = xnvme_adm_log(&ctx, XNVME_SPEC_LOG_HEALTH, 0x0, 0, nsid, 0, log, log_nbytes);
+	struct xnvme_cmd_prep_adm_get_log_page_args args = {
+		.args_nbytes = sizeof(args),
+		.nsid = nsid,
+		.lid = XNVME_SPEC_LOG_HEALTH,
+	};
+
+	err = get_log_page(&ctx, &args, log, log_nbytes);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		xnvme_cli_perr("xnvme_adm_log(XNVME_SPEC_LOG_HEALTH)", err);
+		xnvme_cli_perr("get_log_page(XNVME_SPEC_LOG_HEALTH)", err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;
@@ -221,9 +247,15 @@ sub_log_erri(struct xnvme_cli *cli)
 	}
 
 	xnvme_cli_pinf("Retrieving error-info-log ...");
-	err = xnvme_adm_log(&ctx, XNVME_SPEC_LOG_ERRI, 0x0, 0x0, 0xFFFFFFFF, 0, log, log_nbytes);
+	struct xnvme_cmd_prep_adm_get_log_page_args args = {
+		.args_nbytes = sizeof(args),
+		.nsid = 0xFFFFFFFF,
+		.lid = XNVME_SPEC_LOG_ERRI,
+	};
+
+	err = get_log_page(&ctx, &args, log, log_nbytes);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		xnvme_cli_perr("xnvme_adm_log(XNVME_SPEC_LOG_ERRI)", err);
+		xnvme_cli_perr("get_log_page(XNVME_SPEC_LOG_ERRI)", err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;
@@ -270,9 +302,15 @@ sub_log_sanitize(struct xnvme_cli *cli)
 	}
 
 	xnvme_cli_pinf("Retrieving Sanitize log page ...");
-	err = xnvme_adm_log(&ctx, XNVME_SPEC_LOG_SANITIZE, 0x0, 0, nsid, 0, log, log_nbytes);
+	struct xnvme_cmd_prep_adm_get_log_page_args args = {
+		.args_nbytes = sizeof(args),
+		.nsid = nsid,
+		.lid = XNVME_SPEC_LOG_SANITIZE,
+	};
+
+	err = get_log_page(&ctx, &args, log, log_nbytes);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		xnvme_cli_perr("xnvme_adm_log(XNVME_SPEC_LOG_SANITIZE)", err);
+		xnvme_cli_perr("get_log_page(XNVME_SPEC_LOG_SANITIZE)", err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;
@@ -324,13 +362,17 @@ sub_log_fdp_config(struct xnvme_cli *cli)
 		goto exit;
 	}
 
-	xnvme_prep_adm_log(&ctx, XNVME_SPEC_LOG_FDPCONF, 0x0, 0, nsid, 0, log_nbytes);
-	ctx.cmd.log.lsi = egi;
+	struct xnvme_cmd_prep_adm_get_log_page_args args = {
+		.args_nbytes = sizeof(args),
+		.nsid = nsid,
+		.lid = XNVME_SPEC_LOG_FDPCONF,
+		.lsi = egi,
+	};
 
 	xnvme_cli_pinf("Retrieving FDP configurations log page ...");
-	err = xnvme_cmd_pass_admin(&ctx, log, log_nbytes, NULL, 0x0);
+	err = get_log_page(&ctx, &args, log, log_nbytes);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		xnvme_cli_perr("xnvme_adm_log(XNVME_SPEC_LOG_FDPCONF)", err);
+		xnvme_cli_perr("get_log_page(XNVME_SPEC_LOG_FDPCONF)", err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;
@@ -379,12 +421,16 @@ sub_log_ruhu(struct xnvme_cli *cli)
 	}
 
 	xnvme_cli_pinf("Retrieving ruhu-log ...");
-	xnvme_prep_adm_log(&ctx, XNVME_SPEC_LOG_FDPRUHU, 0x0, 0, nsid, 0, log_nbytes);
-	ctx.cmd.log.lsi = egi;
+	struct xnvme_cmd_prep_adm_get_log_page_args args = {
+		.args_nbytes = sizeof(args),
+		.nsid = nsid,
+		.lid = XNVME_SPEC_LOG_FDPRUHU,
+		.lsi = egi,
+	};
 
-	err = xnvme_cmd_pass_admin(&ctx, log, log_nbytes, NULL, 0x0);
+	err = get_log_page(&ctx, &args, log, log_nbytes);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		xnvme_cli_perr("xnvme_adm_log(XNVME_SPEC_LOG_FDPRUHU)", err);
+		xnvme_cli_perr("get_log_page(XNVME_SPEC_LOG_FDPRUHU)", err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;
@@ -432,13 +478,17 @@ sub_log_fdp_stats(struct xnvme_cli *cli)
 		goto exit;
 	}
 
-	xnvme_prep_adm_log(&ctx, XNVME_SPEC_LOG_FDPSTATS, 0x0, 0, nsid, 0, log_nbytes);
-	ctx.cmd.log.lsi = egi;
+	struct xnvme_cmd_prep_adm_get_log_page_args args = {
+		.args_nbytes = sizeof(args),
+		.nsid = nsid,
+		.lid = XNVME_SPEC_LOG_FDPSTATS,
+		.lsi = egi,
+	};
 
 	xnvme_cli_pinf("Retrieving FDP statistics log page ...");
-	err = xnvme_cmd_pass_admin(&ctx, log, log_nbytes, NULL, 0x0);
+	err = get_log_page(&ctx, &args, log, log_nbytes);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		xnvme_cli_perr("xnvme_adm_log(XNVME_SPEC_LOG_FDPSTATS)", err);
+		xnvme_cli_perr("get_log_page(XNVME_SPEC_LOG_FDPSTATS)", err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;
@@ -488,13 +538,17 @@ sub_log_fdp_events(struct xnvme_cli *cli)
 	}
 
 	xnvme_cli_pinf("Retrieving fdp-events-log ...");
-	xnvme_prep_adm_log(&ctx, XNVME_SPEC_LOG_FDPEVENTS, 0x0, 0, nsid, 0, log_nbytes);
-	ctx.cmd.log.lsi = egi;
-	ctx.cmd.log.cdw10 = xnvme_bits_set(ctx.cmd.log.cdw10, XNVME_SPEC_CMD_LOG_CDW10_LSP, lsp);
+	struct xnvme_cmd_prep_adm_get_log_page_args args = {
+		.args_nbytes = sizeof(args),
+		.nsid = nsid,
+		.lid = XNVME_SPEC_LOG_FDPEVENTS,
+		.lsp = lsp,
+		.lsi = egi,
+	};
 
-	err = xnvme_cmd_pass_admin(&ctx, log, log_nbytes, NULL, 0x0);
+	err = get_log_page(&ctx, &args, log, log_nbytes);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		xnvme_cli_perr("xnvme_adm_log(XNVME_SPEC_LOG_FDPEVENTS)", err);
+		xnvme_cli_perr("get_log_page(XNVME_SPEC_LOG_FDPEVENTS)", err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;
@@ -531,13 +585,18 @@ sub_log(struct xnvme_cli *cli)
 		nsid = xnvme_dev_get_nsid(cli->args.dev);
 	}
 
-	xnvme_cli_pinf("xnvme_adm_log: {lid: 0x%x, lsp: 0x%x, "
+	xnvme_cli_pinf("get_log_page: {lid: 0x%x, lsp: 0x%x, "
 		       "lpo_nbytes: %zu, nsid: 0x%x, rae: %d}",
 		       lid, lsp, lpo_nbytes, nsid, rae);
 
 	if (!buf_nbytes) {
 		err = -EINVAL;
 		xnvme_cli_perr("!arg:data_nbytes", err);
+		goto exit;
+	}
+	if (lpo_nbytes & 0x3) {
+		err = -EINVAL;
+		xnvme_cli_perr("lpo_nbytes is not dword-aligned", err);
 		goto exit;
 	}
 
@@ -548,9 +607,18 @@ sub_log(struct xnvme_cli *cli)
 		goto exit;
 	}
 
-	err = xnvme_adm_log(&ctx, lid, lsp, lpo_nbytes, nsid, rae, buf, buf_nbytes);
+	struct xnvme_cmd_prep_adm_get_log_page_args args = {
+		.args_nbytes = sizeof(args),
+		.nsid = nsid,
+		.rae = rae,
+		.lsp = lsp,
+		.lid = lid,
+		.lpo = lpo_nbytes,
+	};
+
+	err = get_log_page(&ctx, &args, buf, buf_nbytes);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		xnvme_cli_perr("xnvme_adm_log()", err);
+		xnvme_cli_perr("get_log_page()", err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;
@@ -613,10 +681,18 @@ sub_gfeat(struct xnvme_cli *cli)
 
 	xnvme_cli_pinf("cmd_gfeat: {nsid: 0x%x, fid: 0x%x, sel: 0x%x}", nsid, fid, sel);
 
-	xnvme_prep_adm_gfeat(&ctx, nsid, fid, sel);
-	ctx.cmd.gfeat.cdw11 = cdw11;
+	struct xnvme_cmd_prep_adm_get_features_args args = {
+		.args_nbytes = sizeof(args),
+		.nsid = nsid,
+		.sel = sel,
+		.fid = fid,
+		.cdw11 = cdw11,
+	};
 
-	err = xnvme_cmd_pass_admin(&ctx, dbuf, dbuf_nbytes, NULL, 0x0);
+	err = xnvme_cmd_prep_adm_get_features(&ctx.cmd, &args);
+	if (!err) {
+		err = xnvme_cmd_pass_admin(&ctx, dbuf, dbuf_nbytes, NULL, 0x0);
+	}
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		xnvme_cli_perr("xnvme_cmd_pass_admin()", err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
@@ -693,10 +769,18 @@ sub_sfeat(struct xnvme_cli *cli)
 	xnvme_cli_pinf("cmd_sfeat: {nsid: 0%x, fid: 0x%x, save: 0x%x, feat: 0x%x, cdw12: 0x%x}",
 		       nsid, fid, save, feat, cdw12);
 
-	xnvme_prep_adm_sfeat(&ctx, 0, fid, feat, save);
-	ctx.cmd.sfeat.cdw12 = cdw12;
+	struct xnvme_cmd_prep_adm_set_features_args args = {
+		.args_nbytes = sizeof(args),
+		.sv = save,
+		.fid = fid,
+		.cdw11 = feat,
+		.cdw12 = cdw12,
+	};
 
-	err = xnvme_cmd_pass_admin(&ctx, dbuf, dbuf_nbytes, NULL, 0x0);
+	err = xnvme_cmd_prep_adm_set_features(&ctx.cmd, &args);
+	if (!err) {
+		err = xnvme_cmd_pass_admin(&ctx, dbuf, dbuf_nbytes, NULL, 0x0);
+	}
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		xnvme_cli_perr("xnvme_cmd_pass_admin()", err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
@@ -745,10 +829,19 @@ sub_set_fdp_events(struct xnvme_cli *cli)
 	xnvme_cli_pinf("cmd_sfeat: {nsid: 0%x, fid: 0x%x, save: 0x%x, feat: 0x%x, cdw12: 0x%x}",
 		       nsid, fid, save, feat, cdw12);
 
-	xnvme_prep_adm_sfeat(&ctx, nsid, fid, feat, save);
-	ctx.cmd.sfeat.cdw12 = cdw12;
+	struct xnvme_cmd_prep_adm_set_features_args args = {
+		.args_nbytes = sizeof(args),
+		.nsid = nsid,
+		.sv = save,
+		.fid = fid,
+		.cdw11 = feat,
+		.cdw12 = cdw12,
+	};
 
-	err = xnvme_cmd_pass_admin(&ctx, (void *)dbuf, SET_EVENT_BUF_SIZE, NULL, 0x0);
+	err = xnvme_cmd_prep_adm_set_features(&ctx.cmd, &args);
+	if (!err) {
+		err = xnvme_cmd_pass_admin(&ctx, (void *)dbuf, SET_EVENT_BUF_SIZE, NULL, 0x0);
+	}
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		xnvme_cli_perr("xnvme_cmd_pass_admin()", err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
@@ -782,13 +875,32 @@ sub_format(struct xnvme_cli *cli)
 		nsid = xnvme_dev_get_nsid(cli->args.dev);
 	}
 
-	xnvme_cli_pinf("xnvme_adm_format: {nsid: 0x%08x, lbafl: 0x%x, lbafu: 0x%x, "
+	xnvme_cli_pinf("format_nvm: {nsid: 0x%08x, lbafl: 0x%x, lbafu: 0x%x, "
 		       "mset: 0x%x, ses: 0x%x, pi: 0x%x, pil: 0x%x}",
 		       nsid, lbafl, lbafu, mset, ses, pi, pil);
 
-	err = xnvme_adm_format(&ctx, nsid, lbafl, lbafu, mset, ses, pi, pil);
+	// LBAFL is four bits and LBAFU two; the record takes them joined as 'lbaf'
+	if (lbafl > 0xf || lbafu > 0x3) {
+		xnvme_cli_perr("format_nvm: --lbafl or --lbafu wider than its field", -EINVAL);
+		return -EINVAL;
+	}
+
+	struct xnvme_cmd_prep_adm_format_nvm_args args = {
+		.args_nbytes = sizeof(args),
+		.nsid = nsid,
+		.ses = ses,
+		.pil = pil,
+		.pi = pi,
+		.mset = mset,
+		.lbaf = (uint8_t)(lbafu << 4 | lbafl),
+	};
+
+	err = xnvme_cmd_prep_adm_format_nvm(&ctx.cmd, &args);
+	if (!err) {
+		err = xnvme_cmd_pass_admin(&ctx, NULL, 0, NULL, 0);
+	}
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		xnvme_cli_perr("xnvme_adm_format()", err);
+		xnvme_cli_perr("format_nvm", err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 	}
@@ -811,14 +923,27 @@ sub_sanitize(struct xnvme_cli *cli)
 
 	xnvme_dev_get_cmd_ctx(dev, &ctx);
 
-	xnvme_cli_pinf("xnvme_nvm_sanitize: {sanact: 0x%x, ause: 0x%x, "
+	xnvme_cli_pinf("sanitize: {sanact: 0x%x, ause: 0x%x, "
 		       "ovrpat: 0x%x, owpass: 0x%x, oipbp: 0x%x, "
 		       "nodas: 0x%x}",
 		       sanact, ause, ovrpat, owpass, oipbp, nodas);
 
-	err = xnvme_nvm_sanitize(&ctx, sanact, ause, ovrpat, owpass, oipbp, nodas);
+	struct xnvme_cmd_prep_adm_sanitize_args args = {
+		.args_nbytes = sizeof(args),
+		.ndas = nodas,
+		.oipbp = oipbp,
+		.owpass = owpass,
+		.ause = ause,
+		.sanact = sanact,
+		.ovrpat = ovrpat,
+	};
+
+	err = xnvme_cmd_prep_adm_sanitize(&ctx.cmd, &args);
+	if (!err) {
+		err = xnvme_cmd_pass_admin(&ctx, NULL, 0, NULL, 0);
+	}
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		xnvme_cli_perr("xnvme_nvm_sanitize()", err);
+		xnvme_cli_perr("sanitize", err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 	}
@@ -861,10 +986,19 @@ sub_ruhs(struct xnvme_cli *cli)
 	}
 
 	xnvme_cli_pinf("Retrieving ruhs ...");
-	err = xnvme_nvm_mgmt_recv(&ctx, nsid, XNVME_SPEC_IO_MGMT_RECV_RUHS, 0, ruhs, ruhs_nbytes);
+	struct xnvme_cmd_prep_io_io_management_receive_args args = {
+		.args_nbytes = sizeof(args),
+		.nsid = nsid,
+		.mo = XNVME_SPEC_IO_MGMT_RECV_RUHS,
+		.numd = ruhs_nbytes / sizeof(uint32_t) - 1,
+	};
 
+	err = xnvme_cmd_prep_io_io_management_receive(&ctx.cmd, &args);
+	if (!err) {
+		err = xnvme_cmd_pass(&ctx, ruhs, ruhs_nbytes, NULL, 0x0);
+	}
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		xnvme_cli_perr("xnvme_nvm_mgmt_recv(XNVME_SPEC_IO_MGMT_RECV_RUHS)", err);
+		xnvme_cli_perr("io_management_receive(XNVME_SPEC_IO_MGMT_RECV_RUHS)", err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;
@@ -911,11 +1045,19 @@ sub_ruhu(struct xnvme_cli *cli)
 	}
 
 	xnvme_cli_pinf("Updating ruh ...");
-	err = xnvme_nvm_mgmt_send(&ctx, nsid, XNVME_SPEC_IO_MGMT_SEND_RUHU, npids - 1, pid_list,
-				  npids * 2);
+	struct xnvme_cmd_prep_io_io_management_send_args args = {
+		.args_nbytes = sizeof(args),
+		.nsid = nsid,
+		.mos = (uint16_t)(npids - 1),
+		.mo = XNVME_SPEC_IO_MGMT_SEND_RUHU,
+	};
 
+	err = xnvme_cmd_prep_io_io_management_send(&ctx.cmd, &args);
+	if (!err) {
+		err = xnvme_cmd_pass(&ctx, pid_list, npids * 2, NULL, 0x0);
+	}
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		xnvme_cli_perr("xnvme_nvm_mgmt_send(XNVME_SPEC_IO_MGMT_SEND_RUHU)", err);
+		xnvme_cli_perr("io_management_send(XNVME_SPEC_IO_MGMT_SEND_RUHU)", err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;
@@ -961,9 +1103,21 @@ sub_dsm(struct xnvme_cli *cli)
 	dsm_range->llb = llb;
 	dsm_range->slba = slba;
 
-	err = xnvme_nvm_dsm(&ctx, nsid, dsm_range, 0, ad, idw, idr);
+	struct xnvme_cmd_prep_nvm_dataset_management_args args = {
+		.args_nbytes = sizeof(args),
+		.nsid = nsid,
+		.nr = 0,
+		.ad = ad,
+		.idw = idw,
+		.idr = idr,
+	};
+
+	err = xnvme_cmd_prep_nvm_dataset_management(&ctx.cmd, &args);
+	if (!err) {
+		err = xnvme_cmd_pass(&ctx, dsm_range, sizeof(*dsm_range), NULL, 0);
+	}
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		xnvme_cli_perr("xnvme_nvm_dsm()", err);
+		xnvme_cli_perr("dataset_management", err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;

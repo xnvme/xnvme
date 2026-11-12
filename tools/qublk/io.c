@@ -260,13 +260,6 @@ dispatch(struct qublk_queue *q, struct qublk_io *io)
 		return -EBUSY;
 	}
 
-	/*
-	 * The ctx is pooled per xnvme queue and reused across commands.
-	 * xnvme_nvm_{read,write} only writes opcode/nsid/slba/nlb, so other
-	 * fields in cdw12 (fua, lr, prinfo, ...) carry over from the prior
-	 * command. Zero the NVMe command header before each submit.
-	 */
-	memset(&ctx->cmd, 0, sizeof(ctx->cmd));
 	xnvme_cmd_ctx_set_cb(ctx, on_xnvme_complete, io);
 
 	switch (op) {
@@ -279,21 +272,34 @@ dispatch(struct qublk_queue *q, struct qublk_io *io)
 		 * covers have completed. One FLUSH on the local queue
 		 * therefore covers writes completed on every queue.
 		 */
-		xnvme_prep_nvm(ctx, XNVME_SPEC_NVM_OPC_FLUSH, nsid, 0, 0);
-		rc = xnvme_cmd_pass(ctx, NULL, 0, NULL, 0);
+		rc = xnvme_cmd_prep_io_flush(
+			&ctx->cmd,
+			&(struct xnvme_cmd_prep_io_flush_args){
+				.args_nbytes = sizeof(struct xnvme_cmd_prep_io_flush_args),
+				.nsid = nsid,
+			});
+		if (!rc) {
+			rc = xnvme_cmd_pass(ctx, NULL, 0, NULL, 0);
+		}
 		break;
 	case UBLK_IO_OP_READ:
 		slba = iod->start_sector >> (lba_shift - XNVME_UNIVERSAL_SECT_SH);
 		nlb = (uint16_t)(((iod->nr_sectors << XNVME_UNIVERSAL_SECT_SH) >> lba_shift) - 1);
-		rc = xnvme_nvm_read(ctx, nsid, slba, nlb, io->buf, NULL);
+		rc = xnvme_cmd_prep_nvm_read(
+			&ctx->cmd,
+			&(struct xnvme_cmd_prep_nvm_read_args){
+				.args_nbytes = sizeof(struct xnvme_cmd_prep_nvm_read_args),
+				.nsid = nsid,
+				.slba = slba,
+				.nlb = nlb,
+			});
+		if (!rc) {
+			rc = xnvme_cmd_pass(ctx, io->buf, (size_t)bytes, NULL, 0);
+		}
 		break;
 	case UBLK_IO_OP_WRITE:
 		slba = iod->start_sector >> (lba_shift - XNVME_UNIVERSAL_SECT_SH);
 		nlb = (uint16_t)(((iod->nr_sectors << XNVME_UNIVERSAL_SECT_SH) >> lba_shift) - 1);
-		if (iod->op_flags & UBLK_IO_F_FUA) {
-			ctx->cmd.nvm.cdw12 = xnvme_bits_set(ctx->cmd.nvm.cdw12,
-							    XNVME_SPEC_CMD_NVM_CDW12_FUA, 1);
-		}
 
 		// The data to write is fetched from the kernel before the command is submitted
 		if (dev->user_copy) {
@@ -303,7 +309,18 @@ dispatch(struct qublk_queue *q, struct qublk_io *io)
 			}
 		}
 
-		rc = xnvme_nvm_write(ctx, nsid, slba, nlb, io->buf, NULL);
+		rc = xnvme_cmd_prep_nvm_write(
+			&ctx->cmd,
+			&(struct xnvme_cmd_prep_nvm_write_args){
+				.args_nbytes = sizeof(struct xnvme_cmd_prep_nvm_write_args),
+				.nsid = nsid,
+				.slba = slba,
+				.fua = (iod->op_flags & UBLK_IO_F_FUA) ? 1 : 0,
+				.nlb = nlb,
+			});
+		if (!rc) {
+			rc = xnvme_cmd_pass(ctx, io->buf, (size_t)bytes, NULL, 0);
+		}
 		break;
 	default:
 		rc = qublk_zoned_dispatch(q, io, ctx);
