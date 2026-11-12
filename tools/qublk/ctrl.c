@@ -170,13 +170,14 @@ qublk_ctrl_set_params(struct qublk_dev *dev)
 		.len = sizeof(params),
 	};
 
-	// Sent when discard is served. The kernel requires a granularity, and
-	// one segment for a discard limit
-	if (dev->has_dsm) {
+	// Sent when either op is served; a zero limit keeps that op away. The
+	// kernel requires a granularity, and one segment for a discard limit
+	if (dev->has_dsm || dev->has_write_zeroes) {
 		params.types |= UBLK_PARAM_TYPE_DISCARD;
 		params.discard.discard_granularity = 1u << lba_shift;
 		params.discard.max_discard_sectors = dev->max_discard_sectors;
 		params.discard.max_discard_segments = 1;
+		params.discard.max_write_zeroes_sectors = dev->max_write_zeroes_sectors;
 	}
 
 	qublk_zoned_set_params(dev, &params);
