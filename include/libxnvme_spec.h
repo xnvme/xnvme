@@ -83,7 +83,8 @@ enum xnvme_spec_status_code_type {
  */
 enum xnvme_spec_status_code {
 	// TODO: Add remaining status codes from spec
-	XNVME_STATUS_CODE_INVALID_FIELD = 0x02, ///< Invalid Field
+	XNVME_STATUS_CODE_INVALID_OPCODE = 0x01, ///< Invalid Command Opcode
+	XNVME_STATUS_CODE_INVALID_FIELD  = 0x02, ///< Invalid Field
 };
 
 /**
