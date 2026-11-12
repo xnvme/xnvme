@@ -16,6 +16,7 @@ from .qublk_session import (
     UBLK_NODE,
     UBLK_NVME,
     is_userspace_nvme,
+    oncs,
     passes_nvme,
     qublk_session,
     qublk_teardown,
@@ -191,6 +192,129 @@ def test_run_max_io_bytes(cijoe, device, be_opts, cli_args):
         args="--qdepth 64 --max-io-bytes 131072",
     )
     assert not err
+
+
+UBLK_QUEUE = f"/sys/block/{UBLK_NODE.split('/')[-1]}/queue"
+MIB = 1 << 20
+
+
+def _advertised(cijoe, device, be_opts):
+    """What qublk is expected to advertise, as (discard, write_zeroes)"""
+
+    if not passes_nvme(be_opts):
+        return False, False
+
+    return oncs(cijoe, device["uri"], be_opts)
+
+
+def _fails_unsupported(command, marker, message="Operation not supported"):
+    """
+    Shell lines asserting that 'command' fails with EOPNOTSUPP, which the tool
+    reports as 'message'; the message tells it from a refusal for another
+    reason, and LC_ALL=C keeps it untranslated
+    """
+
+    return [
+        f"out=$(LC_ALL=C {command} 2>&1) && {{ echo {marker}; exit 1; }}",
+        'echo "$out"',
+        f'echo "$out" | grep -q "{message}"',
+    ]
+
+
+@xnvme_parametrize(labels=["nvm"], opts=["be"])
+def test_run_discard(cijoe, device, be_opts, cli_args):
+    """
+    Discard is advertised exactly when the backend passes NVMe commands through
+    and the controller lists Dataset Management; then blkdiscard succeeds, else
+    the kernel refuses it
+
+    What a deallocated block reads as is up to the namespace (DLFEAT), so the
+    data is not checked here; see test_run_write_zeroes for the read-back.
+    """
+
+    discard, _ = _advertised(cijoe, device, be_opts)
+
+    payload = [
+        f"lbs=$(cat {UBLK_QUEUE}/logical_block_size)",
+        f"dmb=$(cat {UBLK_QUEUE}/discard_max_bytes)",
+        f"dg=$(cat {UBLK_QUEUE}/discard_granularity)",
+        'echo "discard_max_bytes=$dmb discard_granularity=$dg logical_block_size=$lbs"',
+    ]
+    # --force: blkdiscard declines a device carrying a filesystem signature,
+    # which a previous case's mkfs or the random pattern can leave
+    blkdiscard = f"blkdiscard -f --offset 0 --length {MIB} {UBLK_NODE}"
+    if discard:
+        payload += [
+            "[ $dmb -gt 0 ]",
+            "[ $((dmb % lbs)) -eq 0 ]",
+            "[ $dg -eq $lbs ]",
+            f"dd if=/dev/urandom of={UBLK_NODE} bs=1M count=1 oflag=direct status=none",
+            blkdiscard,
+        ]
+    else:
+        # The granularity is then the kernel's default, not qublk's
+        payload += [
+            "[ $dmb -eq 0 ]",
+            *_fails_unsupported(blkdiscard, "DISCARD-PASSED"),
+        ]
+
+    err, state = qublk_session(cijoe, device["uri"], be_opts["be"], payload)
+    assert not err, state.output()
+
+
+@xnvme_parametrize(labels=["nvm"], opts=["be"])
+def test_run_write_zeroes(cijoe, device, be_opts, cli_args):
+    """
+    Write zeroes is advertised exactly when the backend passes NVMe commands
+    through and the controller lists Write Zeroes
+
+    blkdiscard -z (BLKZEROOUT) reads back as zeroes either way, since the
+    kernel falls back to writing zeroed pages when nothing is advertised; a
+    punch-hole fallocate insists on the offload, so it succeeds exactly when
+    advertised and is refused otherwise.
+    """
+
+    _, write_zeroes = _advertised(cijoe, device, be_opts)
+
+    def zeroed_after(command):
+        return [
+            f"dd if=/dev/urandom of={UBLK_NODE} bs=1M count=1 oflag=direct status=none",
+            command,
+            f"dd if={UBLK_NODE} of=$got bs=1M count=1 iflag=direct status=none",
+            "cmp $zero $got",
+        ]
+
+    punch_hole = f"fallocate --punch-hole --offset 0 --length {MIB} {UBLK_NODE}"
+
+    payload = [
+        f"lbs=$(cat {UBLK_QUEUE}/logical_block_size)",
+        f"wzmb=$(cat {UBLK_QUEUE}/write_zeroes_max_bytes)",
+        'echo "write_zeroes_max_bytes=$wzmb logical_block_size=$lbs"',
+        "zero=$(mktemp)",
+        "got=$(mktemp)",
+        'trap "rm -f $zero $got" EXIT',
+        "dd if=/dev/zero of=$zero bs=1M count=1 status=none",
+        *zeroed_after(f"blkdiscard -f -z --offset 0 --length {MIB} {UBLK_NODE}"),
+    ]
+    if write_zeroes:
+        # One Write Zeroes covers at most 65536 blocks, its 16-bit count
+        payload += [
+            "[ $wzmb -gt 0 ]",
+            "[ $wzmb -le $((65536 * lbs)) ]",
+            *zeroed_after(punch_hole),
+        ]
+    else:
+        payload += [
+            "[ $wzmb -eq 0 ]",
+            # fallocate(1) words the kernel's EOPNOTSUPP after the
+            # FALLOC_FL_KEEP_SIZE it adds to a punch hole
+            *_fails_unsupported(
+                punch_hole, "PUNCH-HOLE-PASSED", "keep size mode is unsupported"
+            ),
+        ]
+
+    err, state = qublk_session(cijoe, device["uri"], be_opts["be"], payload)
+    assert not err, state.output()
 
 
 @xnvme_parametrize(labels=["pcie", "nvm"], opts=["be"])
