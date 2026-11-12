@@ -15,6 +15,29 @@
  * Allocate struct 'znd_report' with memory allowing it to contain all
  * zone-entries, despite the intended 'limit'
  */
+static int
+znd_report(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t slba, uint8_t zra, uint8_t zras,
+	   uint8_t zraspf, void *dbuf, uint32_t dbuf_nbytes)
+{
+	struct xnvme_cmd_prep_zns_zone_management_receive_args args = {
+		.args_nbytes = sizeof(args),
+		.nsid = nsid,
+		.slba = slba,
+		.ndw = dbuf_nbytes / sizeof(uint32_t) - 1,
+		.zraspf = zraspf,
+		.zras = zras,
+		.zra = zra,
+	};
+	int err;
+
+	err = xnvme_cmd_prep_zns_zone_management_receive(&ctx->cmd, &args);
+	if (err) {
+		return err;
+	}
+
+	return xnvme_cmd_pass(ctx, dbuf, dbuf_nbytes, NULL, 0);
+}
+
 static inline struct xnvme_znd_report *
 znd_report_init(struct xnvme_dev *dev, uint64_t slba, size_t limit, uint8_t extended)
 {
@@ -163,11 +186,10 @@ xnvme_znd_report_from_dev(struct xnvme_dev *dev, uint64_t slba, size_t limit, ui
 			break;
 		}
 
-		err = xnvme_znd_mgmt_recv(&ctx, nsid, zslba, action,
-					  XNVME_SPEC_ZND_CMD_MGMT_RECV_SF_ALL, 0x0, dbuf,
-					  dbuf_nbytes);
+		err = znd_report(&ctx, nsid, zslba, action, XNVME_SPEC_ZND_CMD_MGMT_RECV_SF_ALL,
+				 0x0, dbuf, dbuf_nbytes);
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-			XNVME_DEBUG("FAILED: xnvme_znd_mgmt_recv()");
+			XNVME_DEBUG("FAILED: znd_report()");
 			xnvme_buf_virt_free(report);
 			xnvme_buf_free(dev, dbuf);
 			errno = err ? -err : EIO;
@@ -275,10 +297,10 @@ xnvme_znd_descr_from_dev(struct xnvme_dev *dev, uint64_t slba, struct xnvme_spec
 	}
 	memset(dbuf, 0, dbuf_nbytes);
 
-	err = xnvme_znd_mgmt_recv(&ctx, nsid, slba, XNVME_SPEC_ZND_CMD_MGMT_RECV_ACTION_REPORT,
-				  XNVME_SPEC_ZND_CMD_MGMT_RECV_SF_ALL, 0x0, dbuf, dbuf_nbytes);
+	err = znd_report(&ctx, nsid, slba, XNVME_SPEC_ZND_CMD_MGMT_RECV_ACTION_REPORT,
+			 XNVME_SPEC_ZND_CMD_MGMT_RECV_SF_ALL, 0x0, dbuf, dbuf_nbytes);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		XNVME_DEBUG("FAILED: xnvme_znd_mgmt_recv()");
+		XNVME_DEBUG("FAILED: znd_report()");
 		err = err ? err : -EIO;
 		goto exit;
 	}
@@ -351,10 +373,10 @@ xnvme_znd_descr_from_dev_in_state(struct xnvme_dev *dev, uint32_t state,
 	}
 	memset(dbuf, 0, dbuf_nbytes);
 
-	err = xnvme_znd_mgmt_recv(&ctx, nsid, 0x0, XNVME_SPEC_ZND_CMD_MGMT_RECV_ACTION_REPORT,
-				  sfield, 0x1, dbuf, dbuf_nbytes);
+	err = znd_report(&ctx, nsid, 0x0, XNVME_SPEC_ZND_CMD_MGMT_RECV_ACTION_REPORT, sfield, 0x1,
+			 dbuf, dbuf_nbytes);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		XNVME_DEBUG("FAILED: xnvme_znd_mgmt_recv()");
+		XNVME_DEBUG("FAILED: znd_report()");
 		err = err ? err : -EIO;
 		goto exit;
 	}
@@ -395,10 +417,10 @@ xnvme_znd_stat(struct xnvme_dev *dev, uint32_t sfield, uint64_t *nzones)
 	}
 	memset(hdr, 0, hdr_nbytes);
 
-	err = xnvme_znd_mgmt_recv(&ctx, nsid, 0x0, XNVME_SPEC_ZND_CMD_MGMT_RECV_ACTION_REPORT,
-				  sfield, 0x0, hdr, hdr_nbytes);
+	err = znd_report(&ctx, nsid, 0x0, XNVME_SPEC_ZND_CMD_MGMT_RECV_ACTION_REPORT, sfield, 0x0,
+			 hdr, hdr_nbytes);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		XNVME_DEBUG("FAILED: xnvme_znd_mgmt_recv()");
+		XNVME_DEBUG("FAILED: znd_report()");
 		err = err ? err : -EIO;
 		goto exit;
 	}
@@ -417,6 +439,12 @@ xnvme_znd_log_changes_from_dev(struct xnvme_dev *dev)
 	struct xnvme_cmd_ctx ctx = {0};
 	struct xnvme_spec_znd_log_changes *log = NULL;
 	const size_t log_nbytes = sizeof(*log);
+	struct xnvme_cmd_prep_adm_get_log_page_args args = {
+		.args_nbytes = sizeof(args),
+		.nsid = xnvme_dev_get_nsid(dev),
+		.lid = XNVME_SPEC_LOG_ZND_CHANGES,
+		.numd = log_nbytes / sizeof(uint32_t) - 1,
+	};
 	int err;
 
 	xnvme_dev_get_cmd_ctx(dev, &ctx);
@@ -429,10 +457,12 @@ xnvme_znd_log_changes_from_dev(struct xnvme_dev *dev)
 	}
 
 	// Retrieve Changed Zone Information List for namespace with nsid=1
-	err = xnvme_adm_log(&ctx, XNVME_SPEC_LOG_ZND_CHANGES, 0, 0, xnvme_dev_get_nsid(dev), 0,
-			    log, log_nbytes);
+	err = xnvme_cmd_prep_adm_get_log_page(&ctx.cmd, &args);
+	if (!err) {
+		err = xnvme_cmd_pass_admin(&ctx, log, log_nbytes, NULL, 0);
+	}
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		XNVME_DEBUG("FAILED: xnvme_adm_log(XNVME_SPEC_LOG_TBD_ZCHG)");
+		XNVME_DEBUG("FAILED: Get Log Page(XNVME_SPEC_LOG_ZND_CHANGES)");
 		xnvme_buf_free(dev, log);
 		return NULL;
 	}

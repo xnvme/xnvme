@@ -208,6 +208,30 @@ _controller_geometry(struct xnvme_dev *dev)
 }
 
 /**
+ * Send an Identify command with the given CNS, NSID and CSI to the device of 'ctx', into 'dbuf'
+ */
+static int
+_dev_idfy_cmd(struct xnvme_dev *dev, struct xnvme_cmd_ctx *ctx, uint8_t cns, uint32_t nsid,
+	      uint8_t csi, union xnvme_spec_idfy *dbuf)
+{
+	struct xnvme_cmd_prep_adm_identify_args args = {
+		.args_nbytes = sizeof(args),
+		.nsid = nsid,
+		.cns = cns,
+		.csi = csi,
+	};
+	int err;
+
+	xnvme_dev_get_cmd_ctx(dev, ctx);
+	err = xnvme_cmd_prep_adm_identify(&ctx->cmd, &args);
+	if (err) {
+		return err;
+	}
+
+	return xnvme_cmd_pass_admin(ctx, dbuf, sizeof(*dbuf), NULL, 0);
+}
+
+/**
  * Helper function mapping the outcome of an identify command to an errno
  *
  * The controller has not answered when the completion carries an NVMe status, or when the
@@ -321,11 +345,10 @@ _dev_idfy_csi_set(struct xnvme_dev *dev, uint8_t csi, union xnvme_spec_idfy *idf
 		return err;
 	}
 
-	xnvme_dev_get_cmd_ctx(dev, &ctx);
-	err = xnvme_adm_idfy_ctrlr_csi(&ctx, csi, idfy_ctrlr);
+	err = _dev_idfy_cmd(dev, &ctx, XNVME_SPEC_IDFY_CTRLR_IOCS, 0, csi, idfy_ctrlr);
 	err = _dev_idfy_cmd_err(&ctx, err);
 	if (err) {
-		XNVME_DEBUG("INFO: !xnvme_adm_idfy_ctrlr_csi(0x%x), err: %d", csi, err);
+		XNVME_DEBUG("INFO: !_dev_idfy_cmd(CTRLR_IOCS, csi: 0x%x), err: %d", csi, err);
 		return err;
 	}
 	if ((csi == XNVME_SPEC_CSI_FS) && !(fs_ctrlr->ac == 0xAC && fs_ctrlr->dc == 0xDC)) {
@@ -339,11 +362,10 @@ _dev_idfy_csi_set(struct xnvme_dev *dev, uint8_t csi, union xnvme_spec_idfy *idf
 		return err;
 	}
 
-	xnvme_dev_get_cmd_ctx(dev, &ctx);
-	err = xnvme_adm_idfy_ns_csi(&ctx, dev->ident.nsid, csi, idfy_ns);
+	err = _dev_idfy_cmd(dev, &ctx, XNVME_SPEC_IDFY_NS_IOCS, dev->ident.nsid, csi, idfy_ns);
 	err = _dev_idfy_cmd_err(&ctx, err);
 	if (err) {
-		XNVME_DEBUG("INFO: !xnvme_adm_idfy_ns_csi(0x%x), err: %d", csi, err);
+		XNVME_DEBUG("INFO: !_dev_idfy_cmd(NS_IOCS, csi: 0x%x), err: %d", csi, err);
 		return err;
 	}
 	if ((csi == XNVME_SPEC_CSI_ZONED) && !zns->lbafe[0].zsze) {
@@ -449,11 +471,10 @@ _dev_idfy(struct xnvme_dev *dev)
 		goto exit;
 	}
 
-	xnvme_dev_get_cmd_ctx(dev, &ctx);
-	err = xnvme_adm_idfy_ctrlr(&ctx, idfy_ctrlr);
+	err = _dev_idfy_cmd(dev, &ctx, XNVME_SPEC_IDFY_CTRLR, 0, 0, idfy_ctrlr);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		err = err ? err : -EIO;
-		XNVME_DEBUG("FAILED: xnvme_adm_idfy_ctrlr(), err: %d", err);
+		XNVME_DEBUG("FAILED: _dev_idfy_cmd(CTRLR), err: %d", err);
 		goto exit;
 	}
 
@@ -482,11 +503,10 @@ _dev_idfy(struct xnvme_dev *dev)
 		goto exit;
 	}
 
-	xnvme_dev_get_cmd_ctx(dev, &ctx);
-	err = xnvme_adm_idfy_ns(&ctx, dev->ident.nsid, idfy_ns);
+	err = _dev_idfy_cmd(dev, &ctx, XNVME_SPEC_IDFY_NS, dev->ident.nsid, 0, idfy_ns);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		err = err ? err : -EIO;
-		XNVME_DEBUG("FAILED: xnvme_adm_idfy_ns(), err: %d", err);
+		XNVME_DEBUG("FAILED: _dev_idfy_cmd(NS), err: %d", err);
 		goto exit;
 	}
 

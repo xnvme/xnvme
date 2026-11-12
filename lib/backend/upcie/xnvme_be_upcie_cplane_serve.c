@@ -479,18 +479,33 @@ cplane_serve_drop(struct xnvme_be_upcie_cplane_serve_conn *conn)
 static void
 cplane_serve_totals_read(void)
 {
+	struct xnvme_cmd_prep_adm_get_features_args args = {
+		.args_nbytes = sizeof(args),
+		.fid = XNVME_SPEC_FEAT_NQUEUES,
+		.sel = XNVME_SPEC_FEAT_SEL_CURRENT,
+	};
+
 	for (int i = 0; i < g_upcie_cplane_serve.ndevs; ++i) {
 		struct xnvme_cmd_ctx ctx = {0};
+		union xnvme_spec_feat feat;
+		int err;
 
 		xnvme_dev_get_cmd_ctx(g_upcie_cplane_serve.devs[i], &ctx);
+		err = xnvme_cmd_prep_adm_get_features(&ctx.cmd, &args);
+		if (!err) {
+			err = xnvme_cmd_pass_admin(&ctx, NULL, 0, NULL, 0);
+		}
 
 		/* Zero totals mean the controller did not answer, as the status reply defines */
-		if (xnvme_adm_gfeat_nqueues(&ctx, &g_upcie_cplane_serve.nsq_total[i],
-					    &g_upcie_cplane_serve.ncq_total[i])) {
+		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 			XNVME_DEBUG("INFO: controller(%d) did not report its queue counts", i);
 			g_upcie_cplane_serve.nsq_total[i] = 0;
 			g_upcie_cplane_serve.ncq_total[i] = 0;
+			continue;
 		}
+		feat.val = xnvme_bits_get(ctx.cpl.result, XNVME_SPEC_CQE_RESULT_CDW0);
+		g_upcie_cplane_serve.nsq_total[i] = feat.nqueues.nsqa + 1;
+		g_upcie_cplane_serve.ncq_total[i] = feat.nqueues.ncqa + 1;
 	}
 }
 

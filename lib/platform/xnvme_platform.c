@@ -288,6 +288,10 @@ enumerate_controller(const char *uri, const char *kernel_driver, struct enumerat
 	struct xnvme_dev *ctrlr_dev;
 	union xnvme_spec_idfy *idfy_buf;
 	struct xnvme_cmd_ctx cmd_ctx;
+	struct xnvme_cmd_prep_adm_identify_args idfy = {
+		.args_nbytes = sizeof(idfy),
+		.cns = XNVME_SPEC_IDFY_NSLIST,
+	};
 	uint32_t nslist[XNVME_MAX_NS_LIST_SIZE];
 	size_t buf_size;
 	int err;
@@ -321,7 +325,10 @@ enumerate_controller(const char *uri, const char *kernel_driver, struct enumerat
 	}
 
 	xnvme_dev_get_cmd_ctx(ctrlr_dev, &cmd_ctx);
-	err = xnvme_adm_idfy(&cmd_ctx, XNVME_SPEC_IDFY_NSLIST, 0, 0, 0, 0, idfy_buf);
+	err = xnvme_cmd_prep_adm_identify(&cmd_ctx.cmd, &idfy);
+	if (!err) {
+		err = xnvme_cmd_pass_admin(&cmd_ctx, idfy_buf, buf_size, NULL, 0);
+	}
 	if (err || xnvme_cmd_ctx_cpl_status(&cmd_ctx)) {
 		XNVME_DEBUG("FAILED: Identify Active NS List, err: %d", err);
 		xnvme_buf_free(ctrlr_dev, idfy_buf);
