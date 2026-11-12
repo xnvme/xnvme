@@ -1,6 +1,6 @@
 # The generator of the bindings and what it runs on, all pinned: what it
 # generates depends on their versions
-yace==0.9.4
+yace==0.9.5
 libclang==14.0.6
 Jinja2==3.1.6
 MarkupSafe==3.0.4
