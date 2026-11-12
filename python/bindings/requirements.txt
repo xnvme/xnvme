@@ -1,8 +1,14 @@
-# For ctypes-bindings
-black
-# clang version must match system libclang (e.g., clang==19.1.7 for llvm-19)
-clang>=11
-ctypeslib2>=2.4.0
+# The generator of the bindings and what it runs on, all pinned: what it
+# generates depends on their versions
+yace==0.9.5
+libclang==14.0.6
+Jinja2==3.1.6
+MarkupSafe==3.0.4
+pydantic==2.14.3
+pydantic_core==2.50.4
+annotated-types==0.8.0
+typing_extensions==4.16.0
+typing-inspection==0.4.5
+PyYAML==6.0.3
 setuptools
-# All
 pytest

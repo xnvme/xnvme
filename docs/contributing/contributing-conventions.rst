@@ -62,12 +62,11 @@ C: API
     output argument rather than returning one, as
     ``xnvme_opts_set_defaults(&opts)`` does: a structure by value is
     simple in C, but not over FFI
-  - A function replaced for any of these keeps working, as a ``static
-    inline`` in ``libxnvme_compat.h`` calling its replacement, and in a
-    debug build warning that it is deprecated, until a later release
-    removes it; a renamed type keeps its old name there as a ``#define``,
-    unless the rename turns a ``struct`` into a ``union``, which no alias
-    can bridge
+  - A function or type replaced for any of these is removed in the same
+    change. xNVMe keeps no compatibility layer: its one purpose would be to
+    spare projects such as fio's xNVMe engine and SPDK's ``bdev_xnvme`` from
+    changes, and a header cannot do that once the types they use change, so
+    those projects get a port instead
   - Who owns the memory decides the signature. Memory the caller owns is
     filled through an output argument, with 0 or negative ``errno``
     returned, as ``xnvme_dev_get_cmd_ctx(dev, &ctx)`` does. Memory the
@@ -81,7 +80,7 @@ C: API
   a call made while another thread uses the same device, queue or buffer for
   I/O is not covered
 
-  - ``xnvme_dev_open()``, ``xnvme_dev_close()``, ``xnvme_enumerate()``,
+  - ``xnvme_dev_open_uri()``, ``xnvme_dev_close()``, ``xnvme_enumerate()``,
     ``xnvme_queue_init()``, ``xnvme_queue_term()``, ``xnvme_buf_alloc()``,
     ``xnvme_buf_realloc()``, ``xnvme_buf_free()``, their ``xnvme_buf_phys_*()``
     variants, ``xnvme_buf_vtophys()``, ``xnvme_buf_register()``,
@@ -137,17 +136,28 @@ element of an array, which needs a type for its masks to belong to, as
 * The mask is named ``XNVME_SPEC_<STRUCT>_<FIELD>_<NAME>``: the structure
   without its ``xnvme_spec_`` prefix, the integer, and the name the
   specification gives the bits, such as
-  ``XNVME_SPEC_IDFY_NS_FLBAS_FORMAT`` for bits 3:0 of ``flbas``
+  ``XNVME_SPEC_IDFY_NS_FLBAS_FIDXL`` for bits 3:0 of ``flbas``
 * The masks follow the structure they belong to, in the order of its
   integers, and of the bits within each
-* Each mask has a doc comment saying what the bits are, then where they
-  are: ``/** <what>; bits <hi>:<lo> of '<field>' */``, or ``bit <n>`` for
-  one bit
+* Each mask has a doc comment saying what the bits are, where they are, and
+  where the specification defines them: ``/** <what>; bits <hi>:<lo> of
+  '<field>', <ABBR> (<specification> <revision>, Figure <n>) */``, or
+  ``bit <n>`` for one bit, such as ``(NVM Command Set 1.3, Figure 71)``
 * The integer's own doc comment names them: ``///< <what>, see
   XNVME_SPEC_<STRUCT>_<FIELD>_*``
 * ``tests/spec.c`` checks, for each integer, that the structure still has it
   and that its masks fit its width, so a field renamed or narrowed without its
   masks fails the build; a new field of bits gets a line there
+
+A field follows the ratified specification exactly: its name is the
+abbreviation the specification prints, lower-cased for a member and as
+printed for the suffix of a mask, and its width and location are the bits or
+bytes of its figure. A field is neither merged with reserved bits nor split
+in two, and a reserved range holds no field the specification defines. Where
+the specification gives a field no abbreviation, the name describes it, and
+where a structure serves two commands that name a field differently, such as
+Read and Write, the doc names both. ``SPEC_AT()`` in ``tests/spec.c`` checks
+the offset and width of a member against the bytes of its figure.
 
 C: Code organisation
 --------------------

@@ -23,6 +23,8 @@ your :xref-github-xnvme-prs:`pull-request<>` or ask questions.
    contributing-process.rst
    contributing-toolbox.rst
    contributing-conventions.rst
+   contributing-spec-headers.rst
+   contributing-cmd-prep.rst
    contributing-branches.rst
    ci/index.rst
    packaging/index.rst

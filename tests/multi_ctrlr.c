@@ -60,10 +60,9 @@ sub_io(struct xnvme_cli *cli)
 			goto exit;
 		}
 
-		dev[ndev] = xnvme_dev_open(uri, &opts);
-		if (!dev[ndev]) {
-			err = -errno;
-			xnvme_cli_perr("xnvme_dev_open(alt_uri)", err);
+		err = xnvme_dev_open_uri(uri, &opts, &dev[ndev]);
+		if (err) {
+			xnvme_cli_perr("xnvme_dev_open_uri(alt_uri)", err);
 			goto exit;
 		}
 		++ndev;
@@ -111,10 +110,20 @@ sub_io(struct xnvme_cli *cli)
 			goto exit;
 		}
 
-		err = xnvme_nvm_write(&ctx, xnvme_dev_get_nsid(dev[i]), 0, 0, buf[i], NULL);
+		struct xnvme_cmd_prep_nvm_write_args wr = {
+			.args_nbytes = sizeof(wr),
+			.nsid = xnvme_dev_get_nsid(dev[i]),
+		};
+
+		err = xnvme_cmd_prep_nvm_write(&ctx.cmd, &wr);
+		if (!err) {
+			err = xnvme_cmd_pass(&ctx, buf[i],
+					     (size_t)xnvme_dev_get_geo(ctx.dev)->lba_nbytes, NULL,
+					     0);
+		}
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 			err = err ? err : -EIO;
-			xnvme_cli_perr("xnvme_nvm_write()", err);
+			xnvme_cli_perr("write", err);
 			goto exit;
 		}
 	}
@@ -133,10 +142,20 @@ sub_io(struct xnvme_cli *cli)
 			goto exit;
 		}
 
-		err = xnvme_nvm_read(&ctx, xnvme_dev_get_nsid(dev[i]), 0, 0, buf[i], NULL);
+		struct xnvme_cmd_prep_nvm_read_args rd = {
+			.args_nbytes = sizeof(rd),
+			.nsid = xnvme_dev_get_nsid(dev[i]),
+		};
+
+		err = xnvme_cmd_prep_nvm_read(&ctx.cmd, &rd);
+		if (!err) {
+			err = xnvme_cmd_pass(&ctx, buf[i],
+					     (size_t)xnvme_dev_get_geo(ctx.dev)->lba_nbytes, NULL,
+					     0);
+		}
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 			err = err ? err : -EIO;
-			xnvme_cli_perr("xnvme_nvm_read()", err);
+			xnvme_cli_perr("read", err);
 			goto exit;
 		}
 

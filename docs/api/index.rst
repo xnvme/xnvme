@@ -31,7 +31,8 @@ practical :ref:`sec-api-c-examples`.
   * Construct, submit and process **commands**
   
     - Synchronous/blocking
-    - Asynchronous/non-blocking via a queue and callback primitive
+    - Asynchronous/non-blocking via a queue, with completed commands reaped
+      from it or delivered to a callback
 
   * Memory management primitives for command buffers
 
@@ -73,7 +74,7 @@ control-plane calls is serialised with respect to each other by one
 process-wide lock, so these may be made from several threads at once, on any
 backend. They carry the note *Control plane*:
 
-* ``xnvme_dev_open()``, ``xnvme_dev_close()`` and ``xnvme_enumerate()``
+* ``xnvme_dev_open_uri()``, ``xnvme_dev_close()`` and ``xnvme_enumerate()``
 * ``xnvme_queue_init()`` and ``xnvme_queue_term()``
 * ``xnvme_buf_alloc()``, ``xnvme_buf_realloc()``, ``xnvme_buf_free()``, their
   ``xnvme_buf_phys_*()`` variants and ``xnvme_buf_vtophys()``

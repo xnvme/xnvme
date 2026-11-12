@@ -2,3 +2,4 @@ Cargo.lock
 target
 xnvme/target
 xnvme-sys/target
+xnvme-sys/src/xnvme.rs

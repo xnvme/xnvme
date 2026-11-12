@@ -34,6 +34,11 @@ xnvme_be_spdk_alloc_io_qpair(struct spdk_nvme_ctrlr *ctrlr,
 	return qpair;
 }
 
+static void
+cmd_async_cb(void *cb_arg, const struct spdk_nvme_cpl *cpl);
+static void
+cmd_reap_cb(void *cb_arg, const struct spdk_nvme_cpl *cpl);
+
 /**
  * Command Queue for asynchronous command submission and completion
  *
@@ -49,7 +54,7 @@ xnvme_be_spdk_alloc_io_qpair(struct spdk_nvme_ctrlr *ctrlr,
  * xnvme_queue->be_rsvd
  */
 static int
-xnvme_be_spdk_queue_init(struct xnvme_queue *q, int XNVME_UNUSED(opts))
+xnvme_be_spdk_queue_init(struct xnvme_queue *q, int opts)
 {
 	struct xnvme_queue_spdk *queue = (void *)(q);
 	struct xnvme_be_spdk_state *state = &xnvme_be_state(queue->base.dev)->spdk_state;
@@ -70,6 +75,7 @@ xnvme_be_spdk_queue_init(struct xnvme_queue *q, int XNVME_UNUSED(opts))
 		XNVME_DEBUG("FAILED: spdk_nvme_ctrlr_alloc_io_qpair()");
 		return -ENOMEM;
 	}
+	queue->cpl_fn = (opts & XNVME_QUEUE_REAP) ? cmd_reap_cb : cmd_async_cb;
 
 	queue->iov_payloads = malloc(sizeof(*queue->iov_payloads) * qopts.io_queue_size);
 	if (!queue->iov_payloads) {
@@ -122,6 +128,42 @@ xnvme_be_spdk_queue_poke(struct xnvme_queue *q, uint32_t max)
 	return err;
 }
 
+static int
+xnvme_be_spdk_queue_reap(struct xnvme_queue *q, struct xnvme_cmd_ctx **completions, uint32_t max)
+{
+	struct xnvme_queue_spdk *queue = (void *)q;
+	struct xnvme_cmd_ctx **cursor = completions;
+	struct xnvme_cmd_ctx **end = completions + max;
+	uint32_t stored;
+	int err;
+
+	while (queue->overflow && cursor < end) {
+		struct xnvme_cmd_ctx_entry *entry = queue->overflow;
+
+		queue->overflow = SLIST_NEXT(entry, link);
+		*cursor++ = (struct xnvme_cmd_ctx *)entry;
+	}
+	if (cursor == end) {
+		queue->base.outstanding -= max;
+		return max;
+	}
+
+	queue->cursor = cursor;
+	queue->end = end;
+	err = spdk_nvme_qpair_process_completions(queue->qpair, (uint32_t)(end - cursor));
+	cursor = queue->cursor;
+	queue->cursor = NULL;
+	queue->end = NULL;
+	stored = cursor - completions;
+	queue->base.outstanding -= stored;
+	if (err < 0) {
+		XNVME_DEBUG("FAILED: spdk_nvme_qpair_process_completion(), err: %d", err);
+		return stored ? (int)stored : err;
+	}
+
+	return stored;
+}
+
 static void
 cmd_async_cb(void *cb_arg, const struct spdk_nvme_cpl *cpl)
 {
@@ -132,24 +174,41 @@ cmd_async_cb(void *cb_arg, const struct spdk_nvme_cpl *cpl)
 	ctx->async.cb(ctx, ctx->async.cb_arg);
 }
 
+/**
+ * Stores the context in the array of the reap underway, or holds it on 'overflow' when that
+ * array is full or no reap is underway, as when the qpair fails or is freed
+ */
+static void
+cmd_reap_cb(void *cb_arg, const struct spdk_nvme_cpl *cpl)
+{
+	struct xnvme_cmd_ctx *ctx = cb_arg;
+	struct xnvme_queue_spdk *queue = (void *)ctx->async.queue;
+	struct xnvme_cmd_ctx_entry *entry = (void *)ctx;
+
+	ctx->cpl = *(const struct xnvme_spec_cqe *)cpl;
+
+	if (queue->cursor < queue->end) {
+		*queue->cursor++ = ctx;
+		return;
+	}
+
+	SLIST_NEXT(entry, link) = queue->overflow;
+	queue->overflow = entry;
+}
+
 static inline int
 submit_ioc(struct spdk_nvme_ctrlr *ctrlr, struct spdk_nvme_qpair *qpair, struct xnvme_cmd_ctx *ctx,
 	   void *dbuf, uint32_t dbuf_nbytes, void *mbuf, spdk_nvme_cmd_cb cb_fn, void *cb_arg)
 {
-#ifdef XNVME_TRACE_ENABLED
-	XNVME_DEBUG("Dumping IO command");
-	xnvme_spec_sqe_pr(cmd, XNVME_PR_DEF);
-#endif
-
-	switch (ctx->cmd.common.opcode) {
+	switch (ctx->cmd.common.opc) {
 	case XNVME_SPEC_FS_OPC_READ:
 		ctx->cmd.nvm.slba = ctx->cmd.nvm.slba >> ctx->dev->geo.ssw;
-		ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_READ;
+		ctx->cmd.common.opc = XNVME_SPEC_NVM_OPC_READ;
 		break;
 
 	case XNVME_SPEC_FS_OPC_WRITE:
 		ctx->cmd.nvm.slba = ctx->cmd.nvm.slba >> ctx->dev->geo.ssw;
-		ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_WRITE;
+		ctx->cmd.common.opc = XNVME_SPEC_NVM_OPC_WRITE;
 		break;
 	}
 
@@ -166,7 +225,7 @@ xnvme_be_spdk_async_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nb
 	int err;
 
 	queue->base.outstanding += 1;
-	err = submit_ioc(state->ctrlr, queue->qpair, ctx, dbuf, dbuf_nbytes, mbuf, cmd_async_cb,
+	err = submit_ioc(state->ctrlr, queue->qpair, ctx, dbuf, dbuf_nbytes, mbuf, queue->cpl_fn,
 			 ctx);
 	if (err) {
 		queue->base.outstanding -= 1;
@@ -244,7 +303,7 @@ xnvme_be_spdk_async_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_
 
 	err = spdk_nvme_ctrlr_cmd_iov_raw_with_md(
 		state->ctrlr, queue->qpair, (struct spdk_nvme_cmd *)&ctx->cmd,
-		(uint32_t)dvec_nbytes, mbuf, cmd_async_cb, ctx, reset_sgl_offset, next_sgl_entry);
+		(uint32_t)dvec_nbytes, mbuf, queue->cpl_fn, ctx, reset_sgl_offset, next_sgl_entry);
 
 	if (err) {
 		queue->base.outstanding -= 1;
@@ -261,6 +320,7 @@ struct xnvme_be_async g_xnvme_be_spdk_async = {
 	.cmd_io = xnvme_be_spdk_async_cmd_io,
 	.cmd_iov = xnvme_be_spdk_async_cmd_iov,
 	.poke = xnvme_be_spdk_queue_poke,
+	.reap = xnvme_be_spdk_queue_reap,
 	.wait = xnvme_be_nosys_queue_wait,
 	.init = xnvme_be_spdk_queue_init,
 	.term = xnvme_be_spdk_queue_term,
@@ -269,6 +329,7 @@ struct xnvme_be_async g_xnvme_be_spdk_async = {
 	.cmd_io = xnvme_be_nosys_queue_cmd_io,
 	.cmd_iov = xnvme_be_nosys_queue_cmd_iov,
 	.poke = xnvme_be_nosys_queue_poke,
+	.reap = xnvme_be_nosys_queue_reap,
 	.wait = xnvme_be_nosys_queue_wait,
 	.init = xnvme_be_nosys_queue_init,
 	.term = xnvme_be_nosys_queue_term,

@@ -18,13 +18,15 @@ typedef int (*xnvme_scan_cb)(const struct xnvme_ident *ident, void *cb_args);
  * Scan for devices without opening them
  *
  * @param sys_uri URI of the system to scan, when NULL, localhost/PCIe
- * @param opts Options for instrumenting the runtime during scan
+ * @param opts Options for instrumenting the runtime during scan, NULL for the defaults
  * @param cb_func Callback function to invoke for each yielded device identity
  * @param cb_args Arguments passed to the callback function
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
  *
+ * @nullable sys_uri opts
  * @lifetime cb_func call
+ * @errno
  */
 int
 xnvme_scan(const char *sys_uri, struct xnvme_opts *opts, xnvme_scan_cb cb_func, void *cb_args);

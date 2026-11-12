@@ -95,6 +95,8 @@ xnvme_pi_size(uint32_t pi_format);
  * @param pi_format Protection Information Format, a value of ::xnvme_spec_nvm_ns_pif
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
+ *
+ * @errno
  */
 int
 xnvme_pi_ctx_init(struct xnvme_pi_ctx *ctx, uint32_t block_size, uint32_t md_size,
@@ -123,6 +125,8 @@ xnvme_pi_generate(struct xnvme_pi_ctx *ctx, uint8_t *data_buf, uint8_t *md_buf,
  * @param num_blocks Number of logical blocks
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
+ *
+ * @errno
  */
 int
 xnvme_pi_verify(struct xnvme_pi_ctx *ctx, uint8_t *data_buf, uint8_t *md_buf, uint32_t num_blocks);

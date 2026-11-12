@@ -137,6 +137,52 @@ _windows_async_iocp_poke(struct xnvme_queue *q, uint32_t max)
 }
 
 static int
+_windows_async_iocp_reap(struct xnvme_queue *q, struct xnvme_cmd_ctx **completions, uint32_t max)
+{
+	struct xnvme_queue_aio_ov *queue = (void *)q;
+	uint32_t completed = 0;
+
+	max = max ? max : queue->base.outstanding;
+	max = max > queue->base.outstanding ? queue->base.outstanding : max;
+
+	for (uint32_t i = 0; i < max; i++) {
+		struct xnvme_cmd_ctx *cmd_ctx = NULL;
+		struct _ov_request *req = NULL;
+		DWORD byte_count = 0;
+		ULONG_PTR comp_key = 0;
+		OVERLAPPED *overlapped = NULL;
+
+		// FALSE with an OVERLAPPED is a failed I/O, dequeued like any other
+		GetQueuedCompletionStatus(queue->iocp_handle, &byte_count, &comp_key, &overlapped,
+					  0);
+		if (overlapped == NULL) {
+			return completed;
+		}
+		req = CONTAINING_RECORD(overlapped, struct _ov_request, o);
+		cmd_ctx = (struct xnvme_cmd_ctx *)req->data;
+
+		if (overlapped->Internal == ERROR_SUCCESS) {
+			cmd_ctx->cpl.result = byte_count;
+		} else {
+			cmd_ctx->cpl.result = 0;
+			cmd_ctx->cpl.status = xnvme_bits_set(
+				cmd_ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC, GetLastError());
+			cmd_ctx->cpl.status =
+				xnvme_bits_set(cmd_ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT,
+					       XNVME_STATUS_CODE_TYPE_VENDOR);
+		}
+
+		*completions++ = cmd_ctx;
+		completed += 1;
+		queue->base.outstanding -= 1;
+
+		TAILQ_INSERT_TAIL(&(queue)->reqs_ready, req, link);
+	}
+
+	return completed;
+}
+
+static int
 _windows_async_iocp_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
 			   size_t mbuf_nbytes)
 {
@@ -162,7 +208,7 @@ _windows_async_iocp_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nb
 
 	req->data = ctx;
 
-	switch (ctx->cmd.common.opcode) {
+	switch (ctx->cmd.common.opc) {
 	case XNVME_SPEC_FS_OPC_WRITE:
 		ovl->Offset = ctx->cmd.nvm.slba & 0xFFFFFFFF;
 		ovl->OffsetHigh = (ctx->cmd.nvm.slba >> 32);
@@ -226,7 +272,7 @@ _windows_async_iocp_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nb
 		break;
 
 	default:
-		XNVME_DEBUG("FAILED: nosys opcode: %d", ctx->cmd.common.opcode);
+		XNVME_DEBUG("FAILED: nosys opcode: %d", ctx->cmd.common.opc);
 		return -ENOSYS;
 	}
 
@@ -241,6 +287,7 @@ struct xnvme_be_async g_xnvme_be_iocp_async = {
 #ifdef XNVME_BE_IOCP_ENABLED
 	.cmd_io = _windows_async_iocp_cmd_io,
 	.poke = _windows_async_iocp_poke,
+	.reap = _windows_async_iocp_reap,
 	.wait = xnvme_be_nosys_queue_wait,
 	.init = _windows_async_iocp_init,
 	.term = _windows_async_iocp_term,
@@ -248,6 +295,7 @@ struct xnvme_be_async g_xnvme_be_iocp_async = {
 #else
 	.cmd_io = xnvme_be_nosys_queue_cmd_io,
 	.poke = xnvme_be_nosys_queue_poke,
+	.reap = xnvme_be_nosys_queue_reap,
 	.wait = xnvme_be_nosys_queue_wait,
 	.init = xnvme_be_nosys_queue_init,
 	.term = xnvme_be_nosys_queue_term,

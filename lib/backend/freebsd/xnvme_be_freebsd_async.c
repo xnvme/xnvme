@@ -30,9 +30,11 @@ struct xnvme_queue_kqueue {
 	TAILQ_HEAD(, kqueue_request) reqs_outstanding;
 	struct kqueue_request *reqs_storage;
 
+	struct xnvme_cmd_ctx_entry *flushed; ///< Flushes completed at submission, not yet reaped
+
 	uint8_t poll_io;
 
-	uint8_t rsvd[175];
+	uint8_t rsvd[167];
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_queue_kqueue) == XNVME_BE_QUEUE_STATE_NBYTES,
 		    "Incorrect size")
@@ -124,9 +126,7 @@ xnvme_be_freebsd_kqueue_poke(struct xnvme_queue *q, uint32_t max)
 			XNVME_DEBUG("event->data is NULL! => NO REQ!");
 			XNVME_DEBUG("unprocessed events might remain");
 
-			queue->base.outstanding -= 1;
-
-			return -EIO;
+			return event ? event : -EIO;
 		}
 
 		err = aio_error(&req->aiocb);
@@ -161,14 +161,100 @@ xnvme_be_freebsd_kqueue_poke(struct xnvme_queue *q, uint32_t max)
 	return completed;
 }
 
+static int
+xnvme_be_freebsd_kqueue_reap(struct xnvme_queue *q, struct xnvme_cmd_ctx **completions,
+			     uint32_t max)
+{
+	struct xnvme_queue_kqueue *queue = (void *)q;
+	struct timespec timeout = {.tv_sec = 0, .tv_nsec = queue->poll_io ? 0 : 100000};
+	struct kqueue_request *req;
+	int completed;
+	int err;
+
+	max = max ? max : queue->base.outstanding;
+	max = max > queue->base.outstanding ? queue->base.outstanding : max;
+
+	if (!queue->base.outstanding) {
+		return 0;
+	}
+
+	if (queue->flushed) {
+		uint32_t nflushed = 0;
+
+		while (queue->flushed && nflushed < max) {
+			struct xnvme_cmd_ctx_entry *entry = queue->flushed;
+
+			queue->flushed = SLIST_NEXT(entry, link);
+			*completions++ = (struct xnvme_cmd_ctx *)entry;
+			nflushed += 1;
+		}
+		queue->base.outstanding -= nflushed;
+
+		return nflushed;
+	}
+
+	completed = kevent(queue->kq, NULL, 0, queue->aio_events, max, &timeout);
+	if (completed < 0) {
+		XNVME_DEBUG("FAILED: completed: %d, errno: %d", completed, errno);
+		return -errno;
+	}
+
+	for (int event = 0; event < completed; event++) {
+		int res = 0;
+		struct xnvme_cmd_ctx *ctx;
+		struct kevent *ev = &queue->aio_events[event];
+
+		req = (struct kqueue_request *)ev->udata;
+		if (!req) {
+			XNVME_DEBUG("-{[THIS SHOULD NOT HAPPEN]}-");
+			XNVME_DEBUG("event->data is NULL! => NO REQ!");
+			XNVME_DEBUG("unprocessed events might remain");
+
+			return event ? event : -EIO;
+		}
+
+		err = aio_error(&req->aiocb);
+		res = aio_return(&req->aiocb);
+
+		ctx = req->ctx;
+		ctx->cpl.result = res;
+		if (err || (res < 0)) {
+			ctx->cpl.result = 0;
+			// When aio_error() fails, we use 'err'
+			// When aio_return() fails, we use 'errno'
+			ctx->cpl.status = xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC,
+							 err ? err : errno);
+			ctx->cpl.status =
+				xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT,
+					       XNVME_STATUS_CODE_TYPE_VENDOR);
+		}
+
+		*completions++ = ctx;
+		queue->base.outstanding -= 1;
+
+		// Prepare req for reuse
+		memset(&req->aiocb, 0, sizeof(struct aiocb));
+		req->ctx = NULL;
+
+		TAILQ_REMOVE(&queue->reqs_outstanding, req, link);
+		TAILQ_INSERT_TAIL(&queue->reqs_ready, req, link);
+
+		req = TAILQ_FIRST(&queue->reqs_outstanding);
+	}
+
+	return completed;
+}
+
 /**
- * Execute a flush and complete the command-context inline
+ * Execute a flush and complete the command-context inline, or keep it for the next reap
  *
  * The asynchronous aio_fsync() is not usable here: the FreeBSD kernel rejects it with ENOTSUP
  * on the NVMe namespace character-devices which this backend primarily drives, whereas the
  * synchronous fsync() is serviced, as demonstrated by the psync command-interface. Since the
  * flush thus never produces a kqueue-event, it neither consumes a request-object nor bumps
- * the outstanding-counter; the completion-callback is invoked before returning instead.
+ * the outstanding-counter; the completion-callback is invoked before returning instead. On a
+ * queue initialized with XNVME_QUEUE_REAP the context is kept on 'flushed', and counted as
+ * outstanding, for the next reap.
  *
  * Like a flush submitted to a NVMe controller, this provides no ordering-guarantee with
  * regards to the commands which are still outstanding on the queue.
@@ -176,6 +262,9 @@ xnvme_be_freebsd_kqueue_poke(struct xnvme_queue *q, uint32_t max)
 static int
 kqueue_flush(struct xnvme_cmd_ctx *ctx, int fd)
 {
+	struct xnvme_queue_kqueue *queue = (void *)ctx->async.queue;
+	struct xnvme_cmd_ctx_entry *entry = (void *)ctx;
+
 	if (fsync(fd)) {
 		XNVME_DEBUG("FAILED: fsync(), err: %d", errno);
 		return -errno;
@@ -183,6 +272,13 @@ kqueue_flush(struct xnvme_cmd_ctx *ctx, int fd)
 
 	ctx->cpl.result = 0;
 	ctx->cpl.status = 0;
+
+	if (queue->base.opts & XNVME_QUEUE_REAP) {
+		SLIST_NEXT(entry, link) = queue->flushed;
+		queue->flushed = entry;
+		queue->base.outstanding += 1;
+		return 0;
+	}
 
 	///< Nothing on the queue is touched past this point; the callback is free to re-enter
 	ctx->async.cb(ctx, ctx->async.cb_arg);
@@ -206,7 +302,7 @@ xnvme_be_freebsd_kqueue_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbu
 		return -ENOTSUP;
 	}
 
-	switch (ctx->cmd.common.opcode) {
+	switch (ctx->cmd.common.opc) {
 	case XNVME_SPEC_NVM_OPC_FLUSH:
 	case XNVME_SPEC_FS_OPC_FLUSH:
 		return kqueue_flush(ctx, state->posix.fd);
@@ -229,7 +325,7 @@ xnvme_be_freebsd_kqueue_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbu
 
 	///< Literally convert the NVMe command / sqe memory to an aio-control-block
 	///< NOTE: opcode-dispatch (io)
-	switch (ctx->cmd.common.opcode) {
+	switch (ctx->cmd.common.opc) {
 	case XNVME_SPEC_NVM_OPC_WRITE:
 		aiocb->aio_offset = ctx->cmd.nvm.slba << ssw;
 		err = aio_write(aiocb);
@@ -251,7 +347,7 @@ xnvme_be_freebsd_kqueue_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbu
 		break;
 
 	default:
-		XNVME_DEBUG("FAILED: unsupported opcode: %d", ctx->cmd.common.opcode);
+		XNVME_DEBUG("FAILED: unsupported opcode: %d", ctx->cmd.common.opc);
 		return -ENOSYS;
 	}
 
@@ -290,7 +386,7 @@ xnvme_be_freebsd_kqueue_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, s
 	}
 
 	///< A flush has no payload, thus the vectored path defers to the same helper
-	switch (ctx->cmd.common.opcode) {
+	switch (ctx->cmd.common.opc) {
 	case XNVME_SPEC_NVM_OPC_FLUSH:
 	case XNVME_SPEC_FS_OPC_FLUSH:
 		return kqueue_flush(ctx, state->posix.fd);
@@ -313,7 +409,7 @@ xnvme_be_freebsd_kqueue_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, s
 
 	///< Convert the NVMe command/sqe to an Linux aio io-control-block
 	///< NOTE: opcode-dispatch (io)
-	switch (ctx->cmd.common.opcode) {
+	switch (ctx->cmd.common.opc) {
 	case XNVME_SPEC_NVM_OPC_WRITE:
 		aiocb->aio_offset = ctx->cmd.nvm.slba << ssw;
 		err = aio_writev(aiocb);
@@ -335,7 +431,7 @@ xnvme_be_freebsd_kqueue_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, s
 		break;
 
 	default:
-		XNVME_DEBUG("FAILED: unsupported opcode: %d", ctx->cmd.common.opcode);
+		XNVME_DEBUG("FAILED: unsupported opcode: %d", ctx->cmd.common.opc);
 		return -ENOSYS;
 	}
 
@@ -359,6 +455,7 @@ struct xnvme_be_async g_xnvme_be_freebsd_async = {
 	.cmd_io = xnvme_be_freebsd_kqueue_cmd_io,
 	.cmd_iov = xnvme_be_freebsd_kqueue_cmd_iov,
 	.poke = xnvme_be_freebsd_kqueue_poke,
+	.reap = xnvme_be_freebsd_kqueue_reap,
 	.wait = xnvme_be_nosys_queue_wait,
 	.init = xnvme_be_freebsd_kqueue_init,
 	.term = xnvme_be_freebsd_kqueue_term,
@@ -367,6 +464,7 @@ struct xnvme_be_async g_xnvme_be_freebsd_async = {
 	.cmd_io = xnvme_be_nosys_queue_cmd_io,
 	.cmd_iov = xnvme_be_nosys_queue_cmd_iov,
 	.poke = xnvme_be_nosys_queue_poke,
+	.reap = xnvme_be_nosys_queue_reap,
 	.wait = xnvme_be_nosys_queue_wait,
 	.init = xnvme_be_nosys_queue_init,
 	.term = xnvme_be_nosys_queue_term,

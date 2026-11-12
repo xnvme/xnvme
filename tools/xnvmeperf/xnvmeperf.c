@@ -26,6 +26,7 @@ struct xnvmeperf_bref {
 struct xnvmeperf_job {
 	struct xnvme_dev *dev;
 	struct xnvme_queue *queue;
+	struct xnvme_cmd_ctx **completions; ///< Reaped from 'queue', qdepth of them; NULL with cb
 	void *buf;
 	void *mbuf;
 	size_t mbuf_nbytes;
@@ -141,7 +142,7 @@ advance_slba_noop(struct xnvmeperf_job *job)
  * @param ctx  Command context obtained from the job's queue
  * @return     0 on success, negative errno on error
  */
-static int
+static inline int
 submit_io(struct xnvmeperf_job *job, struct xnvme_cmd_ctx *ctx)
 {
 	uint64_t slba = job->peek_slba(job);
@@ -165,9 +166,10 @@ submit_io(struct xnvmeperf_job *job, struct xnvme_cmd_ctx *ctx)
 		ctx->async.cb_arg = &job->brefs[slot];
 	}
 
-	ctx->cmd.common.opcode = job->opcode;
+	ctx->cmd.common.opc = job->opcode;
 	ctx->cmd.common.nsid = job->nsid;
-	ctx->cmd.nvm.nlb = job->nlb - 1;
+	ctx->cmd.nvm.cdw12 =
+		xnvme_bits_set(ctx->cmd.nvm.cdw12, XNVME_SPEC_CMD_NVM_CDW12_NLB, job->nlb - 1);
 	ctx->cmd.nvm.slba = slba;
 
 	err = xnvme_cmd_pass(ctx, buf, (job->nbytes * job->nlb), job->mbuf, job->mbuf_nbytes);
@@ -242,6 +244,156 @@ cb_fn_bounce(struct xnvme_cmd_ctx *ctx, void *cb_arg)
 
 	job->bslot_inuse[ref->slot] = 0;
 	xnvme_queue_put_cmd_ctx(ctx->async.queue, ctx);
+}
+
+/**
+ * Accounts for a failed IO in the job's counters; the caller counts those that succeeded
+ *
+ * @param job  Job owning the queue the ctx was reaped from
+ * @param ctx  Completed command context
+ * @return     Whether the IO succeeded
+ */
+static inline bool
+on_completion(struct xnvmeperf_job *job, struct xnvme_cmd_ctx *ctx)
+{
+	if (xnvme_cmd_ctx_cpl_status(ctx)) {
+		if (!job->io_failed++) {
+			job->failed_status = ctx->cpl.status;
+		}
+		// Not every backend clears the status when it completes a reused ctx
+		memset(&ctx->cpl, 0, sizeof(ctx->cpl));
+		return false;
+	}
+
+	return true;
+}
+
+/**
+ * Accounts for a completed IO with --buf-host-bounce; the ctx carries the bounce slot it read
+ * into, which is copied to the GPU when the IO succeeded, and freed either way
+ *
+ * @param job  Job owning the queue the ctx was reaped from
+ * @param ctx  Completed command context
+ * @return     Whether the IO succeeded
+ */
+static inline bool
+on_completion_bounce(struct xnvmeperf_job *job, struct xnvme_cmd_ctx *ctx)
+{
+	struct xnvmeperf_bref *ref = xnvme_cmd_ctx_get_data(ctx);
+	bool succeeded = on_completion(job, ctx);
+
+	if (succeeded) {
+		xnvmeperf_gpu_bounce_copy(job->gpu, ref->slot, job->bbufs[ref->slot]);
+	}
+	job->bslot_inuse[ref->slot] = 0;
+
+	return succeeded;
+}
+
+/**
+ * Retrieves the IOs completed on the job's queue, accounts for each and returns their ctx
+ *
+ * Counts in a local: the compiler cannot see through xnvme_queue_put_cmd_ctx(), so a count kept
+ * in the job would be read and written back per IO.
+ *
+ * @param job  Job whose queue to reap
+ * @return     Number of IOs reaped, negative errno on error
+ */
+static inline int
+job_reap(struct xnvmeperf_job *job)
+{
+	struct xnvme_cmd_ctx **completions = job->completions;
+	struct xnvme_queue *queue = job->queue;
+	uint64_t completed = 0;
+	int n;
+
+	n = xnvme_queue_reap(queue, completions, job->args->qdepth);
+
+	if (job->args->buf_host_bounce) {
+		for (int i = 0; i < n; i++) {
+			completed += on_completion_bounce(job, completions[i]);
+			xnvme_queue_put_cmd_ctx(queue, completions[i]);
+		}
+	} else {
+		for (int i = 0; i < n; i++) {
+			completed += on_completion(job, completions[i]);
+			xnvme_queue_put_cmd_ctx(queue, completions[i]);
+		}
+	}
+	job->io_completed += completed;
+
+	return n;
+}
+
+/**
+ * Retrieves the IOs completed on the job's queue, accounts for each and submits the next IO on
+ * the ctx of each that succeeded; the rest are returned to the queue
+ *
+ * The ctx is not returned to the free-list of the queue: returning each ctx and taking it back
+ * were two calls per IO, chained through the head of that list.
+ *
+ * @param job  Job whose queue to reap, not in --buf-host-bounce mode
+ * @return     Number of IOs reaped, negative errno on error
+ */
+static inline int
+job_reap_resubmit(struct xnvmeperf_job *job)
+{
+	struct xnvme_cmd_ctx **completions = job->completions;
+	struct xnvme_queue *queue = job->queue;
+	uint64_t completed = 0;
+	int n;
+
+	n = xnvme_queue_reap(queue, completions, job->args->qdepth);
+	for (int i = 0; i < n; i++) {
+		struct xnvme_cmd_ctx *ctx = completions[i];
+
+		if (on_completion(job, ctx)) {
+			completed++;
+			if (!submit_io(job, ctx)) {
+				continue;
+			}
+		}
+		xnvme_queue_put_cmd_ctx(queue, ctx);
+	}
+	job->io_completed += completed;
+
+	return n;
+}
+
+/**
+ * Delivers the IOs completed on the job's queue the way --completion selects
+ *
+ * @param job  Job whose queue to process
+ * @return     Number of IOs delivered, negative errno on error
+ */
+static inline int
+job_complete(struct xnvmeperf_job *job)
+{
+	if (job->args->completion == XNVMEPERF_COMPLETION_REAP) {
+		return job_reap(job);
+	}
+
+	return xnvme_queue_poke(job->queue, 0);
+}
+
+/**
+ * Delivers completions until no IO is outstanding on the job's queue
+ *
+ * @param job  Job whose queue to drain
+ * @return     0 on success, negative errno on error
+ */
+static int
+job_drain(struct xnvmeperf_job *job)
+{
+	while (xnvme_queue_get_outstanding(job->queue)) {
+		int n = job_complete(job);
+
+		if (n < 0) {
+			return n;
+		}
+	}
+
+	return 0;
 }
 
 /**
@@ -327,7 +479,17 @@ setup_job(struct xnvmeperf_job *job, struct xnvme_dev *dev, struct xnvmeperf_arg
 		xnvme_cli_perr("Failed: xnvme_queue_init()", err);
 		return err;
 	}
-	xnvme_queue_set_cb(job->queue, args->buf_host_bounce ? cb_fn_bounce : cb_fn, job);
+
+	if (args->completion == XNVMEPERF_COMPLETION_CB) {
+		xnvme_queue_set_cb(job->queue, args->buf_host_bounce ? cb_fn_bounce : cb_fn, job);
+		return 0;
+	}
+
+	job->completions = calloc(args->qdepth, sizeof(*job->completions));
+	if (!job->completions) {
+		xnvme_cli_perr("Failed: calloc() for completions", -ENOMEM);
+		return -ENOMEM;
+	}
 
 	return 0;
 }
@@ -396,6 +558,7 @@ thread_term(struct xnvmeperf_thread *thread)
 		if (job->queue) {
 			xnvme_queue_term(job->queue);
 		}
+		free(job->completions);
 	}
 	free(thread->jobs);
 }
@@ -561,7 +724,12 @@ thread_fn(void *arg)
 				struct xnvmeperf_job *job = &thread->jobs[i];
 				struct xnvme_cmd_ctx *ctx;
 
-				xnvme_queue_poke(job->queue, 0);
+				if (args->completion == XNVMEPERF_COMPLETION_REAP &&
+				    !args->buf_host_bounce) {
+					job_reap_resubmit(job);
+				} else {
+					job_complete(job);
+				}
 
 				while ((ctx = xnvme_queue_get_cmd_ctx(job->queue))) {
 					if (submit_io(job, ctx)) {
@@ -581,7 +749,7 @@ thread_fn(void *arg)
 	}
 
 	for (int i = 0; i < thread->ndevs; i++) {
-		xnvme_queue_drain(thread->jobs[i].queue);
+		job_drain(&thread->jobs[i]);
 		if (args->buf_host_bounce) {
 			xnvmeperf_gpu_bounce_drain(thread->jobs[i].gpu);
 		}
@@ -616,6 +784,8 @@ print_run_args(struct xnvmeperf_args *args, const char *pattern)
 	       (args->queue_opts & XNVME_QUEUE_SQ_HOSTMEM) ? "yes" : "no");
 	printf("- buf host bounce (read to host, copy to GPU): %s\n",
 	       args->buf_host_bounce ? "yes" : "no");
+	printf("- completion: %s\n",
+	       args->completion == XNVMEPERF_COMPLETION_REAP ? "reap" : "cb");
 	if (args->opts.homi_id) {
 		printf("- served by homi: %u\n", args->opts.homi_id);
 	}
@@ -1103,7 +1273,7 @@ write:
 
 			ctx = xnvme_queue_get_cmd_ctx(job.queue);
 			while (!ctx) {
-				xnvme_queue_poke(job.queue, 0);
+				job_complete(&job);
 				ctx = xnvme_queue_get_cmd_ctx(job.queue);
 			}
 
@@ -1122,7 +1292,7 @@ write:
 			// with the next LBA's pattern; without this, all in-flight DMA
 			// transfers read from whatever write_buf contains at completion time
 			while (job.io_completed + job.io_failed < (uint64_t)(i + 1)) {
-				xnvme_queue_poke(job.queue, 0);
+				job_complete(&job);
 			}
 			if (!i && job.mbuf && job.io_failed &&
 			    refuses_metadata(job.failed_status)) {
@@ -1148,7 +1318,7 @@ without_metadata:
 			       args->dev_uris[d]);
 			goto write;
 		}
-		xnvme_queue_drain(job.queue);
+		job_drain(&job);
 		if (err) {
 			goto next_dev;
 		}
@@ -1184,7 +1354,7 @@ without_metadata:
 
 			struct xnvme_cmd_ctx *ctx = xnvme_queue_get_cmd_ctx(job.queue);
 			while (!ctx) {
-				xnvme_queue_poke(job.queue, 0);
+				job_complete(&job);
 				ctx = xnvme_queue_get_cmd_ctx(job.queue);
 			}
 
@@ -1198,7 +1368,7 @@ without_metadata:
 			}
 
 			while (job.io_completed + job.io_failed < (uint64_t)(i + 1)) {
-				xnvme_queue_poke(job.queue, 0);
+				job_complete(&job);
 			}
 
 			err = fill_pattern(expect_buf, args->iosize, slba, job.nlb);
@@ -1240,7 +1410,7 @@ without_metadata:
 				mismatches++;
 			}
 		}
-		xnvme_queue_drain(job.queue);
+		job_drain(&job);
 
 		printf(" %-20s  verified %d IOs, %lu mismatches, %lu failed\n", args->dev_uris[d],
 		       nios, (unsigned long)mismatches, (unsigned long)job.io_failed);
@@ -1269,6 +1439,7 @@ next_dev:
 		if (job.queue) {
 			xnvme_queue_term(job.queue);
 		}
+		free(job.completions);
 	}
 
 	printf("====================================================================\n");
@@ -1449,6 +1620,18 @@ parse_common_args(struct xnvme_cli *cli, struct xnvmeperf_args *args)
 	xnvme_cli_to_opts(cli, &args->opts);
 	args->queue_opts = cli->args.p2p_cq_mirror ? XNVME_QUEUE_P2P_CQ_MIRROR : 0;
 	args->queue_opts |= cli->args.sq_hostmem ? XNVME_QUEUE_SQ_HOSTMEM : 0;
+
+	args->completion = XNVMEPERF_COMPLETION_CB;
+	if (cli->args.completion && !strcmp(cli->args.completion, "reap")) {
+		args->completion = XNVMEPERF_COMPLETION_REAP;
+		args->queue_opts |= XNVME_QUEUE_REAP;
+	} else if (cli->args.completion && strcmp(cli->args.completion, "cb")) {
+		err = -EINVAL;
+		fprintf(stderr, "Error: unknown completion '%s', use 'cb' or 'reap': err(%d)\n",
+			cli->args.completion, err);
+		return err;
+	}
+
 	return err;
 }
 
@@ -1468,7 +1651,7 @@ parse_run_args(struct xnvme_cli *cli, struct xnvmeperf_args *args)
 		return err;
 	}
 
-	args->gpu_buf = args->opts.be && (!strcmp(args->opts.be, "io_uring_dmabuf"));
+	args->gpu_buf = !strcmp(args->opts.be, "io_uring_dmabuf");
 
 	if (!cli->args.iopattern) {
 		err = -EINVAL;
@@ -1519,8 +1702,7 @@ parse_run_args(struct xnvme_cli *cli, struct xnvmeperf_args *args)
 
 	args->buf_host_bounce = cli->args.buf_host_bounce;
 	if (args->buf_host_bounce &&
-	    (args->gpu_buf ||
-	     (args->opts.be && (strstr(args->opts.be, "cuda") || strstr(args->opts.be, "hip"))))) {
+	    (args->gpu_buf || strstr(args->opts.be, "cuda") || strstr(args->opts.be, "hip"))) {
 		err = -EINVAL;
 		fprintf(stderr,
 			"Error: --buf-host-bounce reads into host memory and copies to the GPU;"
@@ -1542,8 +1724,7 @@ parse_run_args(struct xnvme_cli *cli, struct xnvmeperf_args *args)
 static void
 derive_heap_sizes(struct xnvmeperf_args *args)
 {
-	int is_gpu =
-		args->opts.be && (strstr(args->opts.be, "cuda") || strstr(args->opts.be, "hip"));
+	int is_gpu = strstr(args->opts.be, "cuda") || strstr(args->opts.be, "hip");
 	size_t nq = args->nqueues ? args->nqueues : 1;
 	size_t qd = args->qdepth ? args->qdepth : 1;
 	size_t queues = (size_t)args->ndevs * nq;
@@ -1630,8 +1811,8 @@ sub_cuda_run(struct xnvme_cli *cli)
 		return err;
 	}
 
-	if (!args.opts.be) {
-		args.opts.be = "upcie-cuda";
+	if (!args.opts.be[0]) {
+		snprintf(args.opts.be, sizeof(args.opts.be), "%s", "upcie-cuda");
 	} else if (strcmp(args.opts.be, "upcie-cuda") != 0) {
 		err = -EINVAL;
 		fprintf(stderr, "Error: cuda-run requires --be upcie-cuda, got '%s': err(%d)\n",
@@ -1656,8 +1837,8 @@ sub_cuda_verify(struct xnvme_cli *cli)
 		return err;
 	}
 
-	if (!args.opts.be) {
-		args.opts.be = "upcie-cuda";
+	if (!args.opts.be[0]) {
+		snprintf(args.opts.be, sizeof(args.opts.be), "%s", "upcie-cuda");
 	} else if (strcmp(args.opts.be, "upcie-cuda") != 0) {
 		err = -EINVAL;
 		fprintf(stderr, "Error: cuda-verify requires --be upcie-cuda, got '%s': err(%d)\n",
@@ -1743,6 +1924,7 @@ static struct xnvme_cli_sub g_subs[] = {
 			{XNVME_CLI_OPT_REPORT_FREQ, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_P2P_CQ_MIRROR, XNVME_CLI_LFLG},
 			{XNVME_CLI_OPT_BUF_HOST_BOUNCE, XNVME_CLI_LFLG},
+			{XNVME_CLI_OPT_COMPLETION, XNVME_CLI_LOPT},
 		},
 	},
 	{
@@ -1766,6 +1948,7 @@ static struct xnvme_cli_sub g_subs[] = {
 			{XNVME_CLI_OPT_GPU_ID, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_HOMI_ID, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_P2P_CQ_MIRROR, XNVME_CLI_LFLG},
+			{XNVME_CLI_OPT_COMPLETION, XNVME_CLI_LOPT},
 		},
 	},
 	{

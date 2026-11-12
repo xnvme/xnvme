@@ -2,9 +2,7 @@
 import sys
 from ctypes import POINTER, c_uint32, cast, pointer
 
-import xnvme.ctypes_bindings as xnvme
-
-xnvme.guard_unloadable()
+import xnvme
 
 
 def enumerate_callback(dev, callback_args):
@@ -13,7 +11,7 @@ def enumerate_callback(dev, callback_args):
     count = cast(callback_args, POINTER(c_uint32))
     count.contents.value += 1
 
-    xnvme.xnvme_dev_pr(dev, xnvme.XNVME_PR_DEF)
+    xnvme.XnvmeIdent.pr(xnvme.xnvme_dev_get_ident(dev), xnvme.XNVME_PR_DEF)
 
     return xnvme.XNVME_ENUMERATE_DEV_CLOSE
 
@@ -24,7 +22,7 @@ def main():
     count = c_uint32(0)
 
     err = xnvme.xnvme_enumerate(
-        None, None, xnvme.xnvme_enumerate_cb(enumerate_callback), pointer(count)
+        None, None, xnvme.XnvmeEnumerateCb(enumerate_callback), pointer(count)
     )
     if err:
         print(f"FAILED: xnvme_enumerate(), err({err})")

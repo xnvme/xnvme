@@ -253,7 +253,7 @@ report_zones_complete(struct qublk_queue *q, struct qublk_io *io)
 	uint64_t nzones;
 
 	memcpy(&hdr, buf, sizeof(hdr));
-	nzones = XNVME_MIN_U64(hdr.nzones, n);
+	nzones = XNVME_MIN_U64(hdr.nz, n);
 
 	for (uint64_t i = 0; i < nzones; i++) {
 		struct xnvme_spec_znd_descr descr;
@@ -264,10 +264,12 @@ report_zones_complete(struct qublk_queue *q, struct qublk_io *io)
 		zone.start = descr.zslba << shift;
 		zone.len = dev->zone_sectors;
 		zone.capacity = descr.zcap << shift;
-		zone.wp = (descr.zs == XNVME_SPEC_ZND_STATE_FULL) ? zone.start + zone.len
-								  : descr.wp << shift;
-		zone.type = descr.zt;
-		zone.cond = descr.zs;
+		zone.wp = (xnvme_bits_get(descr.zsattr, XNVME_SPEC_ZND_DESCR_ZSATTR_ZS) ==
+			   XNVME_SPEC_ZND_STATE_FULL)
+				  ? zone.start + zone.len
+				  : descr.wp << shift;
+		zone.type = xnvme_bits_get(descr.ztattr, XNVME_SPEC_ZND_DESCR_ZTATTR_ZT);
+		zone.cond = xnvme_bits_get(descr.zsattr, XNVME_SPEC_ZND_DESCR_ZSATTR_ZS);
 
 		memcpy(buf + i * sizeof(zone), &zone, sizeof(zone));
 	}
@@ -297,11 +299,22 @@ qublk_zoned_dispatch(struct qublk_queue *q, struct qublk_io *io, struct xnvme_cm
 		uint32_t n = report_zones_count(dev, iod->nr_zones);
 
 		slba = iod->start_sector >> (lba_shift - XNVME_UNIVERSAL_SECT_SH);
-		return xnvme_znd_mgmt_recv(ctx, nsid, slba,
-					   XNVME_SPEC_ZND_CMD_MGMT_RECV_ACTION_REPORT,
-					   XNVME_SPEC_ZND_CMD_MGMT_RECV_SF_ALL, 1, io->buf,
-					   (uint32_t)(sizeof(struct xnvme_spec_znd_report_hdr) +
-						      n * sizeof(struct xnvme_spec_znd_descr)));
+		uint32_t nbytes = (uint32_t)(sizeof(struct xnvme_spec_znd_report_hdr) +
+					     n * sizeof(struct xnvme_spec_znd_descr));
+
+		rc = xnvme_cmd_prep_zns_zone_management_receive(
+			&ctx->cmd,
+			&(struct xnvme_cmd_prep_zns_zone_management_receive_args){
+				.args_nbytes = sizeof(
+					struct xnvme_cmd_prep_zns_zone_management_receive_args),
+				.nsid = nsid,
+				.slba = slba,
+				.ndw = nbytes / sizeof(uint32_t) - 1,
+				.zraspf = 1,
+				.zras = XNVME_SPEC_ZND_CMD_MGMT_RECV_SF_ALL,
+				.zra = XNVME_SPEC_ZND_CMD_MGMT_RECV_ACTION_REPORT,
+			});
+		return rc ? rc : xnvme_cmd_pass(ctx, io->buf, nbytes, NULL, 0);
 	}
 	case UBLK_IO_OP_ZONE_APPEND:
 	case UBLK_IO_OP_ZONE_OPEN:
@@ -338,16 +351,23 @@ qublk_zoned_dispatch(struct qublk_queue *q, struct qublk_io *io, struct xnvme_cm
 			}
 
 			nlb = (uint16_t)((bytes >> lba_shift) - 1);
-			if (iod->op_flags & UBLK_IO_F_FUA) {
-				ctx->cmd.znd.append.fua = 1;
-			}
 
 			rc = qublk_io_user_copy_in(q, io, (size_t)bytes);
 			if (rc) {
 				return rc;
 			}
 
-			return xnvme_znd_append(ctx, nsid, slba, nlb, io->buf, NULL);
+			rc = xnvme_cmd_prep_zns_zone_append(
+				&ctx->cmd,
+				&(struct xnvme_cmd_prep_zns_zone_append_args){
+					.args_nbytes =
+						sizeof(struct xnvme_cmd_prep_zns_zone_append_args),
+					.nsid = nsid,
+					.zslba = slba,
+					.fua = (iod->op_flags & UBLK_IO_F_FUA) ? 1 : 0,
+					.nlb = nlb,
+				});
+			return rc ? rc : xnvme_cmd_pass(ctx, io->buf, (size_t)bytes, NULL, 0);
 		}
 
 		rc = zone_mgmt_action(op);
@@ -355,15 +375,32 @@ qublk_zoned_dispatch(struct qublk_queue *q, struct qublk_io *io, struct xnvme_cm
 			return -EOPNOTSUPP;
 		}
 
-		return xnvme_znd_mgmt_send(ctx, nsid, slba, false, rc, 0, NULL);
+		rc = xnvme_cmd_prep_zns_zone_management_send(
+			&ctx->cmd,
+			&(struct xnvme_cmd_prep_zns_zone_management_send_args){
+				.args_nbytes = sizeof(
+					struct xnvme_cmd_prep_zns_zone_management_send_args),
+				.nsid = nsid,
+				.slba = slba,
+				.zsa = (uint8_t)rc,
+			});
+		return rc ? rc : xnvme_cmd_pass(ctx, NULL, 0, NULL, 0);
 	case UBLK_IO_OP_ZONE_RESET_ALL:
 		if (!dev->zoned) {
 			return -EOPNOTSUPP;
 		}
 
 		// Select all: the ZSLBA is ignored by the device
-		return xnvme_znd_mgmt_send(ctx, nsid, 0, true, XNVME_SPEC_ZND_CMD_MGMT_SEND_RESET,
-					   0, NULL);
+		rc = xnvme_cmd_prep_zns_zone_management_send(
+			&ctx->cmd,
+			&(struct xnvme_cmd_prep_zns_zone_management_send_args){
+				.args_nbytes = sizeof(
+					struct xnvme_cmd_prep_zns_zone_management_send_args),
+				.nsid = nsid,
+				.selall = 1,
+				.zsa = XNVME_SPEC_ZND_CMD_MGMT_SEND_RESET,
+			});
+		return rc ? rc : xnvme_cmd_pass(ctx, NULL, 0, NULL, 0);
 	default:
 		return -EOPNOTSUPP;
 	}

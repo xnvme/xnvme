@@ -31,7 +31,7 @@ xnvme_be_ramdisk_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_
 		return -ENOTSUP;
 	}
 
-	switch (ctx->cmd.common.opcode) {
+	switch (ctx->cmd.common.opc) {
 	case XNVME_SPEC_NVM_OPC_WRITE:
 		memcpy(offset + (ctx->cmd.nvm.slba << ssw), dbuf, dbuf_nbytes);
 		break;
@@ -42,7 +42,8 @@ xnvme_be_ramdisk_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_
 
 	case XNVME_SPEC_NVM_OPC_WRITE_ZEROES:
 		memset(offset + (ctx->cmd.nvm.slba << ssw), 0,
-		       (ctx->cmd.nvm.nlb + 1) * ctx->dev->geo.lba_nbytes);
+		       (xnvme_bits_get(ctx->cmd.nvm.cdw12, XNVME_SPEC_CMD_NVM_CDW12_NLB) + 1) *
+			       ctx->dev->geo.lba_nbytes);
 		break;
 
 	case XNVME_SPEC_FS_OPC_WRITE:
@@ -55,10 +56,15 @@ xnvme_be_ramdisk_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_
 
 	case XNVME_SPEC_NVM_OPC_SCOPY:
 
-		for (int i = 0; i <= ctx->cmd.scopy.nr; i++) {
+		for (uint64_t i = 0;
+		     i <= xnvme_bits_get(ctx->cmd.scopy.cdw12, XNVME_SPEC_NVM_CMD_SCOPY_CDW12_NR);
+		     i++) {
 			char *dest = offset + sdlba_offset + (ctx->cmd.scopy.sdlba << ssw);
 			char *src = offset + (ranges[i].slba << ssw);
-			size_t nbytes = (ranges[i].nlb + 1) * ctx->dev->geo.lba_nbytes;
+			size_t nbytes = (xnvme_bits_get(ranges[i].rpars,
+							XNVME_SPEC_NVM_SCOPY_FMT_ZERO_RPARS_NLB) +
+					 1) *
+					ctx->dev->geo.lba_nbytes;
 			memcpy(dest, src, nbytes);
 			sdlba_offset += nbytes;
 		}
@@ -80,7 +86,7 @@ xnvme_be_ramdisk_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_
 		break;
 
 	default:
-		XNVME_DEBUG("FAILED: nosys opcode: %d", ctx->cmd.common.opcode);
+		XNVME_DEBUG("FAILED: nosys opcode: %d", ctx->cmd.common.opc);
 		return -ENOSYS;
 	}
 
@@ -100,7 +106,7 @@ xnvme_be_ramdisk_sync_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, siz
 		return -ENOTSUP;
 	}
 
-	switch (ctx->cmd.common.opcode) {
+	switch (ctx->cmd.common.opc) {
 	case XNVME_SPEC_NVM_OPC_WRITE:
 		for (size_t i = 0; i < dvec_cnt; ++i) {
 			memcpy(offset + (ctx->cmd.nvm.slba << ssw), dvec[i].iov_base,
@@ -136,7 +142,7 @@ xnvme_be_ramdisk_sync_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, siz
 		break;
 
 	default:
-		XNVME_DEBUG("FAILED: nosys opcode: %d", ctx->cmd.common.opcode);
+		XNVME_DEBUG("FAILED: nosys opcode: %d", ctx->cmd.common.opc);
 		return -ENOSYS;
 	}
 

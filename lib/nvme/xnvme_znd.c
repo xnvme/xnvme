@@ -15,13 +15,36 @@
  * Allocate struct 'znd_report' with memory allowing it to contain all
  * zone-entries, despite the intended 'limit'
  */
+static int
+znd_report(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t slba, uint8_t zra, uint8_t zras,
+	   uint8_t zraspf, void *dbuf, uint32_t dbuf_nbytes)
+{
+	struct xnvme_cmd_prep_zns_zone_management_receive_args args = {
+		.args_nbytes = sizeof(args),
+		.nsid = nsid,
+		.slba = slba,
+		.ndw = dbuf_nbytes / sizeof(uint32_t) - 1,
+		.zraspf = zraspf,
+		.zras = zras,
+		.zra = zra,
+	};
+	int err;
+
+	err = xnvme_cmd_prep_zns_zone_management_receive(&ctx->cmd, &args);
+	if (err) {
+		return err;
+	}
+
+	return xnvme_cmd_pass(ctx, dbuf, dbuf_nbytes, NULL, 0);
+}
+
 static inline struct xnvme_znd_report *
 znd_report_init(struct xnvme_dev *dev, uint64_t slba, size_t limit, uint8_t extended)
 {
 	const struct xnvme_spec_idfy_ns *nvm = (void *)xnvme_dev_get_ns(dev);
 	const struct xnvme_spec_znd_idfy_ns *zns = (void *)xnvme_dev_get_ns_css(dev);
 	const size_t zdext_nbytes =
-		zns->lbafe[xnvme_bits_get(nvm->flbas, XNVME_SPEC_IDFY_NS_FLBAS_FORMAT)].zdes * 64;
+		zns->lbafe[xnvme_bits_get(nvm->flbas, XNVME_SPEC_IDFY_NS_FLBAS_FIDXL)].zdes * 64;
 	const struct xnvme_geo *geo = xnvme_dev_get_geo(dev);
 	const size_t zd_nbytes = sizeof(struct xnvme_spec_znd_descr);
 	size_t nentries;
@@ -163,19 +186,18 @@ xnvme_znd_report_from_dev(struct xnvme_dev *dev, uint64_t slba, size_t limit, ui
 			break;
 		}
 
-		err = xnvme_znd_mgmt_recv(&ctx, nsid, zslba, action,
-					  XNVME_SPEC_ZND_CMD_MGMT_RECV_SF_ALL, 0x0, dbuf,
-					  dbuf_nbytes);
+		err = znd_report(&ctx, nsid, zslba, action, XNVME_SPEC_ZND_CMD_MGMT_RECV_SF_ALL,
+				 0x0, dbuf, dbuf_nbytes);
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-			XNVME_DEBUG("FAILED: xnvme_znd_mgmt_recv()");
+			XNVME_DEBUG("FAILED: znd_report()");
 			xnvme_buf_virt_free(report);
 			xnvme_buf_free(dev, dbuf);
 			errno = err ? -err : EIO;
 			return NULL;
 		}
-		XNVME_DEBUG("INFO: hdr->nzones: %" PRIu64, hdr->nzones);
+		XNVME_DEBUG("INFO: hdr->nz: %" PRIu64, hdr->nz);
 
-		if (nentries > hdr->nzones) {
+		if (nentries > hdr->nz) {
 			XNVME_DEBUG("ERR: invalid nentries");
 			break;
 		}
@@ -243,7 +265,9 @@ xnvme_znd_report_find_arbitrary(const struct xnvme_znd_report *report, uint32_t 
 			return err;
 		}
 
-		if ((zdescr->zs == state) && (zdescr->zt == XNVME_SPEC_ZND_TYPE_SEQWR) &&
+		if ((xnvme_bits_get(zdescr->zsattr, XNVME_SPEC_ZND_DESCR_ZSATTR_ZS) == state) &&
+		    (xnvme_bits_get(zdescr->ztattr, XNVME_SPEC_ZND_DESCR_ZTATTR_ZT) ==
+		     XNVME_SPEC_ZND_TYPE_SEQWR) &&
 		    (zdescr->zcap)) {
 			*zlba = zdescr->zslba;
 			return 0;
@@ -273,17 +297,17 @@ xnvme_znd_descr_from_dev(struct xnvme_dev *dev, uint64_t slba, struct xnvme_spec
 	}
 	memset(dbuf, 0, dbuf_nbytes);
 
-	err = xnvme_znd_mgmt_recv(&ctx, nsid, slba, XNVME_SPEC_ZND_CMD_MGMT_RECV_ACTION_REPORT,
-				  XNVME_SPEC_ZND_CMD_MGMT_RECV_SF_ALL, 0x0, dbuf, dbuf_nbytes);
+	err = znd_report(&ctx, nsid, slba, XNVME_SPEC_ZND_CMD_MGMT_RECV_ACTION_REPORT,
+			 XNVME_SPEC_ZND_CMD_MGMT_RECV_SF_ALL, 0x0, dbuf, dbuf_nbytes);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		XNVME_DEBUG("FAILED: xnvme_znd_mgmt_recv()");
+		XNVME_DEBUG("FAILED: znd_report()");
 		err = err ? err : -EIO;
 		goto exit;
 	}
 
 	hdr = (void *)dbuf;
-	if (!hdr->nzones) {
-		XNVME_DEBUG("FAILED: hdr->nzones: %" PRIu64, hdr->nzones);
+	if (!hdr->nz) {
+		XNVME_DEBUG("FAILED: hdr->nz: %" PRIu64, hdr->nz);
 		err = -EIO;
 		goto exit;
 	}
@@ -349,17 +373,17 @@ xnvme_znd_descr_from_dev_in_state(struct xnvme_dev *dev, uint32_t state,
 	}
 	memset(dbuf, 0, dbuf_nbytes);
 
-	err = xnvme_znd_mgmt_recv(&ctx, nsid, 0x0, XNVME_SPEC_ZND_CMD_MGMT_RECV_ACTION_REPORT,
-				  sfield, 0x1, dbuf, dbuf_nbytes);
+	err = znd_report(&ctx, nsid, 0x0, XNVME_SPEC_ZND_CMD_MGMT_RECV_ACTION_REPORT, sfield, 0x1,
+			 dbuf, dbuf_nbytes);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		XNVME_DEBUG("FAILED: xnvme_znd_mgmt_recv()");
+		XNVME_DEBUG("FAILED: znd_report()");
 		err = err ? err : -EIO;
 		goto exit;
 	}
 
 	hdr = (void *)dbuf;
-	if (!hdr->nzones) {
-		XNVME_DEBUG("FAILED: hdr->nzones: %" PRIu64, hdr->nzones);
+	if (!hdr->nz) {
+		XNVME_DEBUG("FAILED: hdr->nz: %" PRIu64, hdr->nz);
 		err = -EIO;
 		goto exit;
 	}
@@ -393,15 +417,15 @@ xnvme_znd_stat(struct xnvme_dev *dev, uint32_t sfield, uint64_t *nzones)
 	}
 	memset(hdr, 0, hdr_nbytes);
 
-	err = xnvme_znd_mgmt_recv(&ctx, nsid, 0x0, XNVME_SPEC_ZND_CMD_MGMT_RECV_ACTION_REPORT,
-				  sfield, 0x0, hdr, hdr_nbytes);
+	err = znd_report(&ctx, nsid, 0x0, XNVME_SPEC_ZND_CMD_MGMT_RECV_ACTION_REPORT, sfield, 0x0,
+			 hdr, hdr_nbytes);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		XNVME_DEBUG("FAILED: xnvme_znd_mgmt_recv()");
+		XNVME_DEBUG("FAILED: znd_report()");
 		err = err ? err : -EIO;
 		goto exit;
 	}
 
-	*nzones = hdr->nzones;
+	*nzones = hdr->nz;
 
 exit:
 	xnvme_buf_free(dev, hdr);
@@ -415,6 +439,12 @@ xnvme_znd_log_changes_from_dev(struct xnvme_dev *dev)
 	struct xnvme_cmd_ctx ctx = {0};
 	struct xnvme_spec_znd_log_changes *log = NULL;
 	const size_t log_nbytes = sizeof(*log);
+	struct xnvme_cmd_prep_adm_get_log_page_args args = {
+		.args_nbytes = sizeof(args),
+		.nsid = xnvme_dev_get_nsid(dev),
+		.lid = XNVME_SPEC_LOG_ZND_CHANGES,
+		.numd = log_nbytes / sizeof(uint32_t) - 1,
+	};
 	int err;
 
 	xnvme_dev_get_cmd_ctx(dev, &ctx);
@@ -427,155 +457,17 @@ xnvme_znd_log_changes_from_dev(struct xnvme_dev *dev)
 	}
 
 	// Retrieve Changed Zone Information List for namespace with nsid=1
-	err = xnvme_adm_log(&ctx, XNVME_SPEC_LOG_ZND_CHANGES, 0, 0, xnvme_dev_get_nsid(dev), 0,
-			    log, log_nbytes);
+	err = xnvme_cmd_prep_adm_get_log_page(&ctx.cmd, &args);
+	if (!err) {
+		err = xnvme_cmd_pass_admin(&ctx, log, log_nbytes, NULL, 0);
+	}
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		XNVME_DEBUG("FAILED: xnvme_adm_log(XNVME_SPEC_LOG_TBD_ZCHG)");
+		XNVME_DEBUG("FAILED: Get Log Page(XNVME_SPEC_LOG_ZND_CHANGES)");
 		xnvme_buf_free(dev, log);
 		return NULL;
 	}
 
 	return log;
-}
-
-int
-xnvme_znd_mgmt_send(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t zslba, bool select_all,
-		    uint32_t zsa, uint32_t zsaso, void *dbuf)
-{
-	uint32_t dbuf_nbytes = 0;
-
-	ctx->cmd.common.opcode = XNVME_SPEC_ZND_OPC_MGMT_SEND;
-	ctx->cmd.common.nsid = nsid;
-	ctx->cmd.znd.mgmt_send.slba = zslba;
-	ctx->cmd.znd.mgmt_send.select_all = select_all;
-	ctx->cmd.znd.mgmt_send.zsa = zsa;
-	ctx->cmd.znd.mgmt_send.zsaso = zsaso;
-
-	if (dbuf) {
-		struct xnvme_spec_idfy_ns *nvm = (void *)xnvme_dev_get_ns(ctx->dev);
-		struct xnvme_spec_znd_idfy_ns *zns = (void *)xnvme_dev_get_ns_css(ctx->dev);
-
-		dbuf_nbytes =
-			zns->lbafe[xnvme_bits_get(nvm->flbas, XNVME_SPEC_IDFY_NS_FLBAS_FORMAT)]
-				.zdes *
-			64;
-	}
-
-	return xnvme_cmd_pass(ctx, dbuf, dbuf_nbytes, NULL, 0);
-}
-
-int
-xnvme_znd_mgmt_recv(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t slba, uint32_t zra,
-		    uint32_t zrasf, uint8_t partial, void *dbuf, uint32_t dbuf_nbytes)
-{
-	ctx->cmd.common.opcode = XNVME_SPEC_ZND_OPC_MGMT_RECV;
-	ctx->cmd.common.nsid = nsid;
-	ctx->cmd.znd.mgmt_recv.slba = slba;
-	ctx->cmd.znd.mgmt_recv.ndwords = (dbuf_nbytes >> 2) - 1;
-	ctx->cmd.znd.mgmt_recv.zra = zra;
-	ctx->cmd.znd.mgmt_recv.zrasf = zrasf;
-	ctx->cmd.znd.mgmt_recv.partial = partial;
-
-	return xnvme_cmd_pass(ctx, dbuf, dbuf_nbytes, NULL, 0);
-}
-
-int
-xnvme_znd_append(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t zslba, uint16_t nlb,
-		 const void *dbuf, const void *mbuf)
-{
-	void *cdbuf = (void *)dbuf;
-	void *cmbuf = (void *)mbuf;
-
-	size_t dbuf_nbytes = cdbuf ? ctx->dev->geo.lba_nbytes * (nlb + 1) : 0;
-	size_t mbuf_nbytes = cmbuf ? ctx->dev->geo.nbytes_oob * (nlb + 1) : 0;
-
-	// TODO: consider returning -EINVAL when mbuf is provided and namespace
-	// have extended-lba in effect
-
-	ctx->cmd.common.opcode = XNVME_SPEC_ZND_OPC_APPEND;
-	ctx->cmd.common.nsid = nsid;
-	ctx->cmd.znd.append.zslba = zslba;
-	ctx->cmd.znd.append.nlb = nlb;
-
-	return xnvme_cmd_pass(ctx, cdbuf, dbuf_nbytes, cmbuf, mbuf_nbytes);
-}
-
-int
-xnvme_znd_zrwa_flush(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t lba)
-{
-	ctx->cmd.common.opcode = XNVME_SPEC_ZND_OPC_MGMT_SEND;
-	ctx->cmd.common.nsid = nsid;
-	ctx->cmd.znd.mgmt_send.slba = lba;
-	ctx->cmd.znd.mgmt_send.zsa = XNVME_SPEC_ZND_CMD_MGMT_SEND_FLUSH;
-
-	return xnvme_cmd_pass(ctx, NULL, 0x0, NULL, 0x0);
-}
-
-int
-xnvme_znd_report_fpr(FILE *stream, const struct xnvme_znd_report *report, int flags)
-{
-	int wrtn = 0;
-
-	switch (flags) {
-	case XNVME_PR_TERSE:
-		wrtn += fprintf(stream, "# ENOSYS: opts(0x%x)", flags);
-		return wrtn;
-
-	case XNVME_PR_DEF:
-	case XNVME_PR_YAML:
-		break;
-	}
-
-	wrtn += fprintf(stream, "xnvme_znd_report:\n");
-	if (!report) {
-		wrtn += fprintf(stream, " ~\n");
-		return wrtn;
-	}
-
-	wrtn += fprintf(stream, "  report_nbytes: %" PRIu64 "\n", report->report_nbytes);
-	wrtn += fprintf(stream, "  entries_nbytes: %" PRIu64 "\n", report->entries_nbytes);
-
-	wrtn += fprintf(stream, "  zd_nbytes: %" PRIu32 "\n", report->zd_nbytes);
-	wrtn += fprintf(stream, "  zdext_nbytes: %" PRIu32 "\n", report->zdext_nbytes);
-	wrtn += fprintf(stream, "  zrent_nbytes: %" PRIu64 "\n", report->zrent_nbytes);
-
-	wrtn += fprintf(stream, "  zslba: 0x%016" PRIx64 "\n", report->zslba);
-	wrtn += fprintf(stream, "  zelba: 0x%016" PRIx64 "\n", report->zelba);
-
-	wrtn += fprintf(stream, "  nzones: %" PRIu64 "\n", report->nzones);
-	wrtn += fprintf(stream, "  nentries: %" PRIu32 "\n", report->nentries);
-	wrtn += fprintf(stream, "  extended: %" PRIu8 "\n", report->extended);
-
-	wrtn += fprintf(stream, "  entries:");
-
-	if (!report->nentries) {
-		wrtn += fprintf(stream, " ~\n");
-		return wrtn;
-	}
-
-	wrtn += fprintf(stream, "\n");
-	for (uint32_t idx = 0; idx < report->nentries; ++idx) {
-		struct xnvme_spec_znd_descr *descr;
-		int err;
-
-		err = xnvme_znd_report_get_descr(report, idx, &descr, NULL);
-		if (err) {
-			XNVME_DEBUG("xnvme_znd_report_get_descr(), err: %d", err);
-			return err;
-		}
-
-		wrtn += fprintf(stream, "    - {");
-		wrtn += xnvme_spec_znd_descr_fpr_yaml(stream, descr, 0, ", ");
-		wrtn += fprintf(stream, "}\n");
-	}
-
-	return wrtn;
-}
-
-int
-xnvme_znd_report_pr(const struct xnvme_znd_report *report, int flags)
-{
-	return xnvme_znd_report_fpr(stdout, report, flags);
 }
 
 const struct xnvme_spec_znd_idfy_ctrlr *
@@ -639,7 +531,7 @@ xnvme_znd_dev_get_lbafe(struct xnvme_dev *dev)
 		return NULL;
 	}
 
-	lbafe = &zns->lbafe[xnvme_bits_get(ns->flbas, XNVME_SPEC_IDFY_NS_FLBAS_FORMAT)];
+	lbafe = &zns->lbafe[xnvme_bits_get(ns->flbas, XNVME_SPEC_IDFY_NS_FLBAS_FIDXL)];
 
 	return lbafe;
 }

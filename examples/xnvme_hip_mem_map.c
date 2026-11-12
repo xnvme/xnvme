@@ -43,14 +43,13 @@ main(int argc, char **argv)
 		return argc < 2;
 	}
 
-	opts.be = "upcie-hip";
+	snprintf(opts.be, sizeof(opts.be), "%s", "upcie-hip");
 	if (argc > 2) {
 		opts.homi_id = (uint32_t)strtoul(argv[2], NULL, 0);
 	}
-	dev = xnvme_dev_open(argv[1], &opts);
-	if (!dev) {
-		err = -errno;
-		xnvme_cli_perr("xnvme_dev_open()", err);
+	err = xnvme_dev_open_uri(argv[1], &opts, &dev);
+	if (err) {
+		xnvme_cli_perr("xnvme_dev_open_uri()", err);
 		return err;
 	}
 
@@ -79,11 +78,22 @@ main(int argc, char **argv)
 	mapped = 1;
 	xnvme_cli_pinf("xnvme_buf_register(%p, %zu): registered", buf, buf_nbytes);
 
+	struct xnvme_cmd_prep_nvm_read_args args = {
+		.args_nbytes = sizeof(args),
+		.nsid = xnvme_dev_get_nsid(dev),
+		.slba = 0x0,
+		.nlb = (uint16_t)(nlb - 1),
+	};
+
 	xnvme_dev_get_cmd_ctx(dev, &ctx);
-	err = xnvme_nvm_read(&ctx, xnvme_dev_get_nsid(dev), 0x0, nlb - 1, buf, NULL);
+	err = xnvme_cmd_prep_nvm_read(&ctx.cmd, &args);
+	if (!err) {
+		// The buffer is rounded up to 2 MiB; transfer the blocks read
+		err = xnvme_cmd_pass(&ctx, buf, nlb * lba_nbytes, NULL, 0);
+	}
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		err = err ? err : -EIO;
-		xnvme_cli_perr("xnvme_nvm_read()", err);
+		xnvme_cli_perr("read", err);
 		goto exit;
 	}
 

@@ -89,9 +89,22 @@ read_and_compare_lba_range(uint8_t *rbuf, const uint8_t *cbuf, const uint64_t rn
 
 		r_nlb = XNVME_MIN(mdts_naddr, nlb - read_lbs);
 
-		err = xnvme_nvm_read(&ctx, nsid, rng_slba + read_lbs, r_nlb - 1, rbuf, NULL);
+		struct xnvme_cmd_prep_nvm_read_args rd = {
+			.args_nbytes = sizeof(rd),
+			.nsid = nsid,
+			.slba = rng_slba + read_lbs,
+			.nlb = r_nlb - 1,
+		};
+
+		err = xnvme_cmd_prep_nvm_read(&ctx.cmd, &rd);
+		if (!err) {
+			err = xnvme_cmd_pass(&ctx, rbuf,
+					     (size_t)xnvme_dev_get_geo(ctx.dev)->lba_nbytes *
+						     (r_nlb - 1 + 1),
+					     NULL, 0);
+		}
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-			xnvme_cli_pinf("xnvme_nvm_read(): {err: 0x%x, slba: 0x%016lx}", err,
+			xnvme_cli_pinf("read: {err: 0x%x, slba: 0x%016lx}", err,
 				       rng_slba + read_lbs);
 			xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 			err = err ? err : -EIO;
@@ -144,10 +157,22 @@ fill_lba_range_and_write_buffer_with_pattern(uint8_t *wbuf, size_t buf_nbytes, u
 
 		*written_bytes += (1 + nlb) * geo->lba_nbytes;
 
-		err = xnvme_nvm_write(&ctx, nsid, slba, nlb, wbuf, NULL);
+		struct xnvme_cmd_prep_nvm_write_args wr = {
+			.args_nbytes = sizeof(wr),
+			.nsid = nsid,
+			.slba = slba,
+			.nlb = nlb,
+		};
+
+		err = xnvme_cmd_prep_nvm_write(&ctx.cmd, &wr);
+		if (!err) {
+			err = xnvme_cmd_pass(&ctx, wbuf,
+					     (size_t)xnvme_dev_get_geo(ctx.dev)->lba_nbytes *
+						     (nlb + 1),
+					     NULL, 0);
+		}
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-			xnvme_cli_pinf("xnvme_nvm_write(): {err: 0x%x, slba: 0x%016lx}", err,
-				       slba);
+			xnvme_cli_pinf("write: {err: 0x%x, slba: 0x%016lx}", err, slba);
 			xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 			err = err ? err : -EIO;
 			goto exit;
@@ -219,9 +244,20 @@ sub_io(struct xnvme_cli *cli)
 
 		xnvme_dev_get_cmd_ctx(dev, &ctx);
 
-		err = xnvme_nvm_write(&ctx, nsid, slba, 0, wbuf + wbuf_ofz, NULL);
+		struct xnvme_cmd_prep_nvm_write_args wr = {
+			.args_nbytes = sizeof(wr),
+			.nsid = nsid,
+			.slba = slba,
+		};
+
+		err = xnvme_cmd_prep_nvm_write(&ctx.cmd, &wr);
+		if (!err) {
+			err = xnvme_cmd_pass(&ctx, wbuf + wbuf_ofz,
+					     (size_t)xnvme_dev_get_geo(ctx.dev)->lba_nbytes, NULL,
+					     0);
+		}
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-			xnvme_cli_pinf("xnvme_nvm_write(): "
+			xnvme_cli_pinf("write: "
 				       "{err: 0x%x, slba: 0x%016lx}",
 				       err, slba);
 			xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
@@ -244,9 +280,20 @@ sub_io(struct xnvme_cli *cli)
 
 		xnvme_dev_get_cmd_ctx(dev, &ctx);
 
-		err = xnvme_nvm_read(&ctx, nsid, slba, 0, rbuf + rbuf_ofz, NULL);
+		struct xnvme_cmd_prep_nvm_read_args rd = {
+			.args_nbytes = sizeof(rd),
+			.nsid = nsid,
+			.slba = slba,
+		};
+
+		err = xnvme_cmd_prep_nvm_read(&ctx.cmd, &rd);
+		if (!err) {
+			err = xnvme_cmd_pass(&ctx, rbuf + rbuf_ofz,
+					     (size_t)xnvme_dev_get_geo(ctx.dev)->lba_nbytes, NULL,
+					     0);
+		}
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-			xnvme_cli_pinf("xnvme_nvm_read(): "
+			xnvme_cli_pinf("read: "
 				       "{err: 0x%x, slba: 0x%016lx}",
 				       err, slba);
 			xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
@@ -344,9 +391,19 @@ test_write_zeroes(struct xnvme_cli *cli)
 
 		xnvme_dev_get_cmd_ctx(dev, &ctx);
 
-		err = xnvme_nvm_write_zeroes(&ctx, nsid, slba, nlb);
+		struct xnvme_cmd_prep_nvm_write_zeroes_args wz = {
+			.args_nbytes = sizeof(wz),
+			.nsid = nsid,
+			.slba = slba,
+			.nlb = nlb,
+		};
+
+		err = xnvme_cmd_prep_nvm_write_zeroes(&ctx.cmd, &wz);
+		if (!err) {
+			err = xnvme_cmd_pass(&ctx, NULL, 0, NULL, 0);
+		}
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-			xnvme_cli_perr("xnvme_nvm_write_zeroes()", err);
+			xnvme_cli_perr("write_zeroes", err);
 			err = err ? err : -EIO;
 			goto exit;
 		}
@@ -452,9 +509,19 @@ test_write_uncorrectable(struct xnvme_cli *cli)
 
 		r_nlb = XNVME_MIN(mdts_naddr, nlb - execed_lbs);
 
-		err = xnvme_nvm_write_uncorrectable(&ctx, nsid, rng_slba + execed_lbs, r_nlb - 1);
+		struct xnvme_cmd_prep_nvm_write_uncorrectable_args wu = {
+			.args_nbytes = sizeof(wu),
+			.nsid = nsid,
+			.slba = rng_slba + execed_lbs,
+			.nlb = r_nlb - 1,
+		};
+
+		err = xnvme_cmd_prep_nvm_write_uncorrectable(&ctx.cmd, &wu);
+		if (!err) {
+			err = xnvme_cmd_pass(&ctx, NULL, 0, NULL, 0);
+		}
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-			xnvme_cli_perr("xnvme_nvm_write_uncorrectable()", err);
+			xnvme_cli_perr("write_uncorrectable", err);
 			err = err ? err : -EIO;
 			goto exit;
 		}
@@ -470,10 +537,21 @@ test_write_uncorrectable(struct xnvme_cli *cli)
 
 		xnvme_dev_get_cmd_ctx(dev, &ctx);
 
-		read_err = xnvme_nvm_read(&ctx, nsid, slba, 0, rbuf + rbuf_ofz, NULL);
+		struct xnvme_cmd_prep_nvm_read_args rd = {
+			.args_nbytes = sizeof(rd),
+			.nsid = nsid,
+			.slba = slba,
+		};
+
+		read_err = xnvme_cmd_prep_nvm_read(&ctx.cmd, &rd);
+		if (!read_err) {
+			read_err = xnvme_cmd_pass(&ctx, rbuf + rbuf_ofz,
+						  (size_t)xnvme_dev_get_geo(ctx.dev)->lba_nbytes,
+						  NULL, 0);
+		}
 		if (!read_err) {
 			err = -EIO;
-			xnvme_cli_perr("inefective xnvme_nvm_write_uncorrectable", err);
+			xnvme_cli_perr("ineffective write_uncorrectable", err);
 			goto exit;
 		}
 	}

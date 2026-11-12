@@ -37,7 +37,7 @@ xnvme_be_windows_buf_alloc(const struct xnvme_dev *XNVME_UNUSED(dev), size_t nby
 /**
  * buffer reallocate implemented for Windows Backend
  *
- * @param dev Device handle obtained with xnvme_dev_open() / xnvme_dev_openf()
+ * @param dev Device handle obtained with xnvme_dev_open_uri()
  * @param buf The buffer to reallocate
  * @param nbytes The size of the allocated buffer in bytes
  *
@@ -74,7 +74,7 @@ xnvme_be_windows_buf_free(const struct xnvme_dev *XNVME_UNUSED(dev), void *buf)
 /**
  * Allocate a buffer for IO with the given device for the Windows Backend
  *
- * @param dev Device handle obtained with xnvme_dev_open() / xnvme_dev_openf()
+ * @param dev Device handle obtained with xnvme_dev_open_uri()
  * @param buf The buffer to allocate respective physical memory
  * @param phys physical address
  *

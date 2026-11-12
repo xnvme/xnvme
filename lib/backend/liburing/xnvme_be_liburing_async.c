@@ -240,7 +240,7 @@ xnvme_be_liburing_poke(struct xnvme_queue *q, uint32_t max)
 			XNVME_DEBUG("cqe->user_data is NULL! => NO REQ!");
 			XNVME_DEBUG("cqe->res: %d", cqe->res);
 			XNVME_DEBUG("cqe->flags: %u", cqe->flags);
-			return -EIO;
+			return completed ? (int)completed : -EIO;
 		}
 #endif
 
@@ -266,6 +266,67 @@ xnvme_be_liburing_poke(struct xnvme_queue *q, uint32_t max)
 	return completed;
 }
 
+int
+xnvme_be_liburing_reap(struct xnvme_queue *q, struct xnvme_cmd_ctx **completions, uint32_t max)
+{
+	struct xnvme_queue_liburing *queue = (void *)q;
+	struct io_uring_cqe *cqe;
+	struct xnvme_cmd_ctx *ctx;
+	unsigned completed;
+	int err;
+
+	max = max ? max : queue->base.outstanding;
+	max = max > queue->base.outstanding ? queue->base.outstanding : max;
+
+	if (queue->batching) {
+		int err = io_uring_submit(&queue->ring);
+		if (err < 0) {
+			XNVME_DEBUG("io_uring_submit, err: %d", err);
+			return err;
+		}
+	}
+
+	completed = 0;
+	for (uint32_t i = 0; i < max; i++) {
+		err = io_uring_peek_cqe(&queue->ring, &cqe);
+		if (err == -EAGAIN) {
+			return completed;
+		}
+
+		ctx = io_uring_cqe_get_data(cqe);
+
+#ifdef XNVME_DEBUG_ENABLED
+		if (!ctx) {
+			XNVME_DEBUG("-{[THIS SHOULD NOT HAPPEN]}-");
+			XNVME_DEBUG("cqe->user_data is NULL! => NO REQ!");
+			XNVME_DEBUG("cqe->res: %d", cqe->res);
+			XNVME_DEBUG("cqe->flags: %u", cqe->flags);
+			return completed ? (int)completed : -EIO;
+		}
+#endif
+
+		ctx->cpl.result = cqe->res;
+		if (cqe->res < 0) {
+			ctx->cpl.result = 0;
+			ctx->cpl.status = xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC,
+							 -cqe->res);
+			ctx->cpl.status =
+				xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT,
+					       XNVME_STATUS_CODE_TYPE_VENDOR);
+		}
+
+		queue->base.outstanding--;
+
+		io_uring_cqe_seen(&queue->ring, cqe);
+
+		*completions++ = ctx;
+
+		completed++;
+	}
+
+	return completed;
+}
+
 static inline int
 _cmd_io(struct xnvme_cmd_ctx *ctx, uint64_t addr, size_t dbuf_nbytes, void *mbuf,
 	size_t mbuf_nbytes, int buf_index)
@@ -284,7 +345,7 @@ _cmd_io(struct xnvme_cmd_ctx *ctx, uint64_t addr, size_t dbuf_nbytes, void *mbuf
 	}
 
 	///< NOTE: opcode-dispatch (io)
-	switch (ctx->cmd.common.opcode) {
+	switch (ctx->cmd.common.opc) {
 	case XNVME_SPEC_NVM_OPC_WRITE:
 		ssw = queue->base.dev->geo.ssw;
 	/* fall through */
@@ -313,7 +374,7 @@ _cmd_io(struct xnvme_cmd_ctx *ctx, uint64_t addr, size_t dbuf_nbytes, void *mbuf
 		break;
 
 	default:
-		XNVME_DEBUG("FAILED: unsupported opcode: %d for async", ctx->cmd.common.opcode);
+		XNVME_DEBUG("FAILED: unsupported opcode: %d for async", ctx->cmd.common.opc);
 		return -ENOSYS;
 	}
 
@@ -352,7 +413,8 @@ _cmd_io(struct xnvme_cmd_ctx *ctx, uint64_t addr, size_t dbuf_nbytes, void *mbuf
 	// Honour the FUA bit of an NVM write; on a raw block device RWF_DSYNC
 	// makes the kernel issue the write with REQ_FUA. Only for the NVM opcode:
 	// 'fua' is an NVMe command-field, it does not exist for the FS opcodes
-	sqe->rw_flags = (ctx->cmd.common.opcode == XNVME_SPEC_NVM_OPC_WRITE && ctx->cmd.nvm.fua)
+	sqe->rw_flags = (ctx->cmd.common.opc == XNVME_SPEC_NVM_OPC_WRITE &&
+			 xnvme_bits_get(ctx->cmd.nvm.cdw12, XNVME_SPEC_CMD_NVM_CDW12_FUA))
 				? RWF_DSYNC
 				: 0;
 	sqe->user_data = (unsigned long)ctx;
@@ -366,7 +428,7 @@ submit:
 
 	err = io_uring_submit(&queue->ring);
 	if (err < 0) {
-		XNVME_DEBUG("io_uring_submit(%d), err: %d", ctx->cmd.common.opcode, err);
+		XNVME_DEBUG("io_uring_submit(%d), err: %d", ctx->cmd.common.opc, err);
 		return err;
 	}
 
@@ -417,8 +479,8 @@ xnvme_be_liburing_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t 
 	// IORING_SETUP_IOPOLL it would be accepted at submission-time and only fail
 	// with -EINVAL at completion-time. Reject it up-front instead, and do so
 	// before acquiring an sqe, such that none is left dangling in the ring
-	if (queue->poll_io && (ctx->cmd.common.opcode == XNVME_SPEC_NVM_OPC_FLUSH ||
-			       ctx->cmd.common.opcode == XNVME_SPEC_FS_OPC_FLUSH)) {
+	if (queue->poll_io && (ctx->cmd.common.opc == XNVME_SPEC_NVM_OPC_FLUSH ||
+			       ctx->cmd.common.opc == XNVME_SPEC_FS_OPC_FLUSH)) {
 		XNVME_DEBUG("FAILED: FLUSH is not supported on an IOPOLL queue");
 		return -ENOSYS;
 	}
@@ -427,7 +489,7 @@ xnvme_be_liburing_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t 
 	// an sqe; io_uring_get_sqe() advances the submission-queue tail, so an
 	// sqe acquired and then abandoned would go out, carrying stale content,
 	// with the next io_uring_submit()
-	switch (ctx->cmd.common.opcode) {
+	switch (ctx->cmd.common.opc) {
 	case XNVME_SPEC_NVM_OPC_WRITE:
 		ssw = queue->base.dev->geo.ssw;
 	/* fall through */
@@ -448,7 +510,7 @@ xnvme_be_liburing_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t 
 		break;
 
 	default:
-		XNVME_DEBUG("FAILED: unsupported opcode: %d for async", ctx->cmd.common.opcode);
+		XNVME_DEBUG("FAILED: unsupported opcode: %d for async", ctx->cmd.common.opc);
 		return -ENOSYS;
 	}
 
@@ -464,7 +526,8 @@ xnvme_be_liburing_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t 
 	switch (opcode) {
 	case IORING_OP_WRITEV:
 		io_uring_prep_writev(sqe, fd, dvec, dvec_cnt, ctx->cmd.nvm.slba << ssw);
-		if (ctx->cmd.common.opcode == XNVME_SPEC_NVM_OPC_WRITE && ctx->cmd.nvm.fua) {
+		if (ctx->cmd.common.opc == XNVME_SPEC_NVM_OPC_WRITE &&
+		    xnvme_bits_get(ctx->cmd.nvm.cdw12, XNVME_SPEC_CMD_NVM_CDW12_FUA)) {
 			// Honour the FUA bit of an NVM write; on a raw block device
 			// RWF_DSYNC makes the kernel issue the write with REQ_FUA.
 			// Only for the NVM opcode: 'fua' is an NVMe command-field, it
@@ -497,7 +560,7 @@ xnvme_be_liburing_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t 
 
 	err = io_uring_submit(&queue->ring);
 	if (err < 0) {
-		XNVME_DEBUG("io_uring_submit(%d), err: %d", ctx->cmd.common.opcode, err);
+		XNVME_DEBUG("io_uring_submit(%d), err: %d", ctx->cmd.common.opc, err);
 		return err;
 	}
 
@@ -550,6 +613,7 @@ struct xnvme_be_async g_xnvme_be_liburing_async = {
 	.cmd_io = xnvme_be_liburing_cmd_io,
 	.cmd_iov = xnvme_be_liburing_cmd_iov,
 	.poke = xnvme_be_liburing_poke,
+	.reap = xnvme_be_liburing_reap,
 	.wait = xnvme_be_nosys_queue_wait,
 	.init = xnvme_be_liburing_init,
 	.term = xnvme_be_liburing_term,
@@ -558,6 +622,7 @@ struct xnvme_be_async g_xnvme_be_liburing_async = {
 	.cmd_io = xnvme_be_nosys_queue_cmd_io,
 	.cmd_iov = xnvme_be_nosys_queue_cmd_iov,
 	.poke = xnvme_be_nosys_queue_poke,
+	.reap = xnvme_be_nosys_queue_reap,
 	.wait = xnvme_be_nosys_queue_wait,
 	.init = xnvme_be_nosys_queue_init,
 	.term = xnvme_be_nosys_queue_term,

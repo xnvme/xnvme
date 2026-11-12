@@ -2,8 +2,12 @@
 name = "xnvme-sys"
 version = "0.7.5"
 edition = "2021"
+rust-version = "1.81"
 description = "Raw/direct/unsafe bindings to the xNVMe C Library."
 license = "BSD-3-Clause"
+links = "xnvme"
+# src/xnvme.rs is generated and not in the repository, so name what is packaged
+include = ["Cargo.toml", "build.rs", "src/*.rs", "examples/*.rs"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -11,7 +15,6 @@ license = "BSD-3-Clause"
 
 [build-dependencies]
 system-deps = "6"
-bindgen = "0.63.0"
 
 [package.metadata.system-deps]
 xnvme = "0.7.5"

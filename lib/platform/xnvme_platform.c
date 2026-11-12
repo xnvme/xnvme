@@ -44,7 +44,7 @@ static int
 _dev_open_resolve_mem(struct xnvme_be *be, const struct xnvme_be_config *cfg,
 		      const struct xnvme_opts *opts)
 {
-	if (!opts || !opts->mem || !strcmp(opts->mem, cfg->mem->id)) {
+	if (!opts || !opts->mem[0] || !strcmp(opts->mem, cfg->mem->id)) {
 		return 0;
 	}
 
@@ -171,12 +171,12 @@ _dev_open_try_config(struct xnvme_dev *dev, const struct xnvme_be_config *cfg,
 	}
 
 	XNVME_DEBUG("INFO: obtained device handle");
-	dev->opts.be = dev->be.attr.name;
-	dev->opts.admin = dev->be.admin.id;
-	dev->opts.sync = dev->be.sync.id;
-	dev->opts.async = dev->be.async.id;
-	dev->opts.mem = dev->be.mem.id;
-	dev->opts.dev = g_xnvme_platform->name;
+	snprintf(dev->opts.be, sizeof(dev->opts.be), "%s", dev->be.attr.name);
+	snprintf(dev->opts.admin, sizeof(dev->opts.admin), "%s", dev->be.admin.id);
+	snprintf(dev->opts.sync, sizeof(dev->opts.sync), "%s", dev->be.sync.id);
+	snprintf(dev->opts.async, sizeof(dev->opts.async), "%s", dev->be.async.id);
+	snprintf(dev->opts.mem, sizeof(dev->opts.mem), "%s", dev->be.mem.id);
+	snprintf(dev->opts.dev, sizeof(dev->opts.dev), "%s", g_xnvme_platform->name);
 
 	return 0;
 }
@@ -211,17 +211,17 @@ xnvme_platform_dev_open(struct xnvme_dev *dev, struct xnvme_opts *opts)
 	for (int i = 0; g_xnvme_platform->backends[i]; ++i) {
 		const struct xnvme_be_config *cfg = g_xnvme_platform->backends[i];
 
-		if (opts && opts->be && strcmp(opts->be, cfg->attr.name) &&
+		if (opts && opts->be[0] && strcmp(opts->be, cfg->attr.name) &&
 		    strcmp(opts->be, g_xnvme_platform->name)) {
 			continue;
 		}
-		if (opts && opts->async && strcmp(opts->async, cfg->async->id)) {
+		if (opts && opts->async[0] && strcmp(opts->async, cfg->async->id)) {
 			continue;
 		}
-		if (opts && opts->sync && strcmp(opts->sync, cfg->sync->id)) {
+		if (opts && opts->sync[0] && strcmp(opts->sync, cfg->sync->id)) {
 			continue;
 		}
-		if (opts && opts->admin && strcmp(opts->admin, cfg->admin->id)) {
+		if (opts && opts->admin[0] && strcmp(opts->admin, cfg->admin->id)) {
 			continue;
 		}
 		if (uri_cap && !(cfg->attr.caps & uri_cap)) {
@@ -288,15 +288,19 @@ enumerate_controller(const char *uri, const char *kernel_driver, struct enumerat
 	struct xnvme_dev *ctrlr_dev;
 	union xnvme_spec_idfy *idfy_buf;
 	struct xnvme_cmd_ctx cmd_ctx;
+	struct xnvme_cmd_prep_adm_identify_args idfy = {
+		.args_nbytes = sizeof(idfy),
+		.cns = XNVME_SPEC_IDFY_NSLIST,
+	};
 	uint32_t nslist[XNVME_MAX_NS_LIST_SIZE];
 	size_t buf_size;
 	int err;
 
 	ctrlr_opts.nsid = 0;
-	ctrlr_dev = xnvme_dev_open(uri, &ctrlr_opts);
-	if (!ctrlr_dev) {
-		XNVME_DEBUG("FAILED: xnvme_dev_open(%s) for controller", uri);
-		return -errno;
+	err = xnvme_dev_open_uri(uri, &ctrlr_opts, &ctrlr_dev);
+	if (err) {
+		XNVME_DEBUG("FAILED: xnvme_dev_open_uri(%s) for controller", uri);
+		return err;
 	}
 
 	if (kernel_driver) {
@@ -321,7 +325,10 @@ enumerate_controller(const char *uri, const char *kernel_driver, struct enumerat
 	}
 
 	xnvme_dev_get_cmd_ctx(ctrlr_dev, &cmd_ctx);
-	err = xnvme_adm_idfy(&cmd_ctx, XNVME_SPEC_IDFY_NSLIST, 0, 0, 0, 0, idfy_buf);
+	err = xnvme_cmd_prep_adm_identify(&cmd_ctx.cmd, &idfy);
+	if (!err) {
+		err = xnvme_cmd_pass_admin(&cmd_ctx, idfy_buf, buf_size, NULL, 0);
+	}
 	if (err || xnvme_cmd_ctx_cpl_status(&cmd_ctx)) {
 		XNVME_DEBUG("FAILED: Identify Active NS List, err: %d", err);
 		xnvme_buf_free(ctrlr_dev, idfy_buf);
@@ -341,9 +348,8 @@ enumerate_controller(const char *uri, const char *kernel_driver, struct enumerat
 
 		ns_opts.nsid = nslist[i];
 
-		ns_dev = xnvme_dev_open(uri, &ns_opts);
-		if (!ns_dev) {
-			XNVME_DEBUG("FAILED: xnvme_dev_open(%s, nsid=%u)", uri, nslist[i]);
+		if (xnvme_dev_open_uri(uri, &ns_opts, &ns_dev)) {
+			XNVME_DEBUG("FAILED: xnvme_dev_open_uri(%s, nsid=%u)", uri, nslist[i]);
 			continue;
 		}
 
@@ -412,9 +418,8 @@ enumerate_scan_cb(const struct xnvme_ident *ident, void *cb_args)
 			opts.nsid = ident->nsid ? ident->nsid : 1;
 		}
 
-		dev = xnvme_dev_open(ident->uri, &opts);
-		if (!dev) {
-			XNVME_DEBUG("FAILED: xnvme_dev_open(%s)", ident->uri);
+		if (xnvme_dev_open_uri(ident->uri, &opts, &dev)) {
+			XNVME_DEBUG("FAILED: xnvme_dev_open_uri(%s)", ident->uri);
 			return 0;
 		}
 

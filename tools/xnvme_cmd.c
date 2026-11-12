@@ -105,6 +105,12 @@ cli_num(const char *arg, bool *ok)
 }
 
 static void
+cli_str(char *dst, size_t nbytes, const char *arg, bool *ok)
+{
+	*ok = *ok && snprintf(dst, nbytes, "%s", arg) < (int)nbytes;
+}
+
+static void
 cli_hexdump(const uint8_t *buf, size_t nbytes)
 {
 	printf("       0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f\n");
@@ -259,16 +265,16 @@ cli_cmd(enum cli_cmd_kind kind, int argc, char **argv)
 		case CLI_OPT_OFV:
 			break;
 		case CLI_OPT_BE:
-			opts.be = optarg;
+			cli_str(opts.be, sizeof(opts.be), optarg, &ok);
 			break;
 		case CLI_OPT_ADMIN:
-			opts.admin = optarg;
+			cli_str(opts.admin, sizeof(opts.admin), optarg, &ok);
 			break;
 		case CLI_OPT_SYNC:
-			opts.sync = optarg;
+			cli_str(opts.sync, sizeof(opts.sync), optarg, &ok);
 			break;
 		case CLI_OPT_ASYNC:
-			opts.async = optarg;
+			cli_str(opts.async, sizeof(opts.async), optarg, &ok);
 			break;
 		case CLI_OPT_DEV_NSID:
 			opts.nsid = (uint32_t)cli_num(optarg, &ok);
@@ -335,9 +341,9 @@ cli_cmd(enum cli_cmd_kind kind, int argc, char **argv)
 		return 0;
 	}
 
-	dev = xnvme_dev_open(uri, &opts);
-	if (!dev) {
-		fprintf(stderr, "xnvme %s: opening '%s' failed: %s\n", name, uri, strerror(errno));
+	err = xnvme_dev_open_uri(uri, &opts, &dev);
+	if (err) {
+		fprintf(stderr, "xnvme %s: opening '%s' failed: %s\n", name, uri, strerror(-err));
 		return 1;
 	}
 	if (data_len) {
@@ -412,7 +418,8 @@ cli_cmd(enum cli_cmd_kind kind, int argc, char **argv)
 	}
 	if (!raw) {
 		printf("%s Command is Success and result: 0x%08x\n",
-		       kind == CLI_CMD_ADMIN ? "Admin" : "IO", ctx.cpl.cdw0);
+		       kind == CLI_CMD_ADMIN ? "Admin" : "IO",
+		       (unsigned int)xnvme_bits_get(ctx.cpl.result, XNVME_SPEC_CQE_RESULT_CDW0));
 	}
 	if (latency) {
 		printf("latency: %" PRIu64 " us\n", (uint64_t)xnvme_timer_elapsed_usecs(&timer));

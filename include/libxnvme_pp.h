@@ -364,7 +364,7 @@ xnvme_spec_idfy_cs_pr(const struct xnvme_spec_idfy_cs *idfy, int opts);
  * @return On success, the number of characters printed is returned.
  */
 int
-xnvme_spec_feat_fpr(FILE *stream, uint8_t fid, const struct xnvme_spec_feat *feat, int opts);
+xnvme_spec_feat_fpr(FILE *stream, uint8_t fid, const union xnvme_spec_feat *feat, int opts);
 
 /**
  * Prints the given :;xnvme_spec_feat to the given output stream
@@ -375,7 +375,7 @@ xnvme_spec_feat_fpr(FILE *stream, uint8_t fid, const struct xnvme_spec_feat *fea
  * @return On success, the number of characters printed is returned.
  */
 int
-xnvme_spec_feat_pr(uint8_t fid, const struct xnvme_spec_feat *feat, int opts);
+xnvme_spec_feat_pr(uint8_t fid, const union xnvme_spec_feat *feat, int opts);
 
 /**
  * Prints the :;xnvme_spec_fdp_event_desc to the given output stream
@@ -386,7 +386,7 @@ xnvme_spec_feat_pr(uint8_t fid, const struct xnvme_spec_feat *feat, int opts);
  * @return On success, the number of characters printed is returned.
  */
 int
-xnvme_spec_feat_fdp_events_pr(void *buf, const struct xnvme_spec_feat *feat, int opts);
+xnvme_spec_feat_fdp_events_pr(void *buf, const union xnvme_spec_feat *feat, int opts);
 
 /**
  * Prints the given :;xnvme_spec_sqe to the given output stream

@@ -125,11 +125,10 @@ test_enum_open(struct xnvme_cli *cli)
 
 			opts.nsid = listing->entries[i].nsid;
 
-			dev[hidx] = xnvme_dev_open(listing->entries[i].uri, &opts);
-			if (!dev[hidx]) {
-				err = errno;
-				xnvme_cli_pinf("xnvme_dev_open(%s)", listing->entries[i].uri);
-				xnvme_cli_perr("xnvme_dev_open()", err);
+			err = xnvme_dev_open_uri(listing->entries[i].uri, &opts, &dev[hidx]);
+			if (err) {
+				xnvme_cli_pinf("xnvme_dev_open_uri(%s)", listing->entries[i].uri);
+				xnvme_cli_perr("xnvme_dev_open_uri()", err);
 				return err;
 			}
 			if (cli->args.verbose) {
@@ -143,7 +142,7 @@ test_enum_open(struct xnvme_cli *cli)
 		}
 	}
 
-	xnvme_cli_pinf("LGTM: xnvme_enumerate() + xnvme_dev_open() * count");
+	xnvme_cli_pinf("LGTM: xnvme_enumerate() + xnvme_dev_open_uri() * count");
 	return 0;
 }
 
@@ -203,10 +202,18 @@ test_enum_keep_open(struct xnvme_cli *cli)
 			XNVME_DEBUG("FAILED: xnvme_buf_alloc()");
 			return -errno;
 		}
+		struct xnvme_cmd_prep_adm_identify_args id = {
+			.args_nbytes = sizeof(id),
+			.cns = XNVME_SPEC_IDFY_CTRLR,
+		};
+
 		xnvme_dev_get_cmd_ctx(devs[i], &ctx);
-		err = xnvme_adm_idfy_ctrlr(&ctx, idfy_ctrlr);
+		err = xnvme_cmd_prep_adm_identify(&ctx.cmd, &id);
+		if (!err) {
+			err = xnvme_cmd_pass_admin(&ctx, idfy_ctrlr, sizeof(*idfy_ctrlr), NULL, 0);
+		}
 		if (err) {
-			XNVME_DEBUG("FAILED: xnvme_adm_idfy_ctrlr()");
+			XNVME_DEBUG("FAILED: identify(CTRLR)");
 			return err;
 		}
 		xnvme_buf_free(devs[i], idfy_ctrlr);
@@ -260,7 +267,7 @@ test_enum_backend(struct xnvme_cli *cli)
 		if (!attr) {
 			break;
 		}
-		opts.be = attr->name;
+		snprintf(opts.be, sizeof(opts.be), "%s", attr->name);
 		strncpy(cb_args.expected, attr->name, 1023);
 
 		err = xnvme_enumerate(cli->args.sys_uri, &opts, backend_cb, &cb_args);

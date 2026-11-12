@@ -98,11 +98,6 @@ xnvme_be_upcie_queue_poke(struct xnvme_queue *queue, uint32_t max)
 			struct nvme_request *req;
 
 			req = nvme_request_get(qp->rpool, cqe->cid);
-			if (!req) {
-				XNVME_DEBUG("FAILED: nvme_request_get()");
-				return -EIO;
-			}
-
 			ctx = req->user;
 			memcpy(&ctx->cpl, cqe, sizeof(ctx->cpl));
 			nvme_request_free(qp->rpool, req->cid);
@@ -124,6 +119,67 @@ xnvme_be_upcie_queue_poke(struct xnvme_queue *queue, uint32_t max)
 					    : 0;
 }
 
+/**
+ * dma_rmb() is a compiler barrier, so the queue state the loop advances is kept in locals and
+ * written back once, rather than read from memory again for every completion
+ */
+int
+xnvme_be_upcie_queue_reap(struct xnvme_queue *queue, struct xnvme_cmd_ctx **completions,
+			  uint32_t max)
+{
+	struct xnvme_queue_upcie *upcie_queue = (struct xnvme_queue_upcie *)queue;
+	struct nvme_qpair *qp = &upcie_queue->qpair;
+	struct nvme_request_pool *rpool = qp->rpool;
+	struct nvme_completion *cq = qp->cq;
+	const uint32_t depth = qp->depth;
+	uint32_t head = qp->head;
+	uint32_t phase = qp->phase;
+	size_t top = rpool->top;
+	unsigned int reaped = 0;
+
+	wmb();
+	nvme_qpair_sqdb_update(qp);
+
+	do {
+		struct nvme_completion *cqe = &cq[head];
+		struct xnvme_cmd_ctx *ctx;
+		uint16_t cid;
+
+		if (((*(const volatile uint16_t *)&(cqe->status)) & 0x1) != phase) {
+			break;
+		}
+
+		dma_rmb();
+
+		if (++head == depth) {
+			head = 0;
+			phase ^= 1;
+		}
+
+		cid = cqe->cid;
+		ctx = nvme_request_get(rpool, cid)->user;
+		memcpy(&ctx->cpl, cqe, sizeof(ctx->cpl));
+		rpool->stack[top++] = cid;
+
+		completions[reaped++] = ctx;
+	} while (reaped < max);
+
+	if (reaped) {
+		qp->head = head;
+		qp->phase = phase;
+		rpool->top = top;
+		queue->base.outstanding -= reaped;
+		mmio_write32(qp->cqdb, 0, head);
+		upcie_queue->pokes_idle = 0;
+		upcie_queue->served_gone_ns = 0;
+		return reaped;
+	}
+
+	return g_upcie_rte.connection.alive
+		       ? xnvme_be_upcie_cplane_queue_reap_idle(upcie_queue, completions, max)
+		       : 0;
+}
+
 int
 xnvme_be_upcie_async_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
 			    size_t XNVME_UNUSED(mbuf_nbytes))
@@ -139,15 +195,15 @@ xnvme_be_upcie_async_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_n
 		return -EBUSY;
 	}
 
-	switch (ctx->cmd.common.opcode) {
+	switch (ctx->cmd.common.opc) {
 	case XNVME_SPEC_FS_OPC_READ:
 		ctx->cmd.nvm.slba = ctx->cmd.nvm.slba >> ctx->dev->geo.ssw;
-		ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_READ;
+		ctx->cmd.common.opc = XNVME_SPEC_NVM_OPC_READ;
 		break;
 
 	case XNVME_SPEC_FS_OPC_WRITE:
 		ctx->cmd.nvm.slba = ctx->cmd.nvm.slba >> ctx->dev->geo.ssw;
-		ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_WRITE;
+		ctx->cmd.common.opc = XNVME_SPEC_NVM_OPC_WRITE;
 		break;
 	}
 
@@ -205,15 +261,15 @@ xnvme_be_upcie_async_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size
 		return -EBUSY;
 	}
 
-	switch (ctx->cmd.common.opcode) {
+	switch (ctx->cmd.common.opc) {
 	case XNVME_SPEC_FS_OPC_READ:
 		ctx->cmd.nvm.slba = ctx->cmd.nvm.slba >> ctx->dev->geo.ssw;
-		ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_READ;
+		ctx->cmd.common.opc = XNVME_SPEC_NVM_OPC_READ;
 		break;
 
 	case XNVME_SPEC_FS_OPC_WRITE:
 		ctx->cmd.nvm.slba = ctx->cmd.nvm.slba >> ctx->dev->geo.ssw;
-		ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_WRITE;
+		ctx->cmd.common.opc = XNVME_SPEC_NVM_OPC_WRITE;
 		break;
 	}
 
@@ -263,6 +319,7 @@ struct xnvme_be_async g_xnvme_be_upcie_async = {
 	.cmd_io = xnvme_be_upcie_async_cmd_io,
 	.cmd_iov = xnvme_be_upcie_async_cmd_iov,
 	.poke = xnvme_be_upcie_queue_poke,
+	.reap = xnvme_be_upcie_queue_reap,
 	.wait = xnvme_be_nosys_queue_wait,
 	.init = xnvme_be_upcie_queue_init,
 	.term = xnvme_be_upcie_queue_term,
@@ -271,6 +328,7 @@ struct xnvme_be_async g_xnvme_be_upcie_async = {
 	.cmd_io = xnvme_be_nosys_queue_cmd_io,
 	.cmd_iov = xnvme_be_nosys_queue_cmd_iov,
 	.poke = xnvme_be_nosys_queue_poke,
+	.reap = xnvme_be_nosys_queue_reap,
 	.wait = xnvme_be_nosys_queue_wait,
 	.init = xnvme_be_nosys_queue_init,
 	.term = xnvme_be_nosys_queue_term,

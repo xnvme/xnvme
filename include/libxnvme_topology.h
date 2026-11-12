@@ -42,7 +42,7 @@ struct xnvme_namespace {
  * The Linux NVMe driver does it with NVME_IOCTL_SUBSYS_RESET, SPDK with
  * spdk_nvme_ctrlr_reset_subsystem(); other backends return -ENOSYS.
  *
- * @param dev Device handle obtained with xnvme_dev_open()
+ * @param dev Device handle obtained with xnvme_dev_open_uri()
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned, or the negated
  * status code of the completion.
@@ -56,7 +56,7 @@ xnvme_subsystem_reset(struct xnvme_dev *dev);
  * The Linux NVMe driver does it with NVME_IOCTL_RESET, SPDK with spdk_nvme_ctrlr_reset(); other
  * backends return -ENOSYS.
  *
- * @param dev Device handle obtained with xnvme_dev_open()
+ * @param dev Device handle obtained with xnvme_dev_open_uri()
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned, or the negated
  * status code of the completion.
@@ -70,7 +70,7 @@ xnvme_controller_reset(struct xnvme_dev *dev);
  * The Linux NVMe driver does it with NVME_IOCTL_RESCAN; the upcie backend does nothing and
  * returns 0; other backends return -ENOSYS.
  *
- * @param dev Device handle obtained with xnvme_dev_open()
+ * @param dev Device handle obtained with xnvme_dev_open_uri()
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned, or the negated
  * status code of the completion.
@@ -81,7 +81,7 @@ xnvme_namespace_rescan(struct xnvme_dev *dev);
 /**
  * Read NVMe PCIe controller reigsters
  *
- * @param dev Device handle obtained with xnvme_dev_open()
+ * @param dev Device handle obtained with xnvme_dev_open_uri()
  * @param bar NVMe PCIe BAR0 registers buffer to save read values
  * @return On success, 0 is return. On error, a non-zero value is returned.
  */

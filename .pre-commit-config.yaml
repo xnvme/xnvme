@@ -15,6 +15,9 @@ repos:
     entry: toolbox/pcf_clang_format.py
     args: ["--style-file", "toolbox/clang-format-h"]
     files: \.h$
+    # The spec headers are as toolbox/xnvme_spec_headers.py writes them;
+    # clang-format does not settle on their long trailing comments
+    exclude: ^include/libxnvme_spec_(base|boot|cp|kv|mi|nvm|pcie|rdma|slm|tcp|zns)\.h$
 
   - id: clang-format
     name: C-format-source
@@ -80,6 +83,8 @@ repos:
     args:
     - '--profile=black'
     - '--line-length=88'
+    # isort takes a module named as the checkout's directory as first-party
+    - '--thirdparty=xnvme'
 - repo: https://github.com/pycqa/flake8
   rev: '7.0.0'
   hooks:
@@ -87,7 +92,6 @@ repos:
     name: Python-lint-flake8
     args:
     - --extend-ignore=E203,F401,F811,E501
-    exclude: (ctypes_mapping\/api\.py)$
 
 # Rust tools
 - repo: https://github.com/doublify/pre-commit-rust

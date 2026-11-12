@@ -351,9 +351,10 @@ xnvmeperf_cuda_fill_cmds(struct xnvme_dev *dev, uint32_t iosize, uint32_t qdepth
 			goto done;
 		}
 
-		h_cmds[i].common.opcode = opcode;
+		h_cmds[i].common.opc = opcode;
 		h_cmds[i].common.nsid = nsid;
-		h_cmds[i].nvm.nlb = nlb;
+		h_cmds[i].nvm.cdw12 =
+			xnvme_bits_set(h_cmds[i].nvm.cdw12, XNVME_SPEC_CMD_NVM_CDW12_NLB, nlb);
 		h_cmds[i].common.dptr.prp.prp1 = prp1;
 
 		if (npages == 2) {
@@ -980,7 +981,7 @@ xnvmeperf_cuda_verify_io(struct xnvme_dev **devs, const struct xnvmeperf_args *a
 
 	/* Read back through the same GPU queue path */
 	for (uint32_t idx = 0; idx < total_threads; idx++)
-		h_cmds[idx].common.opcode = XNVME_SPEC_NVM_OPC_READ;
+		h_cmds[idx].common.opc = XNVME_SPEC_NVM_OPC_READ;
 
 	err = verify_dispatch(d_qps, h_cmds, d_cmds, d_errs, h_errs, total_queues, args->qdepth,
 			      "read");

@@ -17,7 +17,7 @@
  * @note Control plane: serialised with the other control-plane calls, not with I/O on the
  * same device, queue or buffer; see Thread Safety in the API documentation
  *
- * @param dev Device handle obtained with xnvme_dev_open()
+ * @param dev Device handle obtained with xnvme_dev_open_uri()
  * @param nbytes The size of the allocated buffer in bytes
  *
  * @return On success, a pointer to the allocated memory is returned. On error, NULL is returned
@@ -37,7 +37,7 @@ xnvme_buf_alloc(const struct xnvme_dev *dev, size_t nbytes);
  * @note Control plane: serialised with the other control-plane calls, not with I/O on the
  * same device, queue or buffer; see Thread Safety in the API documentation
  *
- * @param dev Device handle obtained with xnvme_dev_open()
+ * @param dev Device handle obtained with xnvme_dev_open_uri()
  * @param buf The buffer to reallocate
  * @param nbytes The size of the allocated buffer in bytes
  *
@@ -53,7 +53,7 @@ xnvme_buf_realloc(const struct xnvme_dev *dev, void *buf, size_t nbytes);
  * @note Control plane: serialised with the other control-plane calls, not with I/O on the
  * same device, queue or buffer; see Thread Safety in the API documentation
  *
- * @param dev Device handle obtained with xnvme_dev_open()
+ * @param dev Device handle obtained with xnvme_dev_open_uri()
  * @param buf Pointer to a buffer allocated with xnvme_buf_alloc()
  */
 void
@@ -67,7 +67,7 @@ xnvme_buf_free(const struct xnvme_dev *dev, void *buf);
  * @note Control plane: serialised with the other control-plane calls, not with I/O on the
  * same device, queue or buffer; see Thread Safety in the API documentation
  *
- * @param dev Device handle obtained with xnvme_dev_open()
+ * @param dev Device handle obtained with xnvme_dev_open_uri()
  * @param nbytes The size of the allocated buffer in bytes
  * @param phys A pointer to the variable to hold the physical address of the allocated buffer. If
  * NULL, the physical address is not returned.
@@ -84,7 +84,7 @@ xnvme_buf_phys_alloc(const struct xnvme_dev *dev, size_t nbytes, uint64_t *phys)
  * @note Control plane: serialised with the other control-plane calls, not with I/O on the
  * same device, queue or buffer; see Thread Safety in the API documentation
  *
- * @param dev Device handle obtained with xnvme_dev_open()
+ * @param dev Device handle obtained with xnvme_dev_open_uri()
  * @param buf Pointer to a buffer allocated with xnvme_buf_phys_alloc()
  */
 void
@@ -98,7 +98,7 @@ xnvme_buf_phys_free(const struct xnvme_dev *dev, void *buf);
  * @note Control plane: serialised with the other control-plane calls, not with I/O on the
  * same device, queue or buffer; see Thread Safety in the API documentation
  *
- * @param dev Device handle obtained with xnvme_dev_open()
+ * @param dev Device handle obtained with xnvme_dev_open_uri()
  * @param buf The buffer to reallocate
  * @param nbytes The size of the allocated buffer in bytes
  * @param phys A pointer to the variable to hold the physical address of the allocated buffer. If
@@ -120,11 +120,13 @@ xnvme_buf_phys_realloc(const struct xnvme_dev *dev, void *buf, size_t nbytes, ui
  * @note Control plane: serialised with the other control-plane calls, not with I/O on the
  * same device, queue or buffer; see Thread Safety in the API documentation
  *
- * @param dev Device handle obtained with xnvme_dev_open()
+ * @param dev Device handle obtained with xnvme_dev_open_uri()
  * @param buf Pointer to a buffer allocated with xnvme_buf_alloc()
  * @param phys A pointer to the variable to hold the physical address of the given buffer.
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
+ *
+ * @errno
  */
 int
 xnvme_buf_vtophys(const struct xnvme_dev *dev, void *buf, uint64_t *phys);
@@ -146,11 +148,13 @@ xnvme_buf_vtophys(const struct xnvme_dev *dev, void *buf, uint64_t *phys);
  * @note Control plane: serialised with the other control-plane calls, not with I/O on the
  * same device, queue or buffer; see Thread Safety in the API documentation
  *
- * @param dev Device handle obtained with xnvme_dev_open()
+ * @param dev Device handle obtained with xnvme_dev_open_uri()
  * @param vaddr The address the caller accesses the memory at
  * @param nbytes The number of bytes to register, starting at vaddr
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
+ *
+ * @errno
  */
 int
 xnvme_buf_register(const struct xnvme_dev *dev, void *vaddr, size_t nbytes);
@@ -161,10 +165,12 @@ xnvme_buf_register(const struct xnvme_dev *dev, void *vaddr, size_t nbytes);
  * @note Control plane: serialised with the other control-plane calls, not with I/O on the
  * same device, queue or buffer; see Thread Safety in the API documentation
  *
- * @param dev Device handle obtained with xnvme_dev_open()
+ * @param dev Device handle obtained with xnvme_dev_open_uri()
  * @param vaddr The address the memory was registered at
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
+ *
+ * @errno
  */
 int
 xnvme_buf_unregister(const struct xnvme_dev *dev, void *vaddr);
@@ -177,11 +183,13 @@ xnvme_buf_unregister(const struct xnvme_dev *dev, void *vaddr);
  * payloads. Retrieve it before allocating memory that is to be registered, to allocate it
  * suitably.
  *
- * @param dev Device handle obtained with xnvme_dev_open()
+ * @param dev Device handle obtained with xnvme_dev_open_uri()
  * @param align Set to the alignment on success
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned and `align` is left
  * untouched; `-ENOSYS` when the device does not register memory.
+ *
+ * @errno
  */
 int
 xnvme_buf_get_alignment(const struct xnvme_dev *dev, size_t *align);
@@ -233,6 +241,8 @@ xnvme_buf_virt_free(void *buf);
  * @param nbytes Amount of bytes to fill in buf
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
+ *
+ * @errno
  */
 int
 xnvme_buf_fill(void *buf, size_t nbytes, const char *content);
@@ -244,6 +254,8 @@ xnvme_buf_fill(void *buf, size_t nbytes, const char *content);
  * @param nbytes Amount of bytes to fill with zeroes in buf
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
+ *
+ * @errno
  */
 int
 xnvme_buf_clear(void *buf, size_t nbytes);
@@ -256,6 +268,8 @@ xnvme_buf_clear(void *buf, size_t nbytes);
  * @param nbytes Amount of bytes to copy
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
+ *
+ * @errno
  */
 int
 xnvme_buf_memcpy(void *dst, const void *src, size_t nbytes);
@@ -269,6 +283,8 @@ xnvme_buf_memcpy(void *dst, const void *src, size_t nbytes);
  * @param diff Output pointer storing the number of differing bytes
  *
  * @return 0 on success, negative `errno` on error.
+ *
+ * @errno
  */
 int
 xnvme_buf_diff(const void *expected, const void *actual, size_t nbytes, size_t *diff);
@@ -285,6 +301,8 @@ xnvme_buf_diff(const void *expected, const void *actual, size_t nbytes, size_t *
  * @param path Destination where buffer will be dumped to
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
+ *
+ * @errno
  */
 int
 xnvme_buf_to_file(void *buf, size_t nbytes, const char *path);
@@ -297,6 +315,8 @@ xnvme_buf_to_file(void *buf, size_t nbytes, const char *path);
  * @param path Source to read from
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
+ *
+ * @errno
  */
 int
 xnvme_buf_from_file(void *buf, size_t nbytes, const char *path);

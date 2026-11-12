@@ -39,7 +39,7 @@ xnvme_be_windows_sync_fs_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t db
 
 	memset(&overlapped, 0, sizeof(OVERLAPPED));
 
-	switch (ctx->cmd.common.opcode) {
+	switch (ctx->cmd.common.opc) {
 	case XNVME_SPEC_NVM_OPC_WRITE:
 		slba = ctx->cmd.nvm.slba << ssw;
 		overlapped.Offset = slba;
@@ -99,7 +99,7 @@ xnvme_be_windows_sync_fs_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t db
 		break;
 
 	default:
-		XNVME_DEBUG("FAILED: nosys opcode: %d", ctx->cmd.common.opcode);
+		XNVME_DEBUG("FAILED: nosys opcode: %d", ctx->cmd.common.opc);
 		return -ENOSYS;
 	}
 

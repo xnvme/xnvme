@@ -27,13 +27,7 @@ def main(args, cijoe):
     if not xnvme_source:
         return errno.EINVAL
 
-    commands = []
-
-    err, _ = cijoe.run("apt-get --version")
-    if not err:
-        commands += ["apt-get install libclang-dev -qy"]
-
-    commands += [
+    commands = [
         "pipx ensurepath",
         "make uninstall",
         "make clean",

@@ -186,9 +186,7 @@ _windows_async_iocp_th_poke(struct xnvme_queue *q, uint32_t max)
 			XNVME_DEBUG("ctx is NULL! => NO REQ!");
 			XNVME_DEBUG("unprocessed events might remain");
 
-			queue->base.outstanding -= 1;
-
-			return -EIO;
+			return completed ? (int)completed : -EIO;
 		}
 
 		switch (req->state) {
@@ -228,6 +226,68 @@ _windows_async_iocp_th_poke(struct xnvme_queue *q, uint32_t max)
 }
 
 static int
+_windows_async_iocp_th_reap(struct xnvme_queue *q, struct xnvme_cmd_ctx **completions,
+			    uint32_t max)
+{
+	struct xnvme_queue_aio_ov *queue = (void *)q;
+	struct _ov_request *req = NULL;
+	struct xnvme_cmd_ctx *cmd_ctx = NULL;
+	uint32_t completed = 0;
+
+	max = max ? max : queue->base.outstanding;
+	max = max > queue->base.outstanding ? queue->base.outstanding : max;
+
+	req = TAILQ_FIRST(&queue->reqs_outstanding);
+	assert(req != NULL);
+
+	while (req != NULL && completed < max) {
+		cmd_ctx = req->data;
+
+		if (!cmd_ctx) {
+			XNVME_DEBUG("-{[THIS SHOULD NOT HAPPEN]}-");
+			XNVME_DEBUG("ctx is NULL! => NO REQ!");
+			XNVME_DEBUG("unprocessed events might remain");
+
+			return completed ? (int)completed : -EIO;
+		}
+
+		switch (req->state) {
+		case IN_PROGRESS:
+			req = TAILQ_NEXT(req, link);
+			continue;
+
+		case SUCCESS:
+			req->err = 0;
+			cmd_ctx->cpl.result = req->byte_count;
+			break;
+
+		case FAILED:
+			cmd_ctx->cpl.result = 0;
+			cmd_ctx->cpl.status = xnvme_bits_set(cmd_ctx->cpl.status,
+							     XNVME_SPEC_CQE_STATUS_SC, req->err);
+			cmd_ctx->cpl.status =
+				xnvme_bits_set(cmd_ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT,
+					       XNVME_STATUS_CODE_TYPE_VENDOR);
+			break;
+
+		default:
+			break;
+		}
+
+		*completions++ = cmd_ctx;
+		completed += 1;
+		queue->base.outstanding -= 1;
+
+		TAILQ_REMOVE(&queue->reqs_outstanding, req, link);
+		TAILQ_INSERT_TAIL(&(queue)->reqs_ready, req, link);
+
+		req = TAILQ_FIRST(&queue->reqs_outstanding);
+	}
+
+	return completed;
+}
+
+static int
 _windows_async_iocp_th_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
 			      void *mbuf, size_t mbuf_nbytes)
 {
@@ -254,7 +314,7 @@ _windows_async_iocp_th_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf
 	req->data = ctx;
 	req->state = IN_PROGRESS;
 
-	switch (ctx->cmd.common.opcode) {
+	switch (ctx->cmd.common.opc) {
 	case XNVME_SPEC_FS_OPC_WRITE:
 		ovl->Offset = ctx->cmd.nvm.slba & 0xFFFFFFFF;
 		ovl->OffsetHigh = (ctx->cmd.nvm.slba >> 32);
@@ -318,7 +378,7 @@ _windows_async_iocp_th_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf
 		break;
 
 	default:
-		XNVME_DEBUG("FAILED: nosys opcode: %d", ctx->cmd.common.opcode);
+		XNVME_DEBUG("FAILED: nosys opcode: %d", ctx->cmd.common.opc);
 		return -ENOSYS;
 	}
 
@@ -335,6 +395,7 @@ struct xnvme_be_async g_xnvme_be_iocp_async_th = {
 #ifdef XNVME_BE_IOCP_ENABLED
 	.cmd_io = _windows_async_iocp_th_cmd_io,
 	.poke = _windows_async_iocp_th_poke,
+	.reap = _windows_async_iocp_th_reap,
 	.wait = xnvme_be_nosys_queue_wait,
 	.init = _windows_async_iocp_th_init,
 	.term = _windows_async_iocp_th_term,
@@ -342,6 +403,7 @@ struct xnvme_be_async g_xnvme_be_iocp_async_th = {
 #else
 	.cmd_io = xnvme_be_nosys_queue_cmd_io,
 	.poke = xnvme_be_nosys_queue_poke,
+	.reap = xnvme_be_nosys_queue_reap,
 	.wait = xnvme_be_nosys_queue_wait,
 	.init = xnvme_be_nosys_queue_init,
 	.term = xnvme_be_nosys_queue_term,

@@ -63,6 +63,8 @@ xnvme_cplane_server_alive(uint32_t cplane_id);
  * @return On success, 0 is returned. On error, negative errno is returned:
  *         -ENOENT when nobody serves this id, -ENOSYS where sharing is
  *         unavailable.
+ *
+ * @errno
  */
 int
 xnvme_cplane_get_info(uint32_t cplane_id, struct xnvme_cplane_info *info);
@@ -91,15 +93,24 @@ struct xnvme_cplane_ctrlr_info {
  * The servers are asked in turn until one holds the controller. Neither this
  * nor xnvme_cplane_get_info() becomes a client: the connection only asks.
  *
- * @param uri Device identifier, as passed to xnvme_dev_open()
+ * @param uri Device identifier, as passed to xnvme_dev_open_uri()
  * @param info Filled on success
  *
  * @return On success, 0 is returned. On error, negative errno is returned:
  *         -ENOENT when nobody serves this controller, -ENOSYS where sharing
  *         is unavailable.
+ *
+ * @errno
  */
 int
 xnvme_cplane_get_ctrlr_info(const char *uri, struct xnvme_cplane_ctrlr_info *info);
+
+/**
+ * Signature of the function xnvme_cplane_serve() calls once clients can connect
+ *
+ * @param ready_arg The argument that was given to xnvme_cplane_serve() together with the function
+ */
+typedef void (*xnvme_cplane_ready_cb)(void *ready_arg);
 
 /**
  * Serve clients of the given devices until told to stop
@@ -127,9 +138,13 @@ xnvme_cplane_get_ctrlr_info(const char *uri, struct xnvme_cplane_ctrlr_info *inf
  * @param ready_arg Passed to `ready`
  *
  * @return 0 on success, negative errno on error
+ *
+ * @nullable ready
+ * @lifetime ready call
+ * @errno
  */
 int
 xnvme_cplane_serve(struct xnvme_dev **devs, int ndevs, uint32_t cplane_id,
-		   volatile sig_atomic_t *stop, void (*ready)(void *), void *ready_arg);
+		   volatile sig_atomic_t *stop, xnvme_cplane_ready_cb ready, void *ready_arg);
 
 #endif /* __LIBXNVME_CPLANE_H */

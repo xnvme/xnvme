@@ -235,7 +235,7 @@ jobs:
     - name: Test the cijoe scripts, those not needing a target, and the toolbox
       run: |
         python3 -m venv /tmp/selftest
-        /tmp/selftest/bin/pip install -q pytest ./cijoe
+        /tmp/selftest/bin/pip install -q pytest ./cijoe senfd==0.19.0
         /tmp/selftest/bin/pytest -q -p no:cacheprovider cijoe/tests/selftest toolbox/tests
 
     # The 'publish-release' workflow releases when the merged pull-request ends on the
@@ -272,10 +272,6 @@ jobs:
       id: source
       with:
         name: xnvme-src-archive-with-subprojects
-
-    - name: Python sdist-packages, system-package deps.
-      run: |
-        apt-get install -qy libclang-17-dev
 
     - name: Python sdist-packages, build bindings
       run: |
@@ -318,7 +314,7 @@ jobs:
     - name: Install dependencies
       run: |
         apt-get update -qy
-        apt-get install -qy curl libclang-17-dev
+        apt-get install -qy curl
 
     - name: Build xNVMe
       run: make common
@@ -334,11 +330,20 @@ jobs:
 
     - uses: dtolnay/rust-toolchain@stable
 
-    - name: Rust, generate and build bindings
+    # yace checks what it generates by building it with cargo
+    - name: Rust, generate bindings
+      run: |
+        python3 -m venv /tmp/yace
+        /tmp/yace/bin/pip install -r python/bindings/requirements.txt
+        /tmp/yace/bin/python toolbox/xnvme_bindings.py rust rust/xnvme-sys/src/xnvme.rs
+
+    - name: Rust, build bindings
       run: cargo build --release --manifest-path rust/Cargo.toml
 
-    - name: Rust, run example
-      run: cargo run --manifest-path rust/Cargo.toml
+    - name: Rust, run examples
+      run: |
+        cargo run --manifest-path rust/Cargo.toml
+        cargo run --manifest-path rust/Cargo.toml --example xnvme_rust_example01
 
   # Build and test xNVMe
   #

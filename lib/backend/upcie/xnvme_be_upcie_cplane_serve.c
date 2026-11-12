@@ -479,18 +479,33 @@ cplane_serve_drop(struct xnvme_be_upcie_cplane_serve_conn *conn)
 static void
 cplane_serve_totals_read(void)
 {
+	struct xnvme_cmd_prep_adm_get_features_args args = {
+		.args_nbytes = sizeof(args),
+		.fid = XNVME_SPEC_FEAT_NQUEUES,
+		.sel = XNVME_SPEC_FEAT_SEL_CURRENT,
+	};
+
 	for (int i = 0; i < g_upcie_cplane_serve.ndevs; ++i) {
 		struct xnvme_cmd_ctx ctx = {0};
+		union xnvme_spec_feat feat;
+		int err;
 
 		xnvme_dev_get_cmd_ctx(g_upcie_cplane_serve.devs[i], &ctx);
+		err = xnvme_cmd_prep_adm_get_features(&ctx.cmd, &args);
+		if (!err) {
+			err = xnvme_cmd_pass_admin(&ctx, NULL, 0, NULL, 0);
+		}
 
 		/* Zero totals mean the controller did not answer, as the status reply defines */
-		if (xnvme_adm_gfeat_nqueues(&ctx, &g_upcie_cplane_serve.nsq_total[i],
-					    &g_upcie_cplane_serve.ncq_total[i])) {
+		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 			XNVME_DEBUG("INFO: controller(%d) did not report its queue counts", i);
 			g_upcie_cplane_serve.nsq_total[i] = 0;
 			g_upcie_cplane_serve.ncq_total[i] = 0;
+			continue;
 		}
+		feat.val = xnvme_bits_get(ctx.cpl.result, XNVME_SPEC_CQE_RESULT_CDW0);
+		g_upcie_cplane_serve.nsq_total[i] = feat.nqueues.nsqa + 1;
+		g_upcie_cplane_serve.ncq_total[i] = feat.nqueues.ncqa + 1;
 	}
 }
 
@@ -770,7 +785,7 @@ cplane_serve_teardown(void)
 
 int
 xnvme_cplane_serve(struct xnvme_dev **devs, int ndevs, uint32_t cplane_id,
-		   volatile sig_atomic_t *stop, void (*ready)(void *), void *ready_arg)
+		   volatile sig_atomic_t *stop, xnvme_cplane_ready_cb ready, void *ready_arg)
 {
 	struct xnvme_be_upcie_cplane_share shares[XNVME_BE_UPCIE_CPLANE_SERVE_DEVS_MAX] = {0};
 	char path[256] = {0};
@@ -872,11 +887,8 @@ exit:
 int
 xnvme_cplane_serve(struct xnvme_dev **XNVME_UNUSED(devs), int XNVME_UNUSED(ndevs),
 		   uint32_t XNVME_UNUSED(cplane_id), volatile sig_atomic_t *XNVME_UNUSED(stop),
-		   void (*ready)(void *), void *XNVME_UNUSED(ready_arg))
+		   xnvme_cplane_ready_cb XNVME_UNUSED(ready), void *XNVME_UNUSED(ready_arg))
 {
-	/* XNVME_UNUSED() is not usable on a function-pointer parameter */
-	(void)ready;
-
 	return -ENOSYS;
 }
 #endif
