@@ -256,9 +256,9 @@ def parse_frontend(tsig):
                     [f"xnvme-{name}-{prog}", "--help"], cwd=str(builddir / f"{name}s")
                 )
                 match = re.match(RE_SIG, pout, re.MULTILINE | re.IGNORECASE)
-                rows.append(
-                    (f"{name}-{prog}", summary(match.group("descr")) if match else "")
-                )
+                # A program printing its own --help: the usage, a blank line, the description
+                pdescr = match.group("descr") if match else pout.partition("\n\n")[2]
+                rows.append((f"{name}-{prog}", summary(pdescr)))
             usage = f"xnvme {name} <program> <command> [<args>]"
             tsig["group_pages"].append((name, descr, usage, rows))
             tsig["toc"].append((name, descr))
