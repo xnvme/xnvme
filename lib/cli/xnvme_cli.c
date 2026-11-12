@@ -988,6 +988,12 @@ static struct xnvme_cli_opt_attr xnvme_cli_opts[] = {
 		.descr = "Alternate xNVMe backend for dual-backend operations",
 	},
 	{
+		.opt = XNVME_CLI_OPT_COMPLETION,
+		.vtype = XNVME_CLI_OPT_VTYPE_STR,
+		.name = "completion",
+		.descr = "How completed IOs are delivered: 'cb' calls back, 'reap' reaps them",
+	},
+	{
 		.opt = XNVME_CLI_OPT_END,
 		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
 		.name = "",
@@ -1903,6 +1909,9 @@ xnvme_cli_assign_arg(struct xnvme_cli *cli, struct xnvme_cli_opt_attr *opt_attr,
 		break;
 	case XNVME_CLI_OPT_IOPATTERN:
 		args->iopattern = arg ? arg : "INVALID_INPUT";
+		break;
+	case XNVME_CLI_OPT_COMPLETION:
+		args->completion = arg ? arg : "INVALID_INPUT";
 		break;
 	case XNVME_CLI_OPT_CPUMASK:
 		if (cli->given[XNVME_CLI_OPT_CPULIST]) {

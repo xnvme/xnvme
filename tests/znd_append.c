@@ -30,6 +30,8 @@ cb_lbacheck(struct xnvme_cmd_ctx *ctx, void *cb_arg)
 		xnvme_cli_pinf("ERR: cpl.result: 0x%016lx != 0x%016lx", ctx->cpl.result, expected);
 		cb_args->ecount_offset += 1;
 	}
+
+	xnvme_queue_put_cmd_ctx(ctx->async.queue, ctx);
 }
 
 static int
@@ -113,17 +115,12 @@ cmd_verify(struct xnvme_cli *cli)
 	xnvme_cli_timer_start(cli);
 
 	cb_args.zslba = zone.zslba;
+	xnvme_queue_set_cb(queue, cb_lbacheck, &cb_args);
 
 	for (uint64_t sect = 0; (sect < zone.zcap) && !cb_args.ecount; ++sect) {
-		struct xnvme_cmd_ctx ctx = {0};
+		struct xnvme_cmd_ctx *ctx = xnvme_queue_get_cmd_ctx(queue);
 
-		xnvme_dev_get_cmd_ctx(dev, &ctx);
-
-		ctx.async.queue = queue;
-		ctx.async.cb = cb_lbacheck;
-		ctx.async.cb_arg = &cb_args;
-
-		err = xnvme_znd_append(&ctx, nsid, zone.zslba, 0, dbuf + sect * geo->lba_nbytes,
+		err = xnvme_znd_append(ctx, nsid, zone.zslba, 0, dbuf + sect * geo->lba_nbytes,
 				       NULL);
 		switch (err) {
 		case 0:
@@ -133,10 +130,12 @@ cmd_verify(struct xnvme_cli *cli)
 		case -EBUSY:
 		case -EAGAIN:
 			xnvme_cli_perr("is busy, should not be possible!", err);
+			xnvme_queue_put_cmd_ctx(queue, ctx);
 			goto exit;
 
 		default:
 			xnvme_cli_perr("submission-error", EIO);
+			xnvme_queue_put_cmd_ctx(queue, ctx);
 			goto exit;
 		}
 
@@ -204,7 +203,7 @@ exit:
 	xnvme_cli_pinf("cb_args: {submitted: %u, completed: %u, ecount: %u}", cb_args.submitted,
 		       cb_args.completed, cb_args.ecount);
 
-	{
+	if (queue) {
 		int err_exit = xnvme_queue_term(queue);
 		if (err_exit) {
 			xnvme_cli_perr("xnvme_queue_term()", err_exit);

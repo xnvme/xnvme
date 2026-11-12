@@ -49,6 +49,35 @@ xnvme_cmd_ctx_set_cb(struct xnvme_cmd_ctx *ctx, xnvme_queue_cb cb, void *cb_arg)
 }
 
 /**
+ * Assign a pointer of your own to the given ::xnvme_cmd_ctx, for xnvme_cmd_ctx_get_data() to
+ * retrieve when xnvme_queue_reap() hands the command-context back
+ *
+ * The pointer is kept in `async.cb_arg`, which xnvme_queue_set_cb() and xnvme_cmd_ctx_set_cb()
+ * assign as well.
+ *
+ * @param ctx Pointer to the ::xnvme_cmd_ctx
+ * @param data The pointer to assign
+ */
+static inline void
+xnvme_cmd_ctx_set_data(struct xnvme_cmd_ctx *ctx, void *data)
+{
+	ctx->async.cb_arg = data;
+}
+
+/**
+ * Retrieve the pointer assigned to the given ::xnvme_cmd_ctx with xnvme_cmd_ctx_set_data()
+ *
+ * @param ctx Pointer to the ::xnvme_cmd_ctx
+ *
+ * @return The pointer assigned with xnvme_cmd_ctx_set_data()
+ */
+static inline void *
+xnvme_cmd_ctx_get_data(const struct xnvme_cmd_ctx *ctx)
+{
+	return ctx->async.cb_arg;
+}
+
+/**
  * Initialize the given command-context for issuing synchronous commands to the given device
  *
  * @param dev Device handle (::xnvme_dev) obtained with xnvme_dev_open(), or with
@@ -90,7 +119,8 @@ xnvme_cmd_ctx_cpl_status(struct xnvme_cmd_ctx *ctx)
  * obtained via xnvme_dev_get_cmd_ctx() submits synchronously and returns once
  * the command has completed, whereas a context obtained via
  * xnvme_queue_get_cmd_ctx() submits asynchronously and returns once the command
- * has been submitted; its completion is then processed via xnvme_queue_poke().
+ * has been submitted; its completion is then processed via xnvme_queue_poke(), or the context
+ * handed back by xnvme_queue_reap().
  *
  * @param ctx Pointer to command context (::xnvme_cmd_ctx)
  * @param dbuf pointer to data-payload

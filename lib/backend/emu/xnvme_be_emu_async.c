@@ -150,6 +150,49 @@ emu_poke(struct xnvme_queue *q, uint32_t max)
 	return completed;
 }
 
+static int
+emu_reap(struct xnvme_queue *q, struct xnvme_cmd_ctx **completions, uint32_t max)
+{
+	struct xnvme_queue_emu *queue = (void *)q;
+	struct qpair *qp = queue->qp;
+	unsigned completed = 0;
+
+	max = max ? max : queue->base.outstanding;
+	max = max > queue->base.outstanding ? queue->base.outstanding : max;
+
+	while (completed < max) {
+		struct qpair_entry *entry = STAILQ_FIRST(&qp->sq);
+		int err;
+
+		STAILQ_REMOVE_HEAD(&qp->sq, link);
+
+		err = entry->is_vectored
+			      ? queue->base.dev->be.sync.cmd_iov(
+					entry->ctx, entry->data, entry->data_vec_cnt,
+					entry->data_nbytes, entry->meta, entry->meta_nbytes)
+			      : queue->base.dev->be.sync.cmd_io(entry->ctx, entry->data,
+								entry->data_nbytes, entry->meta,
+								entry->meta_nbytes);
+		///< On submission-error; ctx.cpl is not filled, thus assigned below
+		if (err) {
+			if (!xnvme_bits_get(entry->ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC)) {
+				entry->ctx->cpl.status = xnvme_bits_set(
+					entry->ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC, err);
+			}
+			XNVME_DEBUG("FAILED: sync.cmd_io{v}(), err: %d", err);
+		}
+
+		*completions++ = entry->ctx;
+		STAILQ_INSERT_TAIL(&qp->rp, entry, link);
+
+		++completed;
+	};
+
+	queue->base.outstanding -= completed;
+
+	return completed;
+}
+
 static inline int
 emu_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
 	   size_t mbuf_nbytes)
@@ -224,6 +267,7 @@ struct xnvme_be_async g_xnvme_be_emu_async = {
 	.cmd_io = emu_cmd_io,
 	.cmd_iov = emu_cmd_iov,
 	.poke = emu_poke,
+	.reap = emu_reap,
 	.wait = xnvme_be_nosys_queue_wait,
 	.init = emu_init,
 	.term = emu_term,
@@ -232,6 +276,7 @@ struct xnvme_be_async g_xnvme_be_emu_async = {
 	.cmd_io = xnvme_be_nosys_queue_cmd_io,
 	.cmd_iov = xnvme_be_nosys_queue_cmd_iov,
 	.poke = xnvme_be_nosys_queue_poke,
+	.reap = xnvme_be_nosys_queue_reap,
 	.wait = xnvme_be_nosys_queue_wait,
 	.init = xnvme_be_nosys_queue_init,
 	.term = xnvme_be_nosys_queue_term,

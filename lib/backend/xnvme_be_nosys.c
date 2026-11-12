@@ -85,6 +85,15 @@ xnvme_be_nosys_queue_poke(struct xnvme_queue *XNVME_UNUSED(queue), uint32_t XNVM
 }
 
 int
+xnvme_be_nosys_queue_reap(struct xnvme_queue *XNVME_UNUSED(queue),
+			  struct xnvme_cmd_ctx **XNVME_UNUSED(completions),
+			  uint32_t XNVME_UNUSED(max))
+{
+	XNVME_DEBUG("FAILED: not implemented(possibly intentional)");
+	return -ENOSYS;
+}
+
+int
 xnvme_be_nosys_queue_wait(struct xnvme_queue *XNVME_UNUSED(queue))
 {
 	XNVME_DEBUG("FAILED: not implemented(possibly intentional)");

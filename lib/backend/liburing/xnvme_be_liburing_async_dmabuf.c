@@ -79,6 +79,7 @@ struct xnvme_be_async g_xnvme_be_liburing_async_dmabuf = {
 	.cmd_io = cmd_io,
 	.cmd_iov = xnvme_be_liburing_cmd_iov,
 	.poke = xnvme_be_liburing_poke,
+	.reap = xnvme_be_liburing_reap,
 	.wait = xnvme_be_nosys_queue_wait,
 	.init = queue_init,
 	.term = queue_term,

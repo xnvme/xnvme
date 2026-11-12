@@ -1,0 +1,197 @@
+#!/usr/bin/env python3
+"""
+Reads at a queue depth through the Python bindings, and the rate they reach
+
+Keeps 'qdepth' reads of 'iosize' bytes at LBA 0 outstanding until 'ios' have
+completed, retrieving the completions either by callback, with
+xnvme_queue_poke(), or by reaping them with xnvme_queue_reap(), and prints the
+rate as YAML. On the ramdisk, whose async interface 'nil' completes a command
+without doing it, what is measured is the binding and the completion path.
+
+With '--bindings', the module named 'xnvme' in that directory is used instead
+of xnvme.ctypes_bindings, as the Python module yace generates, whose records
+are named in CamelCase.
+"""
+import argparse
+import ctypes
+import sys
+import time
+
+
+def parse_args(argv=None):
+    """Parse command-line arguments"""
+
+    parser = argparse.ArgumentParser(
+        description="Read at a queue depth and print the rate",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    parser.add_argument("--uri", required=True, help="uri of the device to open")
+    parser.add_argument("--be", help="backend, as xnvme_opts.be")
+    parser.add_argument("--async", dest="async_", help="async interface")
+    parser.add_argument("--dev-nsid", type=lambda x: int(x, 0), default=0x1)
+    parser.add_argument("--completion", choices=["cb", "reap"], default="reap")
+    parser.add_argument("--qdepth", type=int, default=16)
+    parser.add_argument("--ios", type=int, default=100000)
+    parser.add_argument("--iosize", type=int, default=4096, help="bytes per read")
+    parser.add_argument(
+        "--bindings", help="directory of a module 'xnvme' to use instead"
+    )
+
+    return parser.parse_args(argv)
+
+
+def load(bindings):
+    """The binding to use, and the name it goes by"""
+
+    if bindings:
+        sys.path.insert(0, bindings)
+        import xnvme as binding
+
+        return binding, "xnvme"
+
+    import xnvme.ctypes_bindings as binding
+
+    binding.guard_unloadable()
+    return binding, "xnvme.ctypes_bindings"
+
+
+def record(binding, name):
+    """The record or type 'name' of 'binding', in either way of naming it"""
+
+    camel = "".join(part.capitalize() for part in name.split("_"))
+    return getattr(binding, name, None) or getattr(binding, camel)
+
+
+def set_str(struct, field, value, keep):
+    """Set the 'const char *' 'field' of 'struct', keeping 'value' alive"""
+
+    ftype = dict((f[0], f[1]) for f in type(struct)._fields_)[field]
+    cstr = ctypes.c_char_p(value.encode())
+    keep.append(cstr)
+    setattr(
+        struct, field, cstr if ftype is ctypes.c_char_p else ctypes.cast(cstr, ftype)
+    )
+
+
+def run(x, args):
+    """Read as 'args' say through the binding 'x', returning the rate"""
+
+    keep = []
+    opts = record(x, "xnvme_opts")()
+    if x.xnvme_opts_set_defaults(ctypes.byref(opts)):
+        raise SystemExit("FAILED: xnvme_opts_set_defaults()")
+    opts.nsid = args.dev_nsid
+    if args.be:
+        set_str(opts, "be", args.be, keep)
+    if args.async_:
+        set_str(opts, "async", args.async_, keep)
+
+    dev = x.xnvme_dev_open(args.uri.encode(), ctypes.byref(opts))
+    if not dev:
+        raise SystemExit(f"FAILED: xnvme_dev_open({args.uri})")
+
+    lba_nbytes = x.xnvme_dev_get_geo(dev).contents.lba_nbytes
+    if args.iosize % lba_nbytes:
+        raise SystemExit(f"FAILED: iosize is not a multiple of {lba_nbytes}")
+    nlb = args.iosize // lba_nbytes - 1
+    nsid = x.xnvme_dev_get_nsid(dev)
+    buf = x.xnvme_buf_alloc(dev, args.iosize)
+    if not buf:
+        raise SystemExit("FAILED: xnvme_buf_alloc()")
+
+    reaping = args.completion == "reap"
+    queue = ctypes.POINTER(record(x, "xnvme_queue"))()
+    qopts = int(x.XNVME_QUEUE_REAP) if reaping else 0
+    err = x.xnvme_queue_init(dev, args.qdepth, qopts, ctypes.byref(queue))
+    if err:
+        raise SystemExit(f"FAILED: xnvme_queue_init(), err({err})")
+
+    get_ctx = x.xnvme_queue_get_cmd_ctx
+    put_ctx = x.xnvme_queue_put_cmd_ctx
+    read = x.xnvme_nvm_read
+    state = {"done": 0, "outstanding": 0, "errors": 0}
+
+    # All but the phase tag, which a successful completion may have set
+    status_mask = 0xFFFE
+
+    if reaping:
+        reap = x.xnvme_queue_reap
+        completed = (ctypes.POINTER(record(x, "xnvme_cmd_ctx")) * args.qdepth)()
+
+        def complete():
+            n = reap(queue, completed, args.qdepth)
+            if n < 0:
+                raise SystemExit(f"FAILED: xnvme_queue_reap(), err({n})")
+            for i in range(n):
+                ctx = completed[i]
+                if ctx.contents.cpl.status & status_mask:
+                    state["errors"] += 1
+                put_ctx(queue, ctx)
+            state["done"] += n
+            state["outstanding"] -= n
+
+    else:
+
+        def on_completion(ctx, cb_arg):
+            if ctx.contents.cpl.status & status_mask:
+                state["errors"] += 1
+            put_ctx(queue, ctx)
+            state["done"] += 1
+            state["outstanding"] -= 1
+
+        callback = record(x, "xnvme_queue_cb")(on_completion)
+        keep.append(callback)
+        err = x.xnvme_queue_set_cb(queue, callback, None)
+        if err:
+            raise SystemExit(f"FAILED: xnvme_queue_set_cb(), err({err})")
+        poke = x.xnvme_queue_poke
+
+        def complete():
+            err = poke(queue, 0)
+            if err < 0:
+                raise SystemExit(f"FAILED: xnvme_queue_poke(), err({err})")
+
+    submitted = 0
+    begin = time.perf_counter()
+    while state["done"] < args.ios:
+        while state["outstanding"] < args.qdepth and submitted < args.ios:
+            err = read(get_ctx(queue), nsid, 0x0, nlb, buf, None)
+            if err:
+                raise SystemExit(f"FAILED: xnvme_nvm_read(), err({err})")
+            submitted += 1
+            state["outstanding"] += 1
+        complete()
+    seconds = time.perf_counter() - begin
+
+    x.xnvme_queue_term(queue)
+    x.xnvme_buf_free(dev, buf)
+    x.xnvme_dev_close(dev)
+
+    return {
+        "completion": args.completion,
+        "qdepth": args.qdepth,
+        "iosize": args.iosize,
+        "ios": state["done"],
+        "errors": state["errors"],
+        "seconds": round(seconds, 6),
+        "iops": round(state["done"] / seconds),
+        "nsec_per_io": round(seconds * 1e9 / state["done"]),
+    }
+
+
+def main(args):
+    """Read, and print the rate as YAML"""
+
+    x, name = load(args.bindings)
+    result = run(x, args)
+
+    print("xpy_perf:")
+    print(f"  bindings: '{name}'")
+    for key, value in result.items():
+        print(f"  {key}: {value}")
+
+    return 1 if result["errors"] else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(parse_args()))
