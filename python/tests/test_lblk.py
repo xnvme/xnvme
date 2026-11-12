@@ -9,7 +9,7 @@ import numpy
 import pytest
 import xnvme
 from conftest import xnvme_parametrize
-from utils import buf_and_view, dev_from_params
+from utils import args_of, buf_and_view, dev_from_params, prep_and_pass
 
 # Blocks written and read back one by one, and copied
 NBLOCKS = 8
@@ -33,14 +33,28 @@ def check(err, ctx, name):
     assert not (err or status), f"{name}(): err({err}), status(0x{status:x})"
 
 
+def nbytes_of(dev, nlb):
+    """The bytes of 'nlb' + 1 logical blocks of 'dev'"""
+
+    return (nlb + 1) * xnvme.xnvme_dev_get_geo(dev).contents.lba_nbytes
+
+
 def write(dev, nsid, slba, nlb, buf):
     ctx = cmd_ctx(dev)
-    check(xnvme.xnvme_nvm_write(ctx, nsid, slba, nlb, buf, None), ctx, "write")
+    args = args_of(xnvme.XnvmeCmdPrepNvmWriteArgs, nsid=nsid, slba=slba, nlb=nlb)
+    err = prep_and_pass(
+        ctx, xnvme.xnvme_cmd_prep_nvm_write, args, buf, nbytes_of(dev, nlb)
+    )
+    check(err, ctx, "write")
 
 
 def read(dev, nsid, slba, nlb, buf):
     ctx = cmd_ctx(dev)
-    check(xnvme.xnvme_nvm_read(ctx, nsid, slba, nlb, buf, None), ctx, "read")
+    args = args_of(xnvme.XnvmeCmdPrepNvmReadArgs, nsid=nsid, slba=slba, nlb=nlb)
+    err = prep_and_pass(
+        ctx, xnvme.xnvme_cmd_prep_nvm_read, args, buf, nbytes_of(dev, nlb)
+    )
+    check(err, ctx, "read")
 
 
 @xnvme_parametrize(labels=["nvm"], opts=["be", "sync"])
@@ -110,11 +124,16 @@ def test_scopy(cijoe, device, be_opts, cli_args):
         write(dev, nsid, ranges.entry[i].slba, 0, dbuf + i * lba_nbytes)
     write(dev, nsid, sdlba, nranges - 1, vbuf)
 
+    # The source ranges are of format 0h, the Descriptor Format left zero
     ctx = cmd_ctx(dev)
-    err = xnvme.xnvme_nvm_scopy(
-        ctx, nsid, sdlba, ranges.entry, nranges - 1, xnvme.XNVME_NVM_SCOPY_FMT_ZERO
+    args = args_of(
+        xnvme.XnvmeCmdPrepNvmCopyArgs, nsid=nsid, sdlba=sdlba, nr=nranges - 1
     )
-    check(err, ctx, "scopy")
+    nbytes_ranges = nranges * ctypes.sizeof(ranges.entry[0])
+    err = prep_and_pass(
+        ctx, xnvme.xnvme_cmd_prep_nvm_copy, args, ranges_buf, nbytes_ranges
+    )
+    check(err, ctx, "copy")
 
     read(dev, nsid, sdlba, nranges - 1, vbuf)
     assert numpy.array_equal(vview, dview)
@@ -144,7 +163,12 @@ def test_write_zeroes(cijoe, device, be_opts, cli_args):
     write(dev, nsid, 0, NBLOCKS - 1, buf)
 
     ctx = cmd_ctx(dev)
-    check(xnvme.xnvme_nvm_write_zeroes(ctx, nsid, 0, NBLOCKS - 1), ctx, "write_zeroes")
+    args = args_of(xnvme.XnvmeCmdPrepNvmWriteZeroesArgs, nsid=nsid, nlb=NBLOCKS - 1)
+    check(
+        prep_and_pass(ctx, xnvme.xnvme_cmd_prep_nvm_write_zeroes, args),
+        ctx,
+        "write_zeroes",
+    )
 
     view[:] = ord("a")
     read(dev, nsid, 0, NBLOCKS - 1, buf)

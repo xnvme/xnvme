@@ -96,7 +96,12 @@ def run(x, args):
 
     get_ctx = x.xnvme_queue_get_cmd_ctx
     put_ctx = x.xnvme_queue_put_cmd_ctx
-    read = x.xnvme_nvm_read
+    prep = x.xnvme_cmd_prep_nvm_read
+    cmd_pass = x.xnvme_cmd_pass
+    rec = x.XnvmeCmdPrepNvmReadArgs
+    read_args = ctypes.byref(
+        rec(args_nbytes=ctypes.sizeof(rec), nsid=nsid, slba=0x0, nlb=nlb)
+    )
     state = {"done": 0, "outstanding": 0, "errors": 0}
 
     # All but the phase tag, which a successful completion may have set
@@ -143,9 +148,13 @@ def run(x, args):
     begin = time.perf_counter()
     while state["done"] < args.ios:
         while state["outstanding"] < args.qdepth and submitted < args.ios:
-            err = read(get_ctx(queue), nsid, 0x0, nlb, buf, None)
+            ctx = get_ctx(queue)
+            err = prep(ctypes.byref(ctx.contents.cmd), read_args)
             if err:
-                raise SystemExit(f"FAILED: xnvme_nvm_read(), err({err})")
+                raise SystemExit(f"FAILED: xnvme_cmd_prep_nvm_read(), err({err})")
+            err = cmd_pass(ctx, buf, args.iosize, None, 0)
+            if err:
+                raise SystemExit(f"FAILED: xnvme_cmd_pass(), err({err})")
             submitted += 1
             state["outstanding"] += 1
         complete()

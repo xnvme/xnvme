@@ -18,7 +18,7 @@ import numpy
 import pytest
 import xnvme
 from conftest import xnvme_parametrize
-from utils import buf_and_view, dev_from_params
+from utils import args_of, buf_and_view, dev_from_params, prep_and_pass
 
 PAGE_SIZE = 1 << 12
 
@@ -152,7 +152,7 @@ def test_pwrite_pread(cijoe, device, be_opts, cli_args, size):
 @pytest.mark.parametrize("size", ["page", "pages", "hugepage"])
 @xnvme_parametrize(labels=["bdev"], opts=["mem", "sync"])
 def test_nvm_write_read(cijoe, device, be_opts, cli_args, size):
-    """xnvme_nvm_write() and xnvme_nvm_read() of a block device, from each backend"""
+    """Write and Read of a block device, from each backend"""
 
     if be_opts["label"] != ["bdev"] or be_opts["sync"] not in ["nvme", "block"]:
         pytest.skip(reason="the test reads a kernel block device back itself")
@@ -177,8 +177,11 @@ def test_nvm_write_read(cijoe, device, be_opts, cli_args, size):
             ctx = xnvme.XnvmeCmdCtx()
             assert not xnvme.xnvme_dev_get_cmd_ctx(dev, ctypes.byref(ctx))
             slba = n * nbytes // geo.lba_nbytes
-            err = xnvme.xnvme_nvm_write(ctx, nsid, slba, nlb, buf, None)
-            check(err, ctx, "xnvme_nvm_write")
+            args = args_of(
+                xnvme.XnvmeCmdPrepNvmWriteArgs, nsid=nsid, slba=slba, nlb=nlb
+            )
+            err = prep_and_pass(ctx, xnvme.xnvme_cmd_prep_nvm_write, args, buf, nbytes)
+            check(err, ctx, "write")
 
         check_with_odirect(device["uri"], nbytes)
 
@@ -187,8 +190,9 @@ def test_nvm_write_read(cijoe, device, be_opts, cli_args, size):
             ctx = xnvme.XnvmeCmdCtx()
             assert not xnvme.xnvme_dev_get_cmd_ctx(dev, ctypes.byref(ctx))
             slba = n * nbytes // geo.lba_nbytes
-            err = xnvme.xnvme_nvm_read(ctx, nsid, slba, nlb, buf, None)
-            check(err, ctx, "xnvme_nvm_read")
+            args = args_of(xnvme.XnvmeCmdPrepNvmReadArgs, nsid=nsid, slba=slba, nlb=nlb)
+            err = prep_and_pass(ctx, xnvme.xnvme_cmd_prep_nvm_read, args, buf, nbytes)
+            check(err, ctx, "read")
             assert numpy.all(view == pattern(n)), f"write {n} read back wrong"
 
         xnvme.xnvme_buf_free(dev, buf)

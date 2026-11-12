@@ -46,6 +46,23 @@ def dev_from_params(device, be_opts):
     return dev_open(device["uri"], ctypes.byref(opts))
 
 
+def args_of(record, **fields):
+    """A record of the arguments of a command prep, its size set, and 'fields'"""
+
+    return record(args_nbytes=ctypes.sizeof(record), **fields)
+
+
+def prep_and_pass(ctx, prep, args, dbuf=None, dbuf_nbytes=0):
+    """Prepare the command of 'ctx' with 'prep' from 'args', then pass it with
+    'dbuf'; returns what the first of the two that fails returns, or 0"""
+
+    err = prep(ctypes.byref(ctx.cmd), ctypes.byref(args))
+    if err:
+        return err
+
+    return xnvme.xnvme_cmd_pass(ctypes.byref(ctx), dbuf, dbuf_nbytes, None, 0)
+
+
 def buf_and_view(dev, buffer_size):
     """
     Returns a buffer of the given 'buffer_size' along with a numpy-view
