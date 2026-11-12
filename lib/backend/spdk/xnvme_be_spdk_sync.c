@@ -27,11 +27,6 @@ static inline int
 submit_ioc(struct spdk_nvme_ctrlr *ctrlr, struct spdk_nvme_qpair *qpair, struct xnvme_cmd_ctx *ctx,
 	   void *dbuf, uint32_t dbuf_nbytes, void *mbuf, spdk_nvme_cmd_cb cb_fn, void *cb_arg)
 {
-#ifdef XNVME_TRACE_ENABLED
-	XNVME_DEBUG("Dumping IO command");
-	xnvme_spec_sqe_pr(cmd, XNVME_PR_DEF);
-#endif
-
 	switch (ctx->cmd.common.opcode) {
 	case XNVME_SPEC_FS_OPC_READ:
 		ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_READ;
