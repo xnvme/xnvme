@@ -32,7 +32,7 @@ Prerequisites
      python3 -m venv ~/venvs/spec
      ~/venvs/spec/bin/pip install senfd yace
 
-  The generator needs senfd 0.13.0 or later and yace 0.9.0 or later. yace
+  The generator needs senfd 0.18.0 or later and yace 0.9.0 or later. yace
   0.9.0 is the first release that runs a generator from its file.
   ``senfd --version`` and ``yace --version`` say what you have.
 
@@ -93,11 +93,21 @@ The options of the generator, each given as
   or ``nvm:write``. The default is all commands. ``none`` writes no commands.
   For a command, the generator writes its opcode and the masks of the fields
   of its dwords, and no struct: ``union xnvme_cmd_sqe`` of ``libxnvme_cmd.h``
-  holds the dwords of every command, and the command preps make them.
+  holds the dwords of every command, and the command preps make them. A field
+  whose values the specification names gets an enum of them, such as ZSA of
+  Zone Management Send. When two fields select the operation, such as DTYPE
+  and DOPER of Directive Send, the operations are an enum of the second field
+  for each value of the first, named by that value: DOPER when DTYPE is 1h.
 * ``structures`` selects the structures to write. Name a structure by its
   name, or by the abbreviation of its document and its name, such as
   ``base:identify_controller``. The default is every byte layout except the
-  examples. ``none`` writes no structures.
+  examples. ``none`` writes no structures. A field whose values the
+  specification names gets an enum of them, as for the commands. An array
+  whose entries another figure defines, such as the Power State Descriptors of
+  Identify Controller, takes the layout of that figure: an entry of 1, 2, 4 or
+  8 bytes keeps its integer type and gets masks named by the entry, such as
+  ``XNVME_SPEC_NVM_LBA_FORMAT_*`` for ``lbaf``, and a larger entry is a struct
+  of its own.
 * ``registers`` set to ``none`` leaves out the registers. Otherwise the
   generator writes the registers of each document as one struct, such as
   ``struct xnvme_spec_base_registers``, with each register at its offset. The
@@ -133,9 +143,11 @@ so the next run does not undo the fix.
 Commit the headers
 ------------------
 
-Copy the headers into ``include/``, and add any new one to the list of
-``include/meson.build`` and to ``libxnvme.h``, where the build takes them as
-any other header. Each header says the version of senfd that produced its data
+Copy the headers into ``include/`` as the generator writes them, and add any
+new one to the list of ``include/meson.build`` and to ``libxnvme.h``, where
+the build takes them as any other header. pre-commit does not format them:
+clang-format does not settle on their long trailing comments, and the headers
+are never edited by hand. Each header says the version of senfd that produced its data
 model, and each citation the revision of its document, so the commit needs no
 record of them.
 yace is not run by the build; run it again, as above, when a document is

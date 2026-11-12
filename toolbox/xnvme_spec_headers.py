@@ -66,6 +66,22 @@ Base is one. Such an entry is a packed struct as well. Each half of a dword is
 a 16-bit member named by its widest field, and the masks of the layout of that
 field come before the masks of the dword.
 
+An array whose entries another figure defines, such as LBAF of Identify
+Namespace, which refers to the LBA Format of Figure 125, takes the layout of
+that figure when the figure is as wide as an entry. An entry of 1, 2, 4 or 8
+bytes keeps its integer type, and the masks are named by the entry, such as
+XNVME_SPEC_NVM_LBA_FORMAT_LBADS. A larger entry, such as the Power State
+Descriptor, is a packed struct of its own: a field of 1, 2, 4 or 8 bytes at
+a byte is a member, and the fields that share the smallest aligned unit that
+holds them are a member with masks.
+
+A field of a command, of a structure or of an entry, whose values the
+specification names, gets an enum of the values, as a field of a register
+does. A name is the value's name without what it adds in parentheses; a value
+for which the data model has only a sentence gets no constant. The operations
+of a command that two fields select, such as DTYPE and DOPER of Directive
+Send, are an enum of the second field for each value of the first.
+
 When the data model describes a dword differently under each of several
 conditions, as it does for CDW13 of Write, the generator writes the masks of
 the description that has no condition, or of the first description when every
@@ -79,6 +95,7 @@ field covers its bits.
 import re
 from dataclasses import dataclass
 from dataclasses import field as default
+from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Dict, List, Optional, Tuple, Union
@@ -142,8 +159,13 @@ def identifier(text: str) -> str:
     return re.sub(r"[^A-Za-z0-9]+", "_", words(text)).strip("_").upper()
 
 
-def senfd_version() -> str:
-    """The version of senfd, which wrote the data model"""
+def senfd_version(spec: Optional[SpecDocument] = None) -> str:
+    """The version of senfd that wrote the data model 'spec', as the model says,
+    else the version of the senfd installed"""
+
+    written = getattr(getattr(spec, "meta", None), "version", None)
+    if written:
+        return written
 
     from importlib.metadata import PackageNotFoundError, version
 
@@ -317,6 +339,14 @@ DEFINED_BY = re.compile(
 )
 
 
+def width_of(structure: Structure) -> int:
+    """The number of bits of the bit layout 'structure'"""
+
+    return 1 + max(
+        (f.upper for f in structure.fields if f.upper is not None), default=-1
+    )
+
+
 def figure_referred(description: str) -> Optional[int]:
     """The figure that 'description' says defines the layout of the field, if
     'description' names exactly one"""
@@ -405,6 +435,10 @@ class Member:
     fields: List[Bits] = default(default_factory=list)
     size: int = 0
     description: str = ""
+    # The field that is the whole member, for the values it names
+    whole: Optional[Bits] = None
+    # The bytes of one element of an array of a run of fields
+    stride: int = 0
 
 
 # The name of the layout of one dword of an entry, such as "Completion Queue
@@ -684,6 +718,8 @@ def layout_of(structure: Structure, element_of) -> Tuple[List[Member], List[str]
                         offset,
                         f"{base}, {length} of {size} bytes",
                         size=length * size,
+                        description=f.description,
+                        stride=size,
                     )
                 )
                 offset += length * size
@@ -715,11 +751,62 @@ def layout_of(structure: Structure, element_of) -> Tuple[List[Member], List[str]
                 [g for g in f.fields if g.unit == "bits"] if scalar else [],
                 size,
                 f.description,
+                f if scalar else None,
             )
         )
         offset = f.upper + 1
         index += 1
     return members, left
+
+
+@dataclass
+class Group:
+    """Bytes of an entry given by a bit layout: one field that is a whole
+    member, or the fields that share the smallest aligned unit holding them"""
+
+    lower: int
+    size: int
+    fields: List[Bits]
+
+
+def unit_of(lower: int, upper: int) -> Optional[Tuple[int, int]]:
+    """The smallest naturally aligned unit of 1, 2, 4 or 8 bytes holding the
+    bits 'lower' to 'upper', as its first byte and its size"""
+
+    for size in (1, 2, 4, 8):
+        if lower // (8 * size) == upper // (8 * size):
+            return lower // (8 * size) * size, size
+    return None
+
+
+def groups_of_bits(fields: List[Bits]) -> Optional[List[Group]]:
+    """The members of an entry of the bit layout 'fields', in the order of
+    their bytes, or None when a field fits no unit of up to 8 bytes. A field
+    without an acronym is reserved and makes no member"""
+
+    groups: List[Group] = []
+    for field in sorted(fields, key=lambda f: f.lower or 0):
+        if not field.acronym or field.lower is None or field.upper is None:
+            continue
+        unit = unit_of(field.lower, field.upper)
+        if unit is None:
+            return None
+        groups.append(Group(unit[0], unit[1], [field]))
+    merged = True
+    while merged:
+        merged = False
+        for a, b in zip(groups, groups[1:]):
+            if b.lower < a.lower + a.size:
+                unit = unit_of(
+                    8 * a.lower, 8 * max(a.lower + a.size, b.lower + b.size) - 1
+                )
+                if unit is None:
+                    return None
+                a.lower, a.size, a.fields = unit[0], unit[1], a.fields + b.fields
+                groups.remove(b)
+                merged = True
+                break
+    return groups
 
 
 def number_of(entry: Entry) -> Optional[int]:
@@ -731,6 +818,58 @@ def number_of(entry: Entry) -> Optional[int]:
         return typed.lower if typed.lower == typed.upper else None
     match = re.match(r"^\s*([0-9A-Fa-f]+)h\s*$", entry.value)
     return int(match[1], 16) if match else None
+
+
+def value_name(entry: Entry) -> Optional[str]:
+    """The name of the value 'entry' without what it adds in parentheses, as
+    "Domain scope" of "Domain scope (i.e., ...)", unless the data model has
+    only the sentence describing it, which makes no name for a constant"""
+
+    named = entry.name or next(iter(value_names(entry)), None)
+    while named and re.search(r"\([^()]*\)", named):
+        named = re.sub(r"\s*\([^()]*\)", "", named).strip()
+    # The documents leave a parenthesis open now and then
+    if named and "(" in named:
+        named = named[: named.index("(")].strip()
+    if named and len(named.split()) > 8:
+        return None
+    return named
+
+
+def operation_enums(command: Command, masks: List[Tuple[str, int, str]]) -> List[str]:
+    """The enums of the operations of 'command' that two fields select, such
+    as DOPER within a DTYPE of Directive Send: one enum of the inner field for
+    each value of the outer one, the outer being the field that the data model
+    names first. An operation that one field selects is in the values of that
+    field"""
+
+    by_acronym = {name.rsplit("_", 1)[-1]: name for name, _, _ in masks}
+    groups: Dict[Tuple[str, str, int], List] = {}
+    for operation in getattr(command, "operations", None) or []:
+        selectors = operation.selectors
+        if len(selectors) != 2 or not all(k in by_acronym for k in selectors):
+            continue
+        outer, inner = list(selectors)
+        groups.setdefault((outer, inner, selectors[outer]), []).append(operation)
+
+    lines: List[str] = []
+    for (outer, inner, at), operations in groups.items():
+        mask = f"{by_acronym[inner]}_{outer}{at:X}H"
+        constants = [
+            (
+                f"{mask}_{identifier(o.name)}",
+                o.selectors[inner],
+                f"{o.name} ({senfd.query.cite(o.source)})",
+            )
+            for o in operations
+            if o.name
+        ]
+        lines += enum_lines(
+            mask.lower(),
+            f"The values of {inner} of {command.name} when {outer} is {at:X}h",
+            constants,
+        )
+    return lines
 
 
 def enum_lines(name: str, doc: str, constants: List[Tuple[str, int, str]]) -> List[str]:
@@ -752,6 +891,56 @@ def enum_lines(name: str, doc: str, constants: List[Tuple[str, int, str]]) -> Li
     if not body:
         return []
     return ["/**", f" * {doc}", " */", f"enum {name} {{", *body, "};", ""]
+
+
+def value_enums(
+    prefix: str,
+    figures: List[Tuple[List[Bits], Source]],
+    masks: List[Tuple[str, int, str]],
+) -> List[str]:
+    """The enums of the values that the specification names for the fields of
+    'figures' that have a mask among 'masks', or that are the whole member
+    'prefix' names. The enum of a field is named by its mask, or by the member,
+    and each constant by that and the name of the value. A value that is a
+    range, or is named reserved, is left out, as for the registers"""
+
+    named_masks = {name for name, _, _ in masks}
+    if not masks:
+        named_masks.add(prefix)
+    lines: List[str] = []
+    for fields, source in figures:
+        for field in fields:
+            if not getattr(field, "acronym", None) or not getattr(
+                field, "values", None
+            ):
+                continue
+            mask = f"{prefix}_{identifier(field.acronym)}"
+            if mask not in named_masks:
+                if prefix not in named_masks or not prefix.endswith(
+                    f"_{identifier(field.acronym)}"
+                ):
+                    continue
+                mask = prefix
+            constants = []
+            for entry in field.values:
+                value = number_of(entry)
+                named = value_name(entry)
+                if value is None or not named or alias(named) == "reserved":
+                    continue
+                constants.append(
+                    (
+                        f"{mask}_{identifier(named)}",
+                        value,
+                        f"{named} ({senfd.query.cite(source)})",
+                    )
+                )
+            lines += enum_lines(
+                mask.lower(),
+                f"The values of {field.name or field.acronym} ({senfd.query.cite(source)})",
+                constants,
+            )
+            named_masks.discard(mask)
+    return lines
 
 
 class SpecHeaders:
@@ -825,6 +1014,111 @@ class SpecHeaders:
         flexible = self.options.get("flexible", "0") not in ("0", "", "no", "false")
         written: Dict[int, str] = {}
         layouts: Dict[Tuple[str, ...], str] = {}
+        # The names of the structs, whatever the order they are written in
+        planned = {
+            f"{stem}_{document_key(s.source.document)}_"
+            f"{'log_' if s.kind == 'log_page' else ''}{alias(structure_name(s))}"
+            for s in spec.structures
+            if s.unit == "bytes"
+        }
+
+        def write_bits(structure: Structure, nbytes: int) -> Optional[str]:
+            """Writes the struct of an entry that the bit layout 'structure'
+            defines, such as the Power State Descriptor, of 'nbytes' bytes"""
+
+            if id(structure) in written:
+                return written[id(structure)]
+            doc = document_key(structure.source.document)
+            groups = groups_of_bits(structure.fields)
+            name = f"{stem}_{doc}_{alias(structure_name(structure))}"
+            if not groups or name in taken:
+                written[id(structure)] = ""
+                return None
+            taken.add(name)
+            written[id(structure)] = name
+            upper = identifier(name)
+            cite = senfd.query.cite(structure.source)
+            body: List[str] = []
+            masks: List[Tuple[str, int, str]] = []
+            values: List[str] = []
+            offset = 0
+            for group in groups:
+                if group.lower > offset:
+                    gap = group.lower - offset
+                    count = "" if gap == 1 else f"[{gap}]"
+                    body.append(f"\tuint8_t rsvd{offset}{count}; ///< Reserved")
+                (field, *more) = group.fields
+                whole = not more and (field.lower, field.upper) == (
+                    8 * group.lower,
+                    8 * (group.lower + group.size) - 1,
+                )
+                member = "_".join(identifier(f.acronym).lower() for f in group.fields)
+                prefix = f"{upper}_{identifier(member)}"
+                # A field alone in its unit from bit 0 is the member, the bits
+                # above it reserved. A part named VAL would take the name that
+                # yace prints the value of a field by, so it gets no mask
+                bare = not more and (
+                    field.lower == 8 * group.lower or identifier(field.acronym) == "VAL"
+                )
+                these = (
+                    []
+                    if whole or bare
+                    else masks_of(
+                        member,
+                        prefix,
+                        [(shifted(group.fields, 8 * group.lower), structure.source)],
+                        8 * group.size,
+                    )
+                )
+                where = (
+                    f"byte {group.lower}"
+                    if group.size == 1
+                    else f"bytes {group.lower + group.size - 1}:{group.lower}"
+                )
+                if bare and not whole:
+                    hi, lo = (
+                        field.upper - 8 * group.lower,
+                        field.lower - 8 * group.lower,
+                    )
+                    bits = f"bit {lo}" if hi == lo else f"bits {hi}:{lo}"
+                    where = f"{bits} of {where}"
+                what = (
+                    field.name
+                    if whole
+                    else "; ".join(f.name or f.acronym for f in group.fields)
+                )
+                see = f", see {prefix}_*" if these else ""
+                body.append(
+                    f"\t{TYPES[group.size]} {member}; ///< {what}, {where}{see}"
+                )
+                masks += these
+                fields = (
+                    [([field], structure.source)]
+                    if whole
+                    else [(shifted(group.fields, 8 * group.lower), structure.source)]
+                )
+                values += value_enums(
+                    prefix, [([field], structure.source)] if bare else fields, these
+                )
+                offset = group.lower + group.size
+            if offset < nbytes:
+                body.append(f"\tuint8_t rsvd{offset}[{nbytes - offset}]; ///< Reserved")
+            lines = out.setdefault(doc, [])
+            lines += [
+                "/**",
+                f" * {structure.name} ({cite}), one entry of {nbytes} bytes",
+                " */",
+                f"struct __attribute__((packed)) {name} {{",
+                *body,
+                "};",
+                "",
+            ]
+            for mask, value, text in masks:
+                lines += [f"/** {text} */", f"#define {mask} 0x{value:x}"]
+            if masks:
+                lines.append("")
+            lines += values
+            return name
 
         def write(structure: Structure) -> Optional[str]:
             if id(structure) in written:
@@ -867,6 +1161,7 @@ class SpecHeaders:
             upper = identifier(name)
             body: List[str] = []
             masks: List[Tuple[str, int, str]] = []
+            values: List[str] = []
             follows: List[str] = []
             for m in members:
                 if m.count == 0 and not flexible:
@@ -890,6 +1185,36 @@ class SpecHeaders:
                 described_by = bit_layouts.get((doc, referred)) if referred else None
                 if not m.fields and m.count is None and described_by:
                     figures = [(described_by.fields, described_by.source)]
+                if m.stride and described_by and width_of(described_by) == 8 * m.stride:
+                    if m.stride in TYPES and m.ctype == TYPES[m.stride]:
+                        # An element that is a scalar keeps its type, and the
+                        # masks of the entry are named by the entry, as the LBA
+                        # Format of LBAF of Identify Namespace
+                        named = f"{stem}_{doc}_{alias(structure_name(described_by))}"
+                        if named in taken or named in planned:
+                            named = f"{named}_figure{described_by.source.figure_nr}"
+                        entry_masks = masks_of(
+                            structure_name(described_by),
+                            identifier(named),
+                            [(described_by.fields, described_by.source)],
+                            8 * m.stride,
+                        )
+                        masks += entry_masks
+                        prefix = identifier(named)
+                        if entry_masks:
+                            m = replace(m, doc=f"{m.doc} of {prefix}_*")
+                        values += value_enums(
+                            prefix,
+                            [(described_by.fields, described_by.source)],
+                            entry_masks,
+                        )
+                        figures = []
+                    else:
+                        element = write_bits(described_by, m.stride)
+                        if element:
+                            m = replace(
+                                m, ctype=f"struct {element}", count=m.size // m.stride
+                            )
                 these = masks_of(
                     m.name,
                     f"{upper}_{identifier(m.name)}",
@@ -900,6 +1225,10 @@ class SpecHeaders:
                 count = "" if m.count is None else f"[{m.count or ''}]"
                 body.append(f"\t{m.ctype} {m.name}{count}; ///< {m.doc}, {where}{see}")
                 masks += these
+                whole = [([m.whole], structure.source)] if m.whole and not these else []
+                values += value_enums(
+                    f"{upper}_{identifier(m.name)}", figures + whole, these
+                )
             lines = out.setdefault(doc, [])
             doc_lines = [
                 "/**",
@@ -931,6 +1260,7 @@ class SpecHeaders:
                 lines.extend([f"/** {doc_text} */", f"#define {mask} 0x{value:x}"])
             if masks:
                 lines.append("")
+            lines.extend(values)
             return name
 
         for structure in self.structures(spec):
@@ -958,6 +1288,7 @@ class SpecHeaders:
             )
             body: List[str] = []
             masks: List[Tuple[str, int, str]] = []
+            values: List[str] = []
             for m, figures in layout_of_dwords(dwords, fields):
                 these = masks_of(
                     m.name, f"{upper}_{identifier(m.name)}", figures, 8 * m.size
@@ -966,6 +1297,7 @@ class SpecHeaders:
                 see = f", see {upper}_{identifier(m.name)}_*" if these else ""
                 body.append(f"\t{m.ctype} {m.name}; ///< {m.doc}, {where}{see}")
                 masks += these
+                values += value_enums(f"{upper}_{identifier(m.name)}", figures, these)
             lines = out.setdefault(doc, [])
             lines += [
                 "/**",
@@ -980,6 +1312,7 @@ class SpecHeaders:
                 lines += [f"/** {text} */", f"#define {mask} 0x{value:x}"]
             if masks:
                 lines.append("")
+            lines += values
 
     def write_enums(
         self, spec: SpecDocument, stem: str, out: Dict[str, List[str]]
@@ -1160,7 +1493,7 @@ class SpecHeaders:
                     constants = []
                     for entry in field.values:
                         value = number_of(entry)
-                        named = entry.name or next(iter(value_names(entry)), None)
+                        named = value_name(entry)
                         if value is None or not named or alias(named) == "reserved":
                             continue
                         constants.append(
@@ -1222,6 +1555,7 @@ class SpecHeaders:
             upper = identifier(struct)
             notes: List[str] = []
             masks: List[Tuple[str, int, str]] = []
+            values: List[str] = []
             for member, lower, last, ctype in members_of(command):
                 width = 32 * (last - lower + 1)
                 figures, others = described(command, lower, last)
@@ -1232,11 +1566,17 @@ class SpecHeaders:
                     if lower == last
                     else f"Command Dwords {lower} and {last}, as one 64-bit value"
                 )
-                masks += masks_of(
+                these = masks_of(
                     what,
                     f"{upper}_{identifier(member)}",
                     [(f.fields, f.source) for f in figures],
                     width,
+                )
+                masks += these
+                values += value_enums(
+                    f"{upper}_{identifier(member)}",
+                    [(f.fields, f.source) for f in figures],
+                    these,
                 )
                 if others:
                     notes.append(
@@ -1244,13 +1584,18 @@ class SpecHeaders:
                         + ", or if ".join(others)
                     )
             lines = commands.setdefault(doc, [])
-            lines += ["/*", f" * The fields of {command.name}, by the dwords of the command"]
+            lines += [
+                "/*",
+                f" * The fields of {command.name}, by the dwords of the command",
+            ]
             if notes:
                 lines += [" *", *notes]
             lines += [" */"]
             for name, value, text in masks:
                 lines += [f"/** {text} */", f"#define {name} 0x{value:x}"]
             lines.append("")
+            lines += values
+            lines += operation_enums(command, masks)
 
         headers: List[Path] = []
         for doc in dict.fromkeys([*enums, *structs, *registers, *commands]):
@@ -1260,7 +1605,7 @@ class SpecHeaders:
                 "/**",
                 f" * What the {doc} specification defines, by {stem}",
                 " *",
-                f" * Written from the data model of senfd {senfd_version()}, by"
+                f" * Written from the data model of senfd {senfd_version(spec)}, by"
                 " toolbox/xnvme_spec_headers.py;",
                 " * each name and mask is as the figure it cites gives it. Do not",
                 " * edit: see the contributor docs on producing the spec headers.",

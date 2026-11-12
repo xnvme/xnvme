@@ -107,9 +107,53 @@ def model(tmp_path):
             spec_model.Dwords(
                 lower=10,
                 upper=10,
-                fields=[bits("15:00", "Foo Count", "FCNT", unit="bits")],
+                fields=[
+                    bits("15:00", "Foo Count", "FCNT", unit="bits"),
+                    bits("18:16", "Foo Action", "FACT", unit="bits").model_copy(
+                        update={
+                            "values": [
+                                value("0h", 0, "Foo Start"),
+                                value(
+                                    "1h",
+                                    1,
+                                    "Foo Stop (i.e., the foo (refer to 1.2) ends)",
+                                ),
+                                value(
+                                    "3h", 3, "Foo Pause (i.e., the foo (refer to 1.3)."
+                                ),
+                                # A description in place of a name makes no
+                                # name of a constant
+                                value(
+                                    "2h",
+                                    2,
+                                    "The controller stops every foo that the host"
+                                    " started before this command",
+                                ),
+                            ]
+                        }
+                    ),
+                    bits("23:20", "Foo Kind", "FKIND", unit="bits"),
+                    bits("31:24", "Foo Step", "FSTEP", unit="bits"),
+                ],
                 source=source(figure_nr=3),
             )
+        ],
+        operations=[
+            spec_model.Operation(
+                name="Foo Begin",
+                selectors={"FKIND": 1, "FSTEP": 1},
+                source=source(figure_nr=16),
+            ),
+            spec_model.Operation(
+                name="Foo End",
+                selectors={"FKIND": 1, "FSTEP": 2},
+                source=source(figure_nr=16),
+            ),
+            spec_model.Operation(
+                name="Foo Peek",
+                selectors={"FKIND": 2, "FSTEP": 1},
+                source=source(figure_nr=17),
+            ),
         ],
         source=source(figure_nr=1),
     )
@@ -138,7 +182,72 @@ def model(tmp_path):
             ),
             structure(
                 "Foo Entry",
-                [bits("07:00", "Foo Entry Key", "FEK"), bits("31:08", "Reserved")],
+                [
+                    bits("07:00", "Foo Entry Key", "FEK").model_copy(
+                        update={
+                            "values": [
+                                value("1h", 1, "Foo Primary"),
+                                value("2h", 2, "Foo Secondary"),
+                            ]
+                        }
+                    ),
+                    bits("31:08", "Reserved"),
+                ],
+            ),
+            structure(
+                "Foo Power Table",
+                [
+                    bits(
+                        "01:00",
+                        "Foo Format 0",
+                        "FFMT0",
+                        description="The format is defined in Figure 15.",
+                    ),
+                    bits(
+                        "03:02",
+                        "Foo Format 1",
+                        "FFMT1",
+                        description="The format is defined in Figure 15.",
+                    ),
+                    bits(
+                        "19:04",
+                        "Foo Power Descriptor 0",
+                        "FPD0",
+                        description="The format is defined in Figure 14.",
+                    ),
+                    bits(
+                        "35:20",
+                        "Foo Power Descriptor 1",
+                        "FPD1",
+                        description="The format is defined in Figure 14.",
+                    ),
+                ],
+                figure_nr=18,
+            ),
+            structure(
+                "Foo Power Descriptor",
+                [
+                    bits("127:120", "Reserved", unit="bits"),
+                    bits("119", "Valid", "VAL", unit="bits"),
+                    bits("100:96", "Foo Rate", "FRATE", unit="bits"),
+                    bits("63:32", "Foo Latency", "FLAT", unit="bits"),
+                    bits("25", "Foo Off", "FOFF", unit="bits"),
+                    bits("24", "Foo Scale", "FSC", unit="bits"),
+                    bits("15:00", "Foo Power", "FPWR", unit="bits"),
+                ],
+                kind="other",
+                figure_nr=14,
+                unit="bits",
+            ),
+            structure(
+                "Foo Format",
+                [
+                    bits("15:08", "Foo Data Size", "FDS", unit="bits"),
+                    bits("07:00", "Foo Metadata Size", "FMS", unit="bits"),
+                ],
+                kind="other",
+                figure_nr=15,
+                unit="bits",
             ),
             structure(
                 "Foo Range Entries",
@@ -277,6 +386,7 @@ def model(tmp_path):
                 identifier=0xC1, name="Foo Events", source=source(figure_nr=7)
             )
         },
+        meta=spec_model.DocumentMeta(version="9.8.7"),
     )
     path = tmp_path / "merged.spec.document.json"
     path.write_text(document.model_dump_json(), encoding="utf-8")
@@ -303,7 +413,8 @@ def test_each_document_has_a_header_named_by_its_abbreviation(model, tmp_path):
     text = text_of(wrote, "libxnvme_spec_foo.h")
     assert "#ifndef LIBXNVME_SPEC_FOO_H" in text
     # The header says what wrote it, and that it is not to be edited
-    assert " * Written from the data model of senfd " in text
+    # The version is of the senfd that wrote the data model
+    assert " * Written from the data model of senfd 9.8.7, by" in text
     assert " * edit: see the contributor docs on producing the spec headers." in text
 
 
@@ -531,3 +642,61 @@ def test_the_registers_are_left_out_when_asked(model, tmp_path):
         generate(model, tmp_path / "out", registers="none"), "libxnvme_spec_foo.h"
     )
     assert "_registers" not in text
+
+
+def test_the_named_values_of_a_field_are_an_enum_by_its_mask(model, tmp_path):
+    text = text_of(generate(model, tmp_path / "out"), "libxnvme_spec_foo.h")
+
+    # Of a command
+    assert "enum xnvme_spec_foo_ding_cdw10_fact {" in text
+    assert "\tXNVME_SPEC_FOO_DING_CDW10_FACT_FOO_START = 0x0," in text
+    # Without what a name adds in parentheses, closed or not
+    assert "\tXNVME_SPEC_FOO_DING_CDW10_FACT_FOO_STOP = 0x1," in text
+    assert "\tXNVME_SPEC_FOO_DING_CDW10_FACT_FOO_PAUSE = 0x3," in text
+    assert "_FACT_THE_CONTROLLER" not in text
+    # Of a field that is the whole member of a structure
+    assert "enum xnvme_spec_foo_foo_entry_fek {" in text
+    assert "\tXNVME_SPEC_FOO_FOO_ENTRY_FEK_FOO_PRIMARY = 0x1," in text
+
+
+def test_operations_that_two_fields_select_are_an_enum_by_the_first(model, tmp_path):
+    text = text_of(generate(model, tmp_path / "out"), "libxnvme_spec_foo.h")
+
+    assert "enum xnvme_spec_foo_ding_cdw10_fstep_fkind1h {" in text
+    assert "\tXNVME_SPEC_FOO_DING_CDW10_FSTEP_FKIND1H_FOO_BEGIN = 0x1," in text
+    assert "\tXNVME_SPEC_FOO_DING_CDW10_FSTEP_FKIND1H_FOO_END = 0x2," in text
+    assert "enum xnvme_spec_foo_ding_cdw10_fstep_fkind2h {" in text
+    assert "\tXNVME_SPEC_FOO_DING_CDW10_FSTEP_FKIND2H_FOO_PEEK = 0x1," in text
+
+
+def test_an_array_takes_the_layout_of_its_entry_from_the_figure_named(model, tmp_path):
+    text = text_of(generate(model, tmp_path / "out"), "libxnvme_spec_foo.h")
+
+    # An entry that is a scalar keeps its type, with masks named by the entry
+    # The entry is named as the struct of Foo Format, so its masks take its
+    # figure
+    assert (
+        "\tuint16_t ffmt[2]; ///< Foo Format, 2 of 2 bytes of"
+        " XNVME_SPEC_FOO_FOO_FORMAT_FIGURE15_*, bytes 3:0" in text
+    )
+    assert "#define XNVME_SPEC_FOO_FOO_FORMAT_FIGURE15_FDS 0xff00" in text
+    assert "#define XNVME_SPEC_FOO_FOO_FORMAT_FIGURE15_FMS 0xff" in text
+    # A wider entry is a struct written before the struct of the array
+    entry = text.index(
+        "struct __attribute__((packed)) xnvme_spec_foo_foo_power_descriptor {"
+    )
+    array = text.index("\tstruct xnvme_spec_foo_foo_power_descriptor fpd[2];")
+    assert entry < array
+    # A byte-aligned field of 1, 2, 4 or 8 bytes is a member
+    assert "\tuint16_t fpwr; ///< Foo Power, bytes 1:0" in text
+    assert "\tuint32_t flat; ///< Foo Latency, bytes 7:4" in text
+    # Fields that share a byte are one member, with masks
+    assert "\tuint8_t fsc_foff; ///< Foo Scale; Foo Off, byte 3, see" in text
+    assert "#define XNVME_SPEC_FOO_FOO_POWER_DESCRIPTOR_FSC_FOFF_FOFF 0x2" in text
+    # A field alone in its byte from bit 0 is the member, without a mask
+    assert "\tuint8_t frate; ///< Foo Rate, bits 4:0 of byte 12" in text
+    assert "_FRATE_FRATE" not in text
+    # VAL is the name yace prints the value of a field by, so it gets no mask
+    assert "\tuint8_t val; ///< Valid, bit 7 of byte 14" in text
+    assert "_VAL_VAL" not in text
+    assert "\tuint8_t rsvd15[1]; ///< Reserved" in text
