@@ -500,7 +500,44 @@ def model(tmp_path):
         ],
         features={
             "foo_config": spec_model.Feature(
-                identifier=0xC0, name="Foo Config", source=source(figure_nr=6)
+                identifier=0xC0,
+                name="Foo Config",
+                source=source(figure_nr=6),
+                sqe=[
+                    spec_model.Dwords(
+                        lower=11,
+                        upper=11,
+                        fields=[
+                            bits("31:18", "Reserved", None, unit="bits"),
+                            bits("17:16", "Foo Level", "FLV", unit="bits").model_copy(
+                                update={
+                                    "values": [
+                                        value("0h", 0, "Foo Low"),
+                                        value("1h", 1, "Foo High"),
+                                    ]
+                                }
+                            ),
+                            bits("15:00", "Foo Limit", "FLIM", unit="bits"),
+                        ],
+                        source=source(figure_nr=24),
+                    ),
+                    # A figure of another feature that the data model also
+                    # lists here gets no mask where it overlaps
+                    spec_model.Dwords(
+                        lower=11,
+                        upper=11,
+                        fields=[bits("00", "Foo Other", "FOTH", unit="bits")],
+                        source=source(figure_nr=25),
+                    ),
+                ],
+                cqe=[
+                    spec_model.Dwords(
+                        lower=0,
+                        upper=0,
+                        fields=[bits("15:00", "Foo Granted", "FGNT", unit="bits")],
+                        source=source(figure_nr=26),
+                    )
+                ],
             )
         },
         log_pages={
@@ -886,3 +923,17 @@ def test_arrays_of_one_entry_share_its_masks(model, tmp_path):
     )
     assert text.count("#define XNVME_SPEC_FOO_FOO_FORMAT_FIGURE15_FDS ") == 1
     assert text.count("enum xnvme_spec_foo_foo_format_figure15_") == 0
+
+
+def test_a_feature_is_the_masks_of_its_dwords_and_values(model, tmp_path):
+    text = text_of(generate(model, tmp_path / "out"), "libxnvme_spec_foo.h")
+
+    assert " * The fields of the feature Foo Config (Foo 1.0" in text
+    assert "#define XNVME_SPEC_FOO_FEATURE_FOO_CONFIG_CDW11_FLV 0x30000" in text
+    assert "#define XNVME_SPEC_FOO_FEATURE_FOO_CONFIG_CDW11_FLIM 0xffff" in text
+    assert "bits 17:16 of Command Dword 11 */" in text
+    assert "_FOO_CONFIG_CDW11_FOTH" not in text
+    assert "#define XNVME_SPEC_FOO_FEATURE_FOO_CONFIG_CQE_DW0_FGNT 0xffff" in text
+    assert "bits 15:0 of Completion Queue Entry Dword 0 */" in text
+    assert "enum xnvme_spec_foo_feature_foo_config_cdw11_flv {" in text
+    assert "\tXNVME_SPEC_FOO_FEATURE_FOO_CONFIG_CDW11_FLV_FOO_HIGH = 0x1," in text

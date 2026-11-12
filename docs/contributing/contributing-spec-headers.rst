@@ -3,13 +3,14 @@
 Producing the spec headers
 ==========================
 
-The headers that define the commands, data structures, log pages, registers,
-identifiers and status codes of the NVMe specifications are written by a
-generator rather than by hand. `senfd`_ reads the specification documents into
-a data model. `yace`_ runs the generator, ``toolbox/xnvme_spec_headers.py``,
-and the generator writes the headers from that data model. yace then parses
-the generated headers as it parses any header, checks that they use only the C
-subset that yace accepts, and emits their pretty-printers and bindings.
+The headers that define the commands, features, data structures, log pages,
+registers, identifiers and status codes of the NVMe specifications are written
+by a generator rather than by hand. `senfd`_ reads the specification documents
+into a data model. `yace`_ runs the generator,
+``toolbox/xnvme_spec_headers.py``, and the generator writes the headers from
+that data model. yace then parses the generated headers as it parses any
+header, checks that they use only the C subset that yace accepts, and emits
+their pretty-printers and bindings.
 
 The build runs neither senfd, the generator nor yace. A contributor runs them
 on a machine that has the specification documents, and commits the generated

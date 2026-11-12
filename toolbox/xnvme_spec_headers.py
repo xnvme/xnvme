@@ -38,7 +38,11 @@ cache, as for senfd lint. 'prefix' is the prefix of every name; the default is
 
 The identifiers of the features and of the log pages are enums as well, and
 so are the status codes of each document, with one enum for each type of
-status code.
+status code. For each feature, the generator writes the masks of the fields
+the feature defines in the dwords of Set Features and in Dword 0 of the
+completion queue entry, named by the feature and the dword, such as
+XNVME_SPEC_BASE_FEATURE_TEMPERATURE_THRESHOLD_CDW11_THSEL, with an enum of
+the named values of a field.
 
 The registers of each document are one packed struct, with each register at
 its offset, as a driver maps the registers. The generator also writes the
@@ -329,7 +333,11 @@ def masks_of(
                 else f"bits {field.upper}:{field.lower}"
             )
             what = field.name or field.acronym
-            of = member if member.startswith("Command Dword") else f"'{member}'"
+            of = (
+                member
+                if member.startswith(("Command Dword", "Completion Queue Entry"))
+                else f"'{member}'"
+            )
             doc = f"{what} ({senfd.query.cite(source)}); {where} of {of}"
             for case in field.cases:
                 if case.role == "field" and (case.name or case.acronym):
@@ -1589,6 +1597,49 @@ class SpecHeaders:
                 enum_lines(f"{stem}_{doc}_{what}", described[(doc, what)], constants)
             )
 
+    def write_features(
+        self, spec: SpecDocument, stem: str, out: Dict[str, List[str]]
+    ) -> None:
+        """Writes into 'out', by the document of each feature, the masks of the
+        fields the feature defines in the dwords of Set Features and in Dword 0
+        of the completion queue entry, named by the feature and the dword, and
+        an enum of the values of each field whose values the specification
+        names"""
+
+        upper = identifier(stem)
+        for feature in sorted(spec.features.values(), key=lambda f: f.identifier):
+            doc = document_key(feature.source.document)
+            prefix = f"{upper}_{doc.upper()}_FEATURE_{identifier(feature.name)}"
+            masks: List[Tuple[str, int, str]] = []
+            values: List[str] = []
+            for part, word, dwords in (
+                ("CDW", "Command Dword", feature.sqe),
+                ("CQE_DW", "Completion Queue Entry Dword", feature.cqe),
+            ):
+                spans = sorted({(d.lower, d.upper) for d in dwords})
+                for lower, last in spans:
+                    figures, _ = described(SimpleNamespace(sqe=dwords), lower, last)
+                    dword = f"{lower}" if lower == last else f"{lower}_{last}"
+                    member = f"{prefix}_{part}{dword}"
+                    fields = [(f.fields, f.source) for f in figures]
+                    what = f"{word} {lower}" if lower == last else f"{word}s {dword}"
+                    these = masks_of(what, member, fields, 32 * (last - lower + 1))
+                    masks += these
+                    values += value_enums(member, fields, these)
+            if not masks:
+                continue
+            lines = out.setdefault(doc, [])
+            lines += [
+                "/*",
+                f" * The fields of the feature {feature.name}"
+                f" ({senfd.query.cite(feature.source)})",
+                " */",
+            ]
+            for name, value, text in masks:
+                lines += [f"/** {text} */", f"#define {name} 0x{value:x}"]
+            lines.append("")
+            lines += values
+
     def write_registers(
         self, spec: SpecDocument, stem: str, out: Dict[str, List[str]]
     ) -> None:
@@ -1730,6 +1781,8 @@ class SpecHeaders:
             self.write_entries(spec, stem, taken, structs)
         registers: Dict[str, List[str]] = {}
         self.write_registers(spec, stem, registers)
+        features: Dict[str, List[str]] = {}
+        self.write_features(spec, stem, features)
 
         for set_key, command in self.commands(spec):
             doc = document_key(command.source.document)
@@ -1780,7 +1833,7 @@ class SpecHeaders:
             lines += operation_enums(command, masks)
 
         headers: List[Path] = []
-        for doc in dict.fromkeys([*enums, *structs, *registers, *commands]):
+        for doc in dict.fromkeys([*enums, *structs, *registers, *commands, *features]):
             name = f"{stem}_{doc}"
             guard = f"LIB{identifier(name)}_H"
             text = [
@@ -1803,6 +1856,7 @@ class SpecHeaders:
                 *structs.get(doc, []),
                 *registers.get(doc, []),
                 *commands.get(doc, []),
+                *features.get(doc, []),
                 f"#endif /* {guard} */",
                 "",
             ]
