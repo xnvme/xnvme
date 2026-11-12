@@ -5,6 +5,7 @@
 tools_source = [
   'homi.c',
   'xnvme.c',
+  'xnvme_cmd.c',
 ]
 tools = {
   'homi.c': [],
@@ -21,12 +22,15 @@ tools_names = {
   'homi.c': 'xnvme-homi',
   'xnvme.c': 'xnvme',
 }
+tools_extra = {
+  'xnvme.c': ['xnvme_cmd.c'],
+}
 foreach source, tests : tools
   bin_name = tools_names[source]
   bin_cuse = source == 'homi.c'
   bin = executable(
     bin_name,
-    [source, xnvme_vcs_h],
+    [source, xnvme_vcs_h] + tools_extra.get(source, []),
     include_directories: [conf_inc, xnvme_inc, xnvme_priv_inc] + (bin_cuse ? [xnvme_cuse_inc] : []),
     link_args: link_args_hardening,
     pie: get_option('hardening'),
