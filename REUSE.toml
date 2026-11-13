@@ -21,3 +21,8 @@ precedence = "aggregate"
 SPDX-FileCopyrightText = "1991, 1993, The Regents of the University of California."
 SPDX-License-Identifier = "BSD-3-Clause"
 
+[[annotations]]
+path = ["lib/backend/transport/common/xnvme_transport_rbtree.c", "lib/backend/transport/common/xnvme_transport_rbtree.h"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Thomas Niemann"
+SPDX-License-Identifier = "LicenseRef-Niemann"

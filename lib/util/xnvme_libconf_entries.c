@@ -69,6 +69,9 @@ static const char *g_libconf_strings[] = {
 #ifdef XNVME_BE_LIBURING_DMABUF_ENABLED
 	"conf: XNVME_BE_LIBURING_DMABUF_ENABLED",
 #endif
+#ifdef XNVME_BE_RDMA_ENABLED
+	"conf: XNVME_BE_RDMA_ENABLED",
+#endif
 #ifdef XNVME_BE_SPDK_ENABLED
 	"conf: XNVME_BE_SPDK_ENABLED",
 #endif

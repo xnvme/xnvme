@@ -42,6 +42,7 @@ extern "C" {
 #include "libxnvme_driver.h"
 #include "libxnvme_queue.h"
 #include "libxnvme_spec.h"
+#include "libxnvme_spec_transports.h"
 #include "libxnvme_spec_fs.h"
 #include "libxnvme_cmd.h"
 #include "libxnvme_ver.h"

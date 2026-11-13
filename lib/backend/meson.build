@@ -26,3 +26,5 @@ subdir('spdk')
 subdir('thrpool')
 subdir('upcie')
 subdir('windows')
+subdir('transport')
+
