@@ -49,9 +49,17 @@ nsid = 2
 labels = [ "hip", "meta_sep" ]
 driver_attachment = "userspace"
 
-# The same controller on the kernel's driver, for io_uring_dmabuf; the guest's
-# only NVMe controller, so its namespace is nvme0n1. Labelled dmabuf alone, so
-# only the tests written for that backend pick it
+# The second controller of the rig 'second-controller', which the homi server
+# for upcie-hip serves beside the first, for a buffer registered through both
+[[devices]]
+uri = "0000:05:00.0"
+nsid = 1
+labels = [ "hip", "second_ctrlr" ]
+driver_attachment = "userspace"
+
+# The first controller on the kernel's driver, for io_uring_dmabuf; it has the
+# lower address, so its namespace is nvme0n1. Labelled dmabuf alone, so only
+# the tests written for that backend pick it
 [[devices]]
 uri = "/dev/nvme0n1"
 nsid = 1
