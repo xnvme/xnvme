@@ -69,10 +69,17 @@ def test_scan(cijoe, device, be_opts, cli_args):
     from ..conftest import cijoe_config_get_all_devices
 
     osname = get_osname()
-    pcie_devices = cijoe_config_get_all_devices(["pcie"])
-    expected_count = len(pcie_devices)
 
     if osname in ["linux", "freebsd", "debian"]:
+        bdf = re.compile(r"[0-9a-f]{4}:[0-9a-f]{2}:[0-9a-f]{2}\.[0-7]")
+        expected_count = len(
+            {
+                d["uri"]
+                for d in cijoe_config_get_all_devices([])
+                if bdf.fullmatch(d["uri"])
+            }
+        )
+
         XnvmeDriver.kernel_attach(cijoe)
         err, state = cijoe.run("xnvme scan")
         assert not err
@@ -110,6 +117,8 @@ def test_scan(cijoe, device, be_opts, cli_args):
             ), f"Expected {expected_count} controllers (detached), found {scan_count}"
     else:
         # Windows/macOS: scan reports namespaces (dtype: 0x2), no detach test
+        expected_count = len(cijoe_config_get_all_devices(["pcie"]))
+
         err, state = cijoe.run("xnvme scan")
         assert not err
 
