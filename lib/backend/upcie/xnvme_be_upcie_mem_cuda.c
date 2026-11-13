@@ -157,12 +157,13 @@ xnvme_be_upcie_cuda_buf_unregister(const struct xnvme_dev *dev, void *vaddr)
 	}
 
 	err = _unmap(dev, last->vaddr);
-	if (err) {
+	/* Served, the range is forgotten even when the server keeps it */
+	if (err && !g_upcie_rte.connection.alive) {
 		return err;
 	}
 	xnvme_buf_reg_remove(last);
 
-	return 0;
+	return err;
 }
 
 static int
