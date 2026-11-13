@@ -171,6 +171,9 @@ DEVENV_ENGINE ?= docker
 DEVENV_NAME ?= xnvme-devenv-$(notdir $(CURDIR))
 DEVENV_HOME ?= $(CURDIR)/.devenv
 DEVENV_CACHE ?= $(HOME)/.cache/xnvme-devenv
+# A worktree's .git names the git directory of its main checkout, which the
+# container then needs at the same path
+DEVENV_GIT_DIR := $(shell git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)
 DEVENV_GUEST ?= $(shell cat $(CIJOE_GUEST_FILE) 2>/dev/null)
 export DEVENV_TESTS = $(TESTS)
 DEVENV_SSH_CONFIG = import sys, tomllib; c = tomllib.load(open(sys.argv[1], "rb"))["qemu"]; g = c["default_guest"]; f = c["guests"][g]["system_args"]["tcp_forward"]; print(f"[qemu.guests.{g}.system_args.tcp_forward]\nhost = {f['host']}\nguest = {f['guest']}\nhost_address = \"0.0.0.0\"")
@@ -210,6 +213,7 @@ devenv-host:
 		$(DEVENV_ENGINE) run -d --name $(DEVENV_NAME) --privileged --ulimit memlock=-1 -p 127.0.0.1::4200 \
 			-v $(CURDIR):/tmp/xnvme -v $(DEVENV_HOME):/root \
 			-v $(DEVENV_CACHE):/root/system_imaging -w /tmp/xnvme \
+			$(if $(filter-out $(CURDIR)/.git,$(DEVENV_GIT_DIR)),-v $(DEVENV_GIT_DIR):$(DEVENV_GIT_DIR)) \
 			$(DEVENV_IMAGE) sleep infinity
 	@echo "## xNVMe: devenv-host [DONE]"
 
