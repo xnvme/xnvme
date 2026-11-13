@@ -54,9 +54,9 @@ sub_async_read(struct xnvme_cli *cli)
 	}
 
 	completion_fd = xnvme_queue_get_completion_fd(queue);
-	if (completion_fd <= 0) {
-		err = -errno;
-		xnvme_cli_perr("error getting eventfd", err);
+	if (completion_fd < 0) {
+		err = completion_fd;
+		xnvme_cli_perr("xnvme_queue_get_completion_fd()", err);
 		goto exit;
 	}
 
