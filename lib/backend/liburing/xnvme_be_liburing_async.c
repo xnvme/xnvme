@@ -59,7 +59,7 @@ retry:
 }
 
 int
-xnvme_be_liburing_init(struct xnvme_queue *q, int opts)
+xnvme_be_liburing_init_ring(struct xnvme_queue *q, int opts, bool bigsqe)
 {
 	struct xnvme_queue_liburing *queue = (void *)q;
 	struct xnvme_be_linux_state *state = &xnvme_be_state(queue->base.dev)->linux_state;
@@ -132,7 +132,7 @@ xnvme_be_liburing_init(struct xnvme_queue *q, int opts)
 		ring_params.flags |= IORING_SETUP_IOPOLL;
 	}
 
-	if (opts & XNVME_QUEUE_IOU_BIGSQE) {
+	if (bigsqe) {
 		ring_params.flags |= IORING_SETUP_SQE128;
 		ring_params.flags |= IORING_SETUP_CQE32;
 	}
@@ -161,6 +161,12 @@ exit:
 	}
 
 	return err;
+}
+
+int
+xnvme_be_liburing_init(struct xnvme_queue *q, int opts)
+{
+	return xnvme_be_liburing_init_ring(q, opts, false);
 }
 
 int
