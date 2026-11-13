@@ -38,3 +38,15 @@ def test_devenv_up_still_boots_a_guest_in_the_container():
     assert proc.returncode == 0, proc.stderr
     assert "false run -d --name devenv-test" in proc.stdout
     assert "make guest-start" in proc.stdout
+
+
+def test_devenv_run_mounts_the_git_directory_of_a_worktree():
+    proc = make("devenv-run", "CMD=true", "DEVENV_GIT_DIR=/elsewhere/.git")
+    assert proc.returncode == 0, proc.stderr
+    assert "-v /elsewhere/.git:/elsewhere/.git" in proc.stdout
+
+
+def test_devenv_run_mounts_no_git_directory_of_a_checkout():
+    proc = make("devenv-run", "CMD=true", f"DEVENV_GIT_DIR={ROOT}/.git")
+    assert proc.returncode == 0, proc.stderr
+    assert f"{ROOT}/.git:" not in proc.stdout
