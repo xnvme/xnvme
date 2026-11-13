@@ -2857,3 +2857,138 @@ struct xnvme_spec_kvs_idfy {
 	};
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_kvs_idfy) == 4096, "Incorrect size")
+
+#define XNVME_SPEC_CC_CSS_ALL_IO_SUPPORTED     0b110
+#define XNVME_SPEC_CC_CSS_NVM_IO_SUPPORTED     0b000
+#define XNVME_SPEC_CC_CSS_ADMIN_ONLY_SUPPORTED 0b111
+
+/**
+ * Base-spec NVMe controller registers reached through Transports Property Get and Property
+ * Set: Controller Capabilities (CAP), Controller Configuration (CC), and Controller Status
+ * (CSTS).
+ *
+ * These are base-spec, not Transports-specific, but they are kept private to
+ * lib/backend/transport for now. A field filling whole bytes is an integer of its own. The
+ * fields narrower than a byte are held in an integer named after them when they are related,
+ * else in one named cdw<N> after the 0-based dword it spans. Those fields are reached through
+ * masks with xnvme_bits_get() and xnvme_bits_set(), as in ``libxnvme_spec.h``, so they can
+ * move there verbatim later. 'raw' is the register as transferred by Property Get and Set.
+ */
+
+/**
+ * Controller Capabilities
+ *
+ * @struct xnvme_spec_ctrlr_cap
+ */
+struct xnvme_spec_ctrlr_cap {
+	union {
+		struct {
+			union {
+				struct {
+					uint16_t mqes;   ///< Maximum Queue Entries Supported, bits 15:0
+					uint8_t cqr_ams; ///< bits 23:16, see XNVME_SPEC_CTRLR_CAP_CQR_AMS_*
+					uint8_t to;      ///< Timeout, in units of 500 ms, bits 31:24
+				};
+				uint32_t cdw0; ///< bits 31:0
+			};
+			uint32_t cdw1;   ///< bits 63:32, see XNVME_SPEC_CTRLR_CAP_CDW1_*
+		};
+		uint64_t raw;
+	};
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_ctrlr_cap) == 8, "Incorrect size");
+
+/** Contiguous Queues Required; bit 0 of 'cqr_ams' */
+#define XNVME_SPEC_CTRLR_CAP_CQR_AMS_CQR 0x1
+/** Arbitration Mechanism Supported; bits 2:1 of 'cqr_ams' */
+#define XNVME_SPEC_CTRLR_CAP_CQR_AMS_AMS 0x6
+/** Doorbell Stride; bits 3:0 of 'cdw1' */
+#define XNVME_SPEC_CTRLR_CAP_CDW1_DSTRD 0xf
+/** NVMe Subsystem Reset Supported; bit 4 of 'cdw1' */
+#define XNVME_SPEC_CTRLR_CAP_CDW1_NSSRS 0x10
+/** NVMe Command Set Support; bit 5 of 'cdw1' */
+#define XNVME_SPEC_CTRLR_CAP_CDW1_NCSS 0x20
+/** I/O Command Set Supported; bit 11 of 'cdw1' */
+#define XNVME_SPEC_CTRLR_CAP_CDW1_IOCSS 0x800
+/** No I/O Command Set Supported; bit 12 of 'cdw1' */
+#define XNVME_SPEC_CTRLR_CAP_CDW1_NOIOCSS 0x1000
+/** Boot Partition Support; bit 13 of 'cdw1' */
+#define XNVME_SPEC_CTRLR_CAP_CDW1_BPS 0x2000
+/** Controller Power Scope; bits 15:14 of 'cdw1' */
+#define XNVME_SPEC_CTRLR_CAP_CDW1_CPS 0xc000
+/** Memory Page Size Minimum; bits 19:16 of 'cdw1' */
+#define XNVME_SPEC_CTRLR_CAP_CDW1_MPSMIN 0xf0000
+/** Memory Page Size Maximum; bits 23:20 of 'cdw1' */
+#define XNVME_SPEC_CTRLR_CAP_CDW1_MPSMAX 0xf00000
+/** Persistent Memory Region Supported; bit 24 of 'cdw1' */
+#define XNVME_SPEC_CTRLR_CAP_CDW1_PMRS 0x1000000
+/** Controller Memory Buffer Supported; bit 25 of 'cdw1' */
+#define XNVME_SPEC_CTRLR_CAP_CDW1_CMBS 0x2000000
+/** NVMe Subsystem Shutdown Supported; bit 26 of 'cdw1' */
+#define XNVME_SPEC_CTRLR_CAP_CDW1_NSSS 0x4000000
+/** Controller Ready with Media Support; bit 27 of 'cdw1' */
+#define XNVME_SPEC_CTRLR_CAP_CDW1_CRWMS 0x8000000
+/** Controller Ready Independent of Media Support; bit 28 of 'cdw1' */
+#define XNVME_SPEC_CTRLR_CAP_CDW1_CRIMS 0x10000000
+/** NVMe Subsystem Shutdown Enhancements Supported; bit 29 of 'cdw1' */
+#define XNVME_SPEC_CTRLR_CAP_CDW1_NSSES 0x20000000
+
+/**
+ * Controller Configuration
+ *
+ * @struct xnvme_spec_ctrlr_cc
+ */
+struct xnvme_spec_ctrlr_cc {
+	union {
+		uint32_t cdw0; ///< bits 31:0, see XNVME_SPEC_CTRLR_CC_CDW0_*
+		uint32_t raw;
+	};
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_ctrlr_cc) == 4, "Incorrect size");
+
+/** Enable; bit 0 of 'cdw0' */
+#define XNVME_SPEC_CTRLR_CC_CDW0_EN 0x1
+/** I/O Command Set Selected, see XNVME_SPEC_CC_CSS_*; bits 6:4 of 'cdw0' */
+#define XNVME_SPEC_CTRLR_CC_CDW0_CSS 0x70
+/** Memory Page Size; bits 10:7 of 'cdw0' */
+#define XNVME_SPEC_CTRLR_CC_CDW0_MPS 0x780
+/** Arbitration Mechanism Selected; bits 13:11 of 'cdw0' */
+#define XNVME_SPEC_CTRLR_CC_CDW0_AMS 0x3800
+/** Shutdown Notification; bits 15:14 of 'cdw0' */
+#define XNVME_SPEC_CTRLR_CC_CDW0_SHN 0xc000
+/** I/O Submission Queue Entry Size; bits 19:16 of 'cdw0' */
+#define XNVME_SPEC_CTRLR_CC_CDW0_IOSQES 0xf0000
+/** I/O Completion Queue Entry Size; bits 23:20 of 'cdw0' */
+#define XNVME_SPEC_CTRLR_CC_CDW0_IOCQES 0xf00000
+/** Controller Ready Independent of Media Enable; bit 24 of 'cdw0' */
+#define XNVME_SPEC_CTRLR_CC_CDW0_CRIME 0x1000000
+
+/**
+ * Controller Status
+ *
+ * @struct xnvme_spec_ctrlr_csts
+ */
+struct xnvme_spec_ctrlr_csts {
+	union {
+		struct {
+			uint8_t sts; ///< bits 7:0, see XNVME_SPEC_CTRLR_CSTS_STS_*
+			uint8_t rsvd[3];
+		};
+		uint32_t raw;
+	};
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_ctrlr_csts) == 4, "Incorrect size");
+
+/** Ready; bit 0 of 'sts' */
+#define XNVME_SPEC_CTRLR_CSTS_STS_RDY 0x1
+/** Controller Fatal Status; bit 1 of 'sts' */
+#define XNVME_SPEC_CTRLR_CSTS_STS_CFS 0x2
+/** Shutdown Status; bits 3:2 of 'sts' */
+#define XNVME_SPEC_CTRLR_CSTS_STS_SHST 0xc
+/** NVMe Subsystem Shutdown Ready; bit 4 of 'sts' */
+#define XNVME_SPEC_CTRLR_CSTS_STS_NSSRO 0x10
+/** Processing Paused; bit 5 of 'sts' */
+#define XNVME_SPEC_CTRLR_CSTS_STS_PP 0x20
+/** Shutdown Type; bit 6 of 'sts' */
+#define XNVME_SPEC_CTRLR_CSTS_STS_ST 0x40
+
