@@ -3,9 +3,12 @@ The test programs:
   xnvme test adm
   xnvme test async-intf
   xnvme test async-limbo
+  xnvme test be
+  xnvme test bits
   xnvme test buf
   xnvme test cli
   xnvme test compare
+  xnvme test compat
   xnvme test copy
   xnvme test ctrlr
   xnvme test cuse-admin64-identify
@@ -19,8 +22,10 @@ The test programs:
   xnvme test kvs
   xnvme test lblk
   xnvme test map
+  xnvme test multi-ctrlr
   xnvme test nvm
   xnvme test scc
+  xnvme test spec
   xnvme test threads
   xnvme test xnvme-cli
   xnvme test xnvme-file
