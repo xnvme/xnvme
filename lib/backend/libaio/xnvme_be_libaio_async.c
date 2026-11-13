@@ -333,10 +333,10 @@ struct xnvme_be_async g_xnvme_be_libaio_async = {
 	.cmd_io = _linux_libaio_cmd_io,
 	.cmd_iov = _linux_libaio_cmd_iov,
 	.poke = _linux_libaio_poke,
-	.wait = _linux_libaio_get_completion_fd,
+	.wait = xnvme_be_nosys_queue_wait,
 	.init = _linux_libaio_init,
 	.term = _linux_libaio_term,
-	.get_completion_fd = xnvme_be_nosys_queue_get_completion_fd,
+	.get_completion_fd = _linux_libaio_get_completion_fd,
 #else
 	.cmd_io = xnvme_be_nosys_queue_cmd_io,
 	.cmd_iov = xnvme_be_nosys_queue_cmd_iov,
