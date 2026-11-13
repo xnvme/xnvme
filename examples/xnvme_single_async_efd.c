@@ -33,7 +33,6 @@ sub_async_read(struct xnvme_cli *cli)
 	err = xnvme_queue_init(dev, 16, 0, &queue);
 	if (err) {
 		xnvme_cli_perr("xnvme_queue_init()", err);
-		xnvme_dev_close(dev);
 		return err;
 	}
 
