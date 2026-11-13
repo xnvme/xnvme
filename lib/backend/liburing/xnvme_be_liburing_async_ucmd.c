@@ -55,9 +55,7 @@ xnvme_be_liburing_ucmd_init(struct xnvme_queue *q, int opts)
 		return -ENOSYS;
 	}
 
-	opts |= XNVME_QUEUE_IOU_BIGSQE;
-
-	return xnvme_be_liburing_init(q, opts);
+	return xnvme_be_liburing_init_ring(q, opts, true);
 }
 
 #ifdef NVME_URING_CMD_IO
