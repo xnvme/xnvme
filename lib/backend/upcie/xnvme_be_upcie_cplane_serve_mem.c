@@ -239,6 +239,7 @@ static struct _cplane_region {
 	uint64_t desc_offset;
 	uint64_t handles[DMAMEM_IOMMU_MAP_PA_DEVS_MAX]; ///< By device of the range; 0 when shared
 	uint32_t devs; ///< A bit per device of the range it is installed for
+	int dev_refs[DMAMEM_IOMMU_MAP_PA_DEVS_MAX];
 	uint64_t iova_base;
 	int map_fd;
 	int refs;
@@ -339,6 +340,27 @@ _region_slot(uint64_t phys0, uint64_t nbytes, uint32_t page_size)
 	return free_slot;
 }
 
+/* The last registration through a device takes the region out of its domain, unless a device
+ * sharing the domain reaches the region through that mapping */
+static void
+_region_dev_put(struct _cplane_region *region, int dev)
+{
+	if (--region->dev_refs[dev]) {
+		return;
+	}
+
+	if (region->handles[dev]) {
+		for (int d = 0; d < DMAMEM_IOMMU_MAP_PA_DEVS_MAX; ++d) {
+			if ((d != dev) && (region->devs & (1U << d)) && !region->handles[d]) {
+				return;
+			}
+		}
+		iommu_map_pa_del(region->map_fd, region->handles[dev]);
+		region->handles[dev] = 0;
+	}
+	region->devs &= ~(1U << dev);
+}
+
 static int
 _registration_arithmetic(struct xnvme_be_upcie_cplane_registration *reg, int dmabuf_fd,
 			 uint64_t nbytes, uint32_t page_size, uint32_t nphys, const uint64_t *phys,
@@ -417,7 +439,9 @@ _registration_arithmetic(struct xnvme_be_upcie_cplane_registration *reg, int dma
 		region->devs |= 1U << dev;
 	}
 
+	++region->dev_refs[dev];
 	++region->refs;
+	reg->dev = dev;
 	reg->desc_offset = region->desc_offset;
 	reg->region = (int)(region - g_regions);
 
@@ -533,6 +557,8 @@ _xnvme_be_upcie_cplane_serve_unregister_mem(struct xnvme_be_upcie_cplane_registr
 
 		if (region->refs && !--region->refs) {
 			_region_term(region);
+		} else if (region->refs) {
+			_region_dev_put(region, reg->dev);
 		}
 		_imp_put();
 	} else if (reg->desc_offset) {
