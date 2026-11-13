@@ -18,7 +18,6 @@ extern struct xnvme_be_mem g_xnvme_be_liburing_mem_dmabuf;
 #include <xnvme_queue.h>
 
 #define XNVME_QUEUE_IOU_CQE_BATCH_MAX 8
-#define XNVME_QUEUE_IOU_BIGSQE        (0x1 << 2)
 
 struct xnvme_be_liburing_dmabuf;
 
@@ -54,6 +53,13 @@ xnvme_be_liburing_poke(struct xnvme_queue *queue, uint32_t max);
 
 int
 xnvme_be_liburing_init(struct xnvme_queue *queue, int opts);
+
+/**
+ * Initialize 'queue' as xnvme_be_liburing_init() does, with 128-byte SQEs and 32-byte CQEs
+ * when 'bigsqe' is set, as the passthrough of io_uring_cmd requires
+ */
+int
+xnvme_be_liburing_init_ring(struct xnvme_queue *queue, int opts, bool bigsqe);
 
 int
 xnvme_be_liburing_term(struct xnvme_queue *queue);

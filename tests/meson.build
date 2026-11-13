@@ -134,6 +134,11 @@ if is_linux
   tests += {'cuse_admin64_identify.c': []}
 endif
 
+# Reads the flags of the io_uring from the queue of the liburing backend
+if conf_data.get('XNVME_BE_LIBURING_ENABLED')
+  tests += {'liburing.c': []}
+endif
+
 tests_exe = {}
 tests_bins = []
 foreach test_source, tests_args : tests
@@ -144,7 +149,7 @@ foreach test_source, tests_args : tests
     link_with: xnvmelib,
     link_args: link_args_hardening,
     pie: get_option('hardening'),
-    dependencies: [thread_dep],
+    dependencies: [thread_dep] + (test_source == 'liburing.c' ? [uring_dep] : []),
     install_rpath: xnvmelib_rpath,
     install: true,
     install_dir: xnvme_libexecdir,

@@ -18,6 +18,7 @@ The test programs:
   xnvme test kv
   xnvme test kvs
   xnvme test lblk
+  xnvme test liburing
   xnvme test map
   xnvme test nvm
   xnvme test scc
