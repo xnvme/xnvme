@@ -182,3 +182,29 @@ def test_run_uri_nsid_inactive(cijoe, device, be_opts, cli_args):
         f" '{device['uri']}/?nsid={nsid}'"
     )
     assert err, f"ran against an inactive namespace: {state.output()}"
+
+
+@xnvme_parametrize(labels=["nvm"], opts=["be"])
+def test_run_polled_stop_continue(cijoe, device, be_opts, cli_args):
+    """A polled run that is stopped and continued still ends with its result
+
+    With --poll_io, io_uring_peek_cqe() enters the kernel, and a signal makes it
+    return -EINTR without a completion. The run is stopped and continued 20
+    times; a poke reading the completion that is not there ends it with SIGSEGV.
+    """
+
+    if be_opts["be"] not in ("io_uring", "io_uring_bdev", "io_uring_cmd"):
+        pytest.skip(reason="Only io_uring polls for completions with --poll_io")
+
+    err, state = cijoe.run(
+        f"xnvme perf run --iopattern randread --qdepth 32 --iosize 4096 --runtime 3"
+        f" --cpumask 0x1 --poll_io 1 --direct --be {be_opts['be']} {device['uri']}"
+        " > /tmp/xnvme-perf-polled.out 2>&1 & pid=$!;"
+        " for i in $(seq 20); do sleep 0.1; kill -STOP $pid; kill -CONT $pid; done;"
+        " wait $pid; rc=$?; cat /tmp/xnvme-perf-polled.out; exit $rc"
+    )
+    assert not err, state.output()
+
+    total = [line.split() for line in state.output().splitlines() if "Total:" in line]
+    if total and float(total[-1][1]) == 0:
+        pytest.skip(reason="No polled I/O completed; the device has no poll queues")

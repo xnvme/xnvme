@@ -227,9 +227,14 @@ xnvme_be_liburing_poke(struct xnvme_queue *q, uint32_t max)
 
 	completed = 0;
 	for (uint32_t i = 0; i < max; i++) {
+		// with IORING_SETUP_IOPOLL the peek enters the kernel, which a signal interrupts
 		err = io_uring_peek_cqe(&queue->ring, &cqe);
-		if (err == -EAGAIN) {
+		if (err == -EAGAIN || err == -EINTR) {
 			return completed;
+		}
+		if (err) {
+			XNVME_DEBUG("FAILED: io_uring_peek_cqe(), err: %d", err);
+			return err;
 		}
 
 		ctx = io_uring_cqe_get_data(cqe);
