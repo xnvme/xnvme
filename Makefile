@@ -128,7 +128,8 @@ docs: tags-xnvme-public
 	@echo "## xNVMe: make docs"
 	xnvme-docs-clean
 	mkdir -p docs/builddir/doxy
-	cd docs/tooling && doxygen doxy.cfg
+	cd docs/tooling && doxygen doxy.cfg 2> ../builddir/doxy/warnings.log; rc=$$?; cat ../builddir/doxy/warnings.log; exit $$rc
+	! grep 'unknown command' docs/builddir/doxy/warnings.log
 	xnvme-docs-apigen --tags tags --output docs/api
 	xnvme-docs-toolchain
 	xnvme-docs-build-html
