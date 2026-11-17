@@ -414,8 +414,8 @@ cplane_serve_dispatch(struct xnvme_be_upcie_cplane_serve_conn *conn, struct nvme
 		reply.u.status.nclients_ctrlr =
 			(uint32_t)xnvme_be_upcie_cplane_serve_conn_count_of(idx);
 		reply.u.status.nqueues = (uint32_t)xnvme_be_upcie_cplane_serve_conn_nqueues(idx);
-		reply.u.status.nsq_total = g_upcie_cplane_serve.nsq_total[idx];
-		reply.u.status.ncq_total = g_upcie_cplane_serve.ncq_total[idx];
+		reply.u.status.nsq_total = share->base.nsqa;
+		reply.u.status.ncq_total = share->base.ncqa;
 		if (snprintf(reply.u.status.bdf, sizeof(reply.u.status.bdf), "%s", share->uri) >=
 		    (int)sizeof(reply.u.status.bdf)) {
 			reply.result = -ENAMETOOLONG;
@@ -473,25 +473,6 @@ cplane_serve_drop(struct xnvme_be_upcie_cplane_serve_conn *conn)
 
 	close(conn->sock);
 	xnvme_be_upcie_cplane_serve_conn_wipe(conn);
-}
-
-/* Ask each controller for its queue counts, so a status request costs no admin command */
-static void
-cplane_serve_totals_read(void)
-{
-	for (int i = 0; i < g_upcie_cplane_serve.ndevs; ++i) {
-		struct xnvme_cmd_ctx ctx = {0};
-
-		xnvme_dev_get_cmd_ctx(g_upcie_cplane_serve.devs[i], &ctx);
-
-		/* Zero totals mean the controller did not answer, as the status reply defines */
-		if (xnvme_adm_gfeat_nqueues(&ctx, &g_upcie_cplane_serve.nsq_total[i],
-					    &g_upcie_cplane_serve.ncq_total[i])) {
-			XNVME_DEBUG("INFO: controller(%d) did not report its queue counts", i);
-			g_upcie_cplane_serve.nsq_total[i] = 0;
-			g_upcie_cplane_serve.ncq_total[i] = 0;
-		}
-	}
 }
 
 /*
@@ -825,8 +806,6 @@ xnvme_cplane_serve(struct xnvme_dev **devs, int ndevs, uint32_t cplane_id,
 			goto exit;
 		}
 	}
-
-	cplane_serve_totals_read();
 
 	xnvme_be_upcie_cplane_socket_path(cplane_id, path, sizeof(path));
 	listener = cplane_serve_listen(path);

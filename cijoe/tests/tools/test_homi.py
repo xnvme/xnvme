@@ -214,7 +214,7 @@ def _held_uris():
 # to the message that forgets to bump NVME_CPLANE_VERSION fails these cases.
 _MSG_NBYTES = 104
 _MSG_HDR_NBYTES = 24  # op, version, status, nfds, index, reserved
-_MSG_VERSION = 1  # NVME_CPLANE_VERSION
+_MSG_VERSION = 2  # NVME_CPLANE_VERSION
 _OP_INIT_CONNECTION = 1
 _OP_ALLOC_IOQPAIR = 2
 _OP_FREE_IOQPAIR = 3
@@ -1210,7 +1210,7 @@ MSG, HDR = 104, 24
 
 def msg(op):
     m = bytearray(MSG)
-    m[0:HDR] = struct.pack("<IIiIII", op, 1, 0, 0, 0, 0)
+    m[0:HDR] = struct.pack("<IIiIII", op, 2, 0, 0, 0, 0)
     return m
 
 def ask(s, m, fds=()):

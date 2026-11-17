@@ -73,8 +73,9 @@ xnvme_cplane_get_info(uint32_t cplane_id, struct xnvme_cplane_info *info);
  * `nconnections` counts the clients given this controller's descriptors,
  * whether or not they took a queue; asking for this is not one of them. A queue
  * identifier covers a pair, so `nsq_used` and `ncq_used` are equal. The smaller
- * of `nsq_total` and `ncq_total` limits the queue pairs, and zero means the
- * controller did not answer, not that it has none.
+ * of `nsq_total` and `ncq_total` limits the queue pairs. They are what the
+ * controller allocated in answer to Set Features Number of Queues when the
+ * server opened it, and zero means the server did not report them.
  */
 struct xnvme_cplane_ctrlr_info {
 	uint32_t nconnections; ///< Clients of this controller

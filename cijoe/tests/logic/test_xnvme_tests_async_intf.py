@@ -19,6 +19,22 @@ def test_init_term(cijoe, device, be_opts, cli_args):
 
 
 @xnvme_parametrize(["dev"], opts=["be", "admin", "async"])
+def test_init_exhaust(cijoe, device, be_opts, cli_args):
+    """
+    A queue past the controller's allocation of Number of Queues fails with -ENOMEM
+
+    Runs on the uPCIe backends only: a queue of the kernel backends is not a
+    queue of the controller, and SPDK and libvfn request queues on their own.
+    """
+
+    if not be_opts["be"].startswith("upcie"):
+        pytest.skip(reason=f"[be={be_opts['be']}] Queues are not the controller's")
+
+    err, _ = cijoe.run(f"xnvme test async-intf init_exhaust {cli_args} --qdepth 8")
+    assert not err
+
+
+@xnvme_parametrize(["dev"], opts=["be", "admin", "async"])
 def test_init_io_term(cijoe, device, be_opts, cli_args):
     """
     One queue at a time, so unlike test_init_term this runs on upcie as well.
