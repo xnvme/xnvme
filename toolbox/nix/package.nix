@@ -21,8 +21,8 @@ let
   upcie = fetchFromGitHub {
     owner = "safl";
     repo = "upcie";
-    tag = "v0.11.1";
-    hash = "sha256-9wDOAT9EhbuRPjeQaemCRGkOG7SGoSNoe44ahYG8cLc=";
+    tag = "v0.12.0";
+    hash = "sha256-0uZaPZ1sTWBMbdnAfQEKh0WNlDjECNxQWgmOO5/E5nM=";
   };
 in
 stdenv.mkDerivation {

@@ -48,8 +48,6 @@ struct xnvme_be_upcie_cplane_serve_admin {
  *
  * `wake` is a pipe a controller's thread writes when it has answered, so the
  * reader looks at the connection again without waiting out its poll.
- * `nsq_total` and `ncq_total` are asked of each controller once, when serving
- * starts, so a status request costs no admin command.
  */
 extern struct xnvme_be_upcie_cplane_serve_state {
 	struct xnvme_dev **devs;
@@ -60,8 +58,6 @@ extern struct xnvme_be_upcie_cplane_serve_state {
 	struct xnvme_be_upcie_cplane_serve_admin admin[XNVME_BE_UPCIE_CPLANE_SERVE_DEVS_MAX];
 
 	int wake[2]; ///< Read and write end of the reader's wake-up pipe
-	uint32_t nsq_total[XNVME_BE_UPCIE_CPLANE_SERVE_DEVS_MAX]; ///< Per controller
-	uint32_t ncq_total[XNVME_BE_UPCIE_CPLANE_SERVE_DEVS_MAX]; ///< Per controller
 	int running; ///< Whether a server runs in this process
 } g_upcie_cplane_serve;
 

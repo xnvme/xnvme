@@ -7,6 +7,7 @@
 
 #define XNVME_TESTS_QDEPTH_MAX 512
 #define XNVME_TESTS_NQUEUE_MAX 1024
+#define XNVME_TESTS_EXHAUST_MAX 128
 
 static int
 test_init_term(struct xnvme_cli *cli)
@@ -189,6 +190,80 @@ test_init_io_term(struct xnvme_cli *cli)
 
 exit:
 	xnvme_buf_free(dev, buf);
+
+	return err;
+}
+
+/**
+ * Creates queues until the controller has none left
+ *
+ * The controller allocates min(NSQA, NCQA) + 1 I/O queue pairs, as Get Features Number of
+ * Queues reports them, and the device and other users may hold some of them already. So
+ * creating one queue more than the allocation fails, and the failure is -ENOMEM.
+ */
+static int
+test_init_exhaust(struct xnvme_cli *cli)
+{
+	struct xnvme_dev *dev = cli->args.dev;
+	uint64_t qd = cli->args.qdepth;
+	struct xnvme_queue *queue[XNVME_TESTS_NQUEUE_MAX] = {0};
+	struct xnvme_cmd_ctx ctx = {0};
+	struct xnvme_spec_feat feat = {.val = 0};
+	uint32_t nqueues, created = 0;
+	int err;
+
+	if (qd > XNVME_TESTS_QDEPTH_MAX) {
+		XNVME_DEBUG("FAILED: qd(%" PRIu64 ") out-of-bounds for test", qd);
+		return 1;
+	}
+
+	xnvme_dev_get_cmd_ctx(dev, &ctx);
+	err = xnvme_adm_gfeat(&ctx, 0x0, XNVME_SPEC_FEAT_NQUEUES, XNVME_SPEC_FEAT_SEL_CURRENT,
+			      NULL, 0);
+	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
+		xnvme_cli_perr("xnvme_adm_gfeat()", err);
+		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
+		return err ? err : -EIO;
+	}
+	feat.val = ctx.cpl.cdw0;
+	xnvme_spec_feat_pr(XNVME_SPEC_FEAT_NQUEUES, &feat, XNVME_PR_DEF);
+
+	nqueues = feat.nqueues.nsqa < feat.nqueues.ncqa ? feat.nqueues.nsqa : feat.nqueues.ncqa;
+	nqueues += 1; ///< NSQA and NCQA are 0's based
+	xnvme_cli_pinf("nqueues: %u", nqueues);
+	xnvme_cli_pinf("qdepth: %" PRIu64, qd);
+
+	// A uPCIe queue takes 4 MiB of the 1 GiB default heap, which past 128 queues can run
+	// out first and fail with -ENOMEM as well
+	if (nqueues > XNVME_TESTS_EXHAUST_MAX) {
+		xnvme_cli_pinf("skipping -- nqueues: %u > %d", nqueues, XNVME_TESTS_EXHAUST_MAX);
+		return 0;
+	}
+
+	for (uint32_t qn = 0; qn <= nqueues; ++qn) {
+		err = xnvme_queue_init(dev, qd, 0, &queue[qn]);
+		if (err) {
+			break;
+		}
+		created++;
+	}
+	xnvme_cli_pinf("created: %u", created);
+
+	if (!err) {
+		XNVME_DEBUG("FAILED: created %u queues, with %u allocated", created, nqueues);
+		err = -EIO;
+	} else if (err != -ENOMEM) {
+		xnvme_cli_perr("xnvme_queue_init() past the allocation; expected -ENOMEM", err);
+	} else {
+		err = 0;
+	}
+
+	for (uint32_t qn = 0; qn < created; ++qn) {
+		if (xnvme_queue_term(queue[qn])) {
+			XNVME_DEBUG("FAILED: xnvme_queue_term, qn(%u)", qn);
+			err = err ? err : -EIO;
+		}
+	}
 
 	return err;
 }
@@ -910,6 +985,21 @@ static struct xnvme_cli_sub g_subs[] = {
 			{XNVME_CLI_OPT_COUNT, XNVME_CLI_LREQ},
 			{XNVME_CLI_OPT_QDEPTH, XNVME_CLI_LREQ},
 			{XNVME_CLI_OPT_P2P_CQ_MIRROR, XNVME_CLI_LFLG},
+
+			XNVME_CLI_ASYNC_OPTS,
+		},
+	},
+	{
+		"init_exhaust",
+		"Create queues until the controller has none left; the next fails with -ENOMEM",
+		"Create queues until the controller has none left; the next fails with -ENOMEM",
+		test_init_exhaust,
+		{
+			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
+
+			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_QDEPTH, XNVME_CLI_LREQ},
 
 			XNVME_CLI_ASYNC_OPTS,
 		},

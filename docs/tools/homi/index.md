@@ -183,10 +183,13 @@ status had to report whether what it found was debris. There is nothing to
 tell apart now: the process that holds the socket is the only thing that
 answers on it, and when it dies the name stops working.
 
-The queue totals are read once when the server brings a controller up, with
-Get Features (Number of Queues). Set Features would let a driver ask for a
-larger allocation, but the drives tested here reject it, so what is reported
-is the allocation the controller made on its own.
+The queue totals are what the controller allocated when the server opened it.
+uPCIe sends Set Features (Number of Queues) for the most queues a request can
+ask for, before it creates any queue, and keeps the counts the controller
+answers with. A controller that fails the Set Features is asked Get Features
+(Number of Queues) instead, and the totals are the allocation it made without
+a request. A queue past the smaller total fails without a command reaching
+the controller.
 
 ## Running several servers
 

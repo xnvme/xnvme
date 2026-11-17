@@ -23,6 +23,10 @@ Create 'count' contexts with given 'qdepth'
 Create a queue, read 'qdepth' LBAs through it and tear it down, 'count' times
 .TP
 .B
+\fBxnvme-test-async-intf-init_exhaust\fP(1)
+Create queues until the controller has none left; the next fails with \fB-ENOMEM\fP
+.TP
+.B
 \fBxnvme-test-async-intf-reap\fP(1)
 Read 'qdepth' LBAs and reap them, checking what \fBxnvme_queue_reap\fP() hands back
 .TP

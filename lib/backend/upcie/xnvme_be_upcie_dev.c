@@ -832,18 +832,12 @@ xnvme_be_upcie_ctrlr_qpair_create_at(struct xnvme_dev *dev, uint64_t sq_addr, ui
 	state = &xnvme_be_state(dev)->upcie_state;
 	ctrl = state->ctrlr->ctrl;
 
-	err = nvme_qid_find_free(ctrl->qids);
-	if (err < 1) {
-		XNVME_DEBUG("FAILED: nvme_qid_find_free(); err(%d)", err);
+	err = nvme_controller_qid_alloc(ctrl);
+	if (err < 0) {
+		XNVME_DEBUG("FAILED: nvme_controller_qid_alloc(); err(%d)", err);
 		return -EBUSY;
 	}
 	allocated = (uint16_t)err;
-
-	err = nvme_qid_alloc(ctrl->qids, allocated);
-	if (err) {
-		XNVME_DEBUG("FAILED: nvme_qid_alloc(%u); err(%d)", allocated, err);
-		return err;
-	}
 
 	/* CQ first: the SQ create names it */
 	cmd.opc = 0x5; ///< Create I/O Completion Queue
