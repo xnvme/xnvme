@@ -97,7 +97,7 @@
  		break;
  
  	default:
-@@ -797,7 +822,9 @@ static enum fio_q_status xnvme_fioe_queue(struct thread_data *td, struct io_u *i
+@@ -797,34 +822,40 @@ static enum fio_q_status xnvme_fioe_queue(struct thread_data *td, struct io_u *i
  	}
  
  	if (fwrap->geo->pi_type)
@@ -108,14 +108,16 @@
  
  	switch (fwrap->geo->pi_type) {
  	case XNVME_PI_TYPE1:
-@@ -805,26 +832,30 @@ static enum fio_q_status xnvme_fioe_queue(struct thread_data *td, struct io_u *i
+ 	case XNVME_PI_TYPE2:
  		switch (fwrap->geo->pi_format) {
- 		case XNVME_SPEC_NVM_NS_16B_GUARD:
+-		case XNVME_SPEC_NVM_NS_16B_GUARD:
++		case XNVME_SPEC_NVM_PIF_16B_GUARD_PROTECTION_INFORMATION:
  			if (o->prchk & XNVME_PI_FLAGS_REFTAG_CHECK)
 -				ctx->cmd.nvm.ilbrt = (uint32_t)slba;
 +				ctx->cmd.common.cdw14 = (uint32_t)slba;
  			break;
- 		case XNVME_SPEC_NVM_NS_64B_GUARD:
+-		case XNVME_SPEC_NVM_NS_64B_GUARD:
++		case XNVME_SPEC_NVM_PIF_64B_GUARD_PROTECTION_INFORMATION:
  			if (o->prchk & XNVME_PI_FLAGS_REFTAG_CHECK) {
 -				ctx->cmd.nvm.ilbrt = (uint32_t)slba;
 -				ctx->cmd.common.cdw03 = ((slba >> 32) & 0xffff);

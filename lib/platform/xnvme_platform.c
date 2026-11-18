@@ -286,10 +286,10 @@ enumerate_controller(const char *uri, const char *kernel_driver, struct enumerat
 {
 	struct xnvme_opts ctrlr_opts = *ctx->opts;
 	struct xnvme_dev *ctrlr_dev;
-	union xnvme_spec_idfy *idfy_buf;
+	void *idfy_buf;
 	struct xnvme_cmd_ctx cmd_ctx;
 	struct xnvme_cmd_prep_adm_identify_args idfy = {
-		.cns = XNVME_SPEC_IDFY_NSLIST,
+		.cns = XNVME_SPEC_BASE_CNS_ACTIVE_NAMESPACE_ID_LIST,
 	};
 	uint32_t nslist[XNVME_MAX_NS_LIST_SIZE];
 	size_t buf_size;
@@ -307,7 +307,7 @@ enumerate_controller(const char *uri, const char *kernel_driver, struct enumerat
 			 "%s", kernel_driver);
 	}
 
-	buf_size = sizeof(*idfy_buf);
+	buf_size = sizeof(nslist);
 	idfy_buf = xnvme_buf_alloc(ctrlr_dev, buf_size);
 	if (!idfy_buf) {
 		XNVME_DEBUG("FAILED: xnvme_buf_alloc()");

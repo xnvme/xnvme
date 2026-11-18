@@ -63,10 +63,10 @@ xnvme_be_macos_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
 		// controller data.
 		switch (xnvme_bits_get(ctx->cmd.common.cdw10,
 				       XNVME_SPEC_ADMIN_IDENTIFY_CDW10_CNS)) {
-		case XNVME_SPEC_IDFY_NS:
+		case XNVME_SPEC_BASE_CNS_NVM_COMMAND_SET_IDENTIFY_NAMESPACE_DATA_STRUCTURE:
 			nsid = ctx->cmd.common.nsid;
 			break;
-		case XNVME_SPEC_IDFY_CTRLR:
+		case XNVME_SPEC_BASE_CNS_IDENTIFY_CONTROLLER_DATA_STRUCTURE:
 			nsid = 0; // 0 for controller identify data as per Apple docs
 			break;
 		default:

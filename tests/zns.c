@@ -12,7 +12,7 @@ enumerate_cb(struct xnvme_dev *dev, void *cb_args)
 	const struct xnvme_ident *ident;
 
 	ident = xnvme_dev_get_ident(dev);
-	if (ident->csi != XNVME_SPEC_CSI_ZONED) {
+	if (ident->csi != XNVME_SPEC_BASE_CSI_ZONED_NAMESPACE_COMMAND_SET) {
 		return XNVME_ENUMERATE_DEV_CLOSE;
 	}
 
@@ -80,7 +80,7 @@ cmd_idfy_ctrlr(struct xnvme_cli *cli)
 	struct xnvme_dev *dev = cli->args.dev;
 	struct xnvme_cmd_ctx ctx = {0};
 	uint32_t nsid = xnvme_dev_get_nsid(cli->args.dev);
-	enum xnvme_spec_csi csi = XNVME_SPEC_CSI_ZONED;
+	enum xnvme_spec_base_csi csi = XNVME_SPEC_BASE_CSI_ZONED_NAMESPACE_COMMAND_SET;
 	struct xnvme_spec_znd_idfy *idfy = NULL;
 	int err;
 
@@ -96,8 +96,8 @@ cmd_idfy_ctrlr(struct xnvme_cli *cli)
 	}
 
 	struct xnvme_cmd_prep_adm_identify_args args = {
-		.cns = XNVME_SPEC_IDFY_CTRLR_IOCS,
-		.csi = XNVME_SPEC_CSI_ZONED,
+		.cns = XNVME_SPEC_BASE_CNS_IO_COMMAND_SET_SPECIFIC_IDENTIFY_CONTROLLER_DATA_STRUCTURE,
+		.csi = XNVME_SPEC_BASE_CSI_ZONED_NAMESPACE_COMMAND_SET,
 	};
 
 	err = xnvme_cmd_prep_adm_identify(&ctx.cmd, &args);
@@ -133,7 +133,7 @@ cmd_idfy_ns(struct xnvme_cli *cli)
 	struct xnvme_dev *dev = cli->args.dev;
 	struct xnvme_cmd_ctx ctx = {0};
 	uint32_t nsid = xnvme_dev_get_nsid(cli->args.dev);
-	enum xnvme_spec_csi csi = XNVME_SPEC_CSI_ZONED;
+	enum xnvme_spec_base_csi csi = XNVME_SPEC_BASE_CSI_ZONED_NAMESPACE_COMMAND_SET;
 	struct xnvme_spec_znd_idfy *idfy = NULL;
 	int err;
 
@@ -150,8 +150,8 @@ cmd_idfy_ns(struct xnvme_cli *cli)
 
 	struct xnvme_cmd_prep_adm_identify_args args = {
 		.nsid = nsid ? nsid : xnvme_dev_get_nsid(dev),
-		.cns = XNVME_SPEC_IDFY_NS_IOCS,
-		.csi = XNVME_SPEC_CSI_ZONED,
+		.cns = XNVME_SPEC_BASE_CNS_IO_COMMAND_SET_SPECIFIC_IDENTIFY_NAMESPACE_DATA_STRUCTURE,
+		.csi = XNVME_SPEC_BASE_CSI_ZONED_NAMESPACE_COMMAND_SET,
 	};
 
 	err = xnvme_cmd_prep_adm_identify(&ctx.cmd, &args);
@@ -230,13 +230,14 @@ exit:
 static int
 cmd_changes(struct xnvme_cli *cli)
 {
-	const struct xnvme_spec_idfy_ctrlr *idfy_ctrlr = xnvme_dev_get_ctrlr_css(cli->args.dev);
+	const struct xnvme_spec_base_identify_controller *idfy_ctrlr =
+		xnvme_dev_get_ctrlr_css(cli->args.dev);
 	struct xnvme_spec_znd_log_changes *changes = NULL;
 	int err;
 
 	xnvme_cli_pinf("Retrieving the Changed Zone List");
 
-	if (!xnvme_bits_get(idfy_ctrlr->oaes, XNVME_SPEC_IDFY_CTRLR_OAES_ZONE_CHANGES)) {
+	if (!xnvme_bits_get(idfy_ctrlr->oaes, XNVME_SPEC_BASE_IDENTIFY_CONTROLLER_OAES_ZDCN)) {
 		xnvme_cli_pinf("Zoned Changes log page is an optional feature");
 		xnvme_cli_pinf("This devices does not support it; expect failure");
 	}

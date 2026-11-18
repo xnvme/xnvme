@@ -24,7 +24,7 @@
 static int
 _idfy_ctrlr(struct xnvme_dev *dev, void *dbuf)
 {
-	struct xnvme_spec_idfy_ctrlr *ctrlr = dbuf;
+	struct xnvme_spec_base_identify_controller *ctrlr = dbuf;
 	uint64_t val;
 	int err;
 
@@ -81,7 +81,7 @@ _idfy_ns_iocs(struct xnvme_dev *dev, void *dbuf)
 static int
 _idfy_ns(struct xnvme_dev *dev, void *dbuf)
 {
-	struct xnvme_spec_idfy_ns *ns = dbuf;
+	struct xnvme_spec_nvm_identify_namespace *ns = dbuf;
 	uint64_t nbytes, val;
 	int err;
 
@@ -102,12 +102,10 @@ _idfy_ns(struct xnvme_dev *dev, void *dbuf)
 	ns->nuse = val;
 
 	ns->nlbaf = 0; ///< This means that there is only one
-	ns->flbas = xnvme_bits_set(ns->flbas, XNVME_SPEC_IDFY_NS_FLBAS_FORMAT,
+	ns->flbas = xnvme_bits_set(ns->flbas, XNVME_SPEC_NVM_IDENTIFY_NAMESPACE_FLBAS_FIDXL,
 				   0); ///< using the first one
 
-	ns->lbaf[0].ms = 0;
-	ns->lbaf[0].ds = XNVME_ILOG2(nbytes);
-	ns->lbaf[0].rp = 0;
+	ns->lbaf[0] = xnvme_bits_set(0, XNVME_SPEC_NVM_LBA_FORMAT_LBADS, XNVME_ILOG2(nbytes));
 
 	return 0;
 }
@@ -131,32 +129,33 @@ _idfy(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes)
 	// TODO: convert sysfs queue/minimum_io_size to idfy.ns.lbad.ds
 
 	switch (xnvme_bits_get(ctx->cmd.common.cdw10, XNVME_SPEC_ADMIN_IDENTIFY_CDW10_CNS)) {
-	case XNVME_SPEC_IDFY_NS_IOCS:
+	case XNVME_SPEC_BASE_CNS_IO_COMMAND_SET_SPECIFIC_IDENTIFY_NAMESPACE_DATA_STRUCTURE:
 		if (!((xnvme_bits_get(ctx->cmd.common.cdw11,
 				      XNVME_SPEC_ADMIN_IDENTIFY_CDW11_CSI) ==
-		       XNVME_SPEC_CSI_ZONED) &&
+		       XNVME_SPEC_BASE_CSI_ZONED_NAMESPACE_COMMAND_SET) &&
 		      (is_zoned))) {
 			XNVME_DEBUG("FAILED: device is not zoned");
 			goto failed;
 		}
 		return _idfy_ns_iocs(ctx->dev, dbuf);
 
-	case XNVME_SPEC_IDFY_NS_DESC:
+	case XNVME_SPEC_BASE_CNS_NAMESPACE_IDENTIFICATION_DESCRIPTOR_LIST:
 		if (!is_zoned) {
 			XNVME_DEBUG("FAILED: device is not zoned");
 			goto failed;
 		}
-		return xnvme_spec_idfy_ns_desc_fill(dbuf, dbuf_nbytes, XNVME_SPEC_CSI_ZONED);
+		return xnvme_spec_idfy_ns_desc_fill(
+			dbuf, dbuf_nbytes, XNVME_SPEC_BASE_CSI_ZONED_NAMESPACE_COMMAND_SET);
 
-	case XNVME_SPEC_IDFY_NS:
+	case XNVME_SPEC_BASE_CNS_NVM_COMMAND_SET_IDENTIFY_NAMESPACE_DATA_STRUCTURE:
 		return _idfy_ns(ctx->dev, dbuf);
 
 	///< TODO: check that device supports the given csi
-	case XNVME_SPEC_IDFY_CTRLR_IOCS:
+	case XNVME_SPEC_BASE_CNS_IO_COMMAND_SET_SPECIFIC_IDENTIFY_CONTROLLER_DATA_STRUCTURE:
 		// TODO: setup command-set specific stuff for zoned
 		if (!((xnvme_bits_get(ctx->cmd.common.cdw11,
 				      XNVME_SPEC_ADMIN_IDENTIFY_CDW11_CSI) ==
-		       XNVME_SPEC_CSI_ZONED) &&
+		       XNVME_SPEC_BASE_CSI_ZONED_NAMESPACE_COMMAND_SET) &&
 		      (is_zoned))) {
 			XNVME_DEBUG("FAILED: device is not zoned");
 			goto failed;
@@ -165,7 +164,7 @@ _idfy(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes)
 		zctrlr->zasl = 7;
 		break;
 
-	case XNVME_SPEC_IDFY_CTRLR:
+	case XNVME_SPEC_BASE_CNS_IDENTIFY_CONTROLLER_DATA_STRUCTURE:
 		return _idfy_ctrlr(ctx->dev, dbuf);
 
 	default:

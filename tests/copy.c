@@ -23,7 +23,7 @@ test_copy(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
 	const struct xnvme_geo *geo = xnvme_dev_get_geo(dev);
-	const struct xnvme_spec_idfy_ns *ns = xnvme_dev_get_ns(dev);
+	const struct xnvme_spec_nvm_identify_namespace *ns = xnvme_dev_get_ns(dev);
 	uint32_t nsid;
 	struct xnvme_cmd_ctx ctx = {0};
 

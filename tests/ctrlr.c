@@ -59,7 +59,7 @@ static int
 test_ctrlr_idfy(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev;
-	union xnvme_spec_idfy *idfy = NULL;
+	struct xnvme_spec_base_identify_controller *idfy = NULL;
 	struct xnvme_cmd_ctx ctx;
 	int err;
 
@@ -77,7 +77,7 @@ test_ctrlr_idfy(struct xnvme_cli *cli)
 	memset(idfy, 0, sizeof(*idfy));
 
 	struct xnvme_cmd_prep_adm_identify_args args = {
-		.cns = XNVME_SPEC_IDFY_CTRLR,
+		.cns = XNVME_SPEC_BASE_CNS_IDENTIFY_CONTROLLER_DATA_STRUCTURE,
 	};
 
 	xnvme_dev_get_cmd_ctx(dev, &ctx);
@@ -92,7 +92,7 @@ test_ctrlr_idfy(struct xnvme_cli *cli)
 		return err ? err : -EIO;
 	}
 
-	if (!idfy->ctrlr.mn[0]) {
+	if (!idfy->mn[0]) {
 		xnvme_cli_pinf("FAILED: model number is empty");
 		xnvme_buf_free(dev, idfy);
 		xnvme_dev_close(dev);
@@ -109,7 +109,8 @@ static int
 test_ctrlr_nslist(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev;
-	union xnvme_spec_idfy *idfy = NULL;
+	size_t idfy_nbytes = 4096; // The Active Namespace ID List, 1024 identifiers
+	void *idfy = NULL;
 	struct xnvme_cmd_ctx ctx;
 	uint32_t *nslist;
 	int err;
@@ -119,22 +120,22 @@ test_ctrlr_nslist(struct xnvme_cli *cli)
 		return -errno;
 	}
 
-	idfy = xnvme_buf_alloc(dev, sizeof(*idfy));
+	idfy = xnvme_buf_alloc(dev, idfy_nbytes);
 	if (!idfy) {
 		xnvme_cli_perr("xnvme_buf_alloc()", -ENOMEM);
 		xnvme_dev_close(dev);
 		return -ENOMEM;
 	}
-	memset(idfy, 0, sizeof(*idfy));
+	memset(idfy, 0, idfy_nbytes);
 
 	struct xnvme_cmd_prep_adm_identify_args args = {
-		.cns = XNVME_SPEC_IDFY_NSLIST,
+		.cns = XNVME_SPEC_BASE_CNS_ACTIVE_NAMESPACE_ID_LIST,
 	};
 
 	xnvme_dev_get_cmd_ctx(dev, &ctx);
 	err = xnvme_cmd_prep_adm_identify(&ctx.cmd, &args);
 	if (!err) {
-		err = xnvme_cmd_pass_admin(&ctx, idfy, sizeof(*idfy), NULL, 0);
+		err = xnvme_cmd_pass_admin(&ctx, idfy, idfy_nbytes, NULL, 0);
 	}
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		xnvme_cli_perr("identify(NSLIST)", err ? err : -EIO);
@@ -143,7 +144,7 @@ test_ctrlr_nslist(struct xnvme_cli *cli)
 		return err ? err : -EIO;
 	}
 
-	nslist = (uint32_t *)idfy;
+	nslist = idfy;
 	if (!nslist[0]) {
 		xnvme_cli_pinf("FAILED: namespace list is empty");
 		xnvme_buf_free(dev, idfy);

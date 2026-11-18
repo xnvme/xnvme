@@ -59,7 +59,7 @@ static void *
 idfy_fn(void *arg)
 {
 	struct worker *w = arg;
-	union xnvme_spec_idfy *idfy;
+	struct xnvme_spec_base_identify_controller *idfy;
 
 	idfy = xnvme_buf_alloc(w->dev, sizeof(*idfy));
 	if (!idfy) {
@@ -69,7 +69,7 @@ idfy_fn(void *arg)
 	for (uint64_t round = 0; round < w->rounds; ++round) {
 		struct xnvme_cmd_ctx ctx = {0};
 		struct xnvme_cmd_prep_adm_identify_args id = {
-			.cns = XNVME_SPEC_IDFY_CTRLR,
+			.cns = XNVME_SPEC_BASE_CNS_IDENTIFY_CONTROLLER_DATA_STRUCTURE,
 		};
 
 		xnvme_dev_get_cmd_ctx(w->dev, &ctx);

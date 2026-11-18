@@ -149,7 +149,7 @@ sub_idfy_cmp(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *alt_dev, *dev = cli->args.dev;
 	struct xnvme_cmd_ctx ctx;
-	union xnvme_spec_idfy *idfy = NULL, *alt_idfy = NULL;
+	struct xnvme_spec_base_identify_controller *idfy = NULL, *alt_idfy = NULL;
 	size_t diff = 0;
 	int err;
 
@@ -175,7 +175,7 @@ sub_idfy_cmp(struct xnvme_cli *cli)
 	xnvme_buf_clear(alt_idfy, sizeof(*alt_idfy));
 
 	struct xnvme_cmd_prep_adm_identify_args id = {
-		.cns = XNVME_SPEC_IDFY_CTRLR,
+		.cns = XNVME_SPEC_BASE_CNS_IDENTIFY_CONTROLLER_DATA_STRUCTURE,
 	};
 
 	xnvme_dev_get_cmd_ctx(dev, &ctx);

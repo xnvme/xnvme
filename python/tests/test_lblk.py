@@ -78,7 +78,7 @@ class TestLBLK:
     def test_enum(self, opts):
         def callback_func(dev, fd):
             ident = xnvme.xnvme_dev_get_ident(dev)
-            if ident.csi != xnvme.XNVME_SPEC_CSI_NVM:
+            if ident.csi != xnvme.XNVME_SPEC_BASE_CSI_NVM_COMMAND_SET:
                 return xnvme.XNVME_ENUMERATE_DEV_CLOSE
 
             xnvme.xnvme_ident_yaml(fd, ident, 0, b", ", 0)
@@ -207,11 +207,11 @@ class TestLBLK:
             rng_elba,
         ) = boilerplate
 
-        # Force void* casting to xnvme_spec_idfy_ns*
-        # xnvme_spec_idfy_ns *nvm = (void *)xnvme_dev_get_ns(dev)
+        # Force void* casting to xnvme_spec_nvm_identify_namespace*
+        # xnvme_spec_nvm_identify_namespace *nvm = (void *)xnvme_dev_get_ns(dev)
         _nvm = xnvme.xnvme_dev_get_ns(dev)
         _void_p = xnvme.xnvme_void_p(_nvm.void_pointer)
-        nvm = xnvme.xnvme_spec_idfy_ns(__void_p=_void_p)
+        nvm = xnvme.xnvme_spec_nvm_identify_namespace(__void_p=_void_p)
         xnvme.xnvme_spec_idfy_ns_pr(nvm, xnvme.XNVME_PR_DEF)
 
         if nvm.msrc:
@@ -228,13 +228,13 @@ class TestLBLK:
         copy_fmt = xnvme.XNVME_NVM_SCOPY_FMT_ZERO
 
         xnvme.xnvme_spec_idfy_ctrlr_pr(
-            xnvme.xnvme_spec_idfy_ctrlr(
+            xnvme.xnvme_spec_base_identify_controller(
                 __void_p=xnvme.xnvme_void_p(xnvme.xnvme_dev_get_ctrlr(dev).void_pointer)
             ),
             xnvme.XNVME_PR_DEF,
         )
         xnvme.xnvme_spec_idfy_ns_pr(
-            xnvme.xnvme_spec_idfy_ns(
+            xnvme.xnvme_spec_nvm_identify_namespace(
                 __void_p=xnvme.xnvme_void_p(xnvme.xnvme_dev_get_ns(dev).void_pointer)
             ),
             xnvme.XNVME_PR_DEF,

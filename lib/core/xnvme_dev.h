@@ -28,14 +28,14 @@ struct xnvme_dev {
 	bool attempted_derive_geo;
 
 	struct {
-		struct xnvme_spec_idfy_ctrlr ctrlr; ///< NVMe id-ctrlr
-		struct xnvme_spec_idfy_ns ns;       ///< NVMe id-ns
+		struct xnvme_spec_base_identify_controller ctrlr; ///< NVMe id-ctrlr
+		struct xnvme_spec_nvm_identify_namespace ns;      ///< NVMe id-ns
 	} id;
 
 	struct {
-		struct xnvme_spec_idfy_ctrlr ctrlr; ///< NVMe id-ctrlr
-		struct xnvme_spec_idfy_ns ns;       ///< NVMe id-ns
-	} idcss;                                    ///< Command Set Specific
+		struct xnvme_spec_base_identify_controller ctrlr; ///< NVMe id-ctrlr
+		struct xnvme_spec_nvm_identify_namespace ns;      ///< NVMe id-ns
+	} idcss;                                                  ///< Command Set Specific
 
 	struct xnvme_opts opts; ///< Options
 };

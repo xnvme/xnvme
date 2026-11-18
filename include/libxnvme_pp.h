@@ -306,7 +306,7 @@ int
 xnvme_spec_ruhs_pr(const struct xnvme_spec_ruhs *ruhs, int limit, int opts);
 
 /**
- * Prints the given :;xnvme_spec_idfy_ns to the given output stream
+ * Prints the given :;xnvme_spec_nvm_identify_namespace to the given output stream
  *
  * @param stream output stream used for printing
  * @param idfy pointer to structure to print
@@ -315,20 +315,21 @@ xnvme_spec_ruhs_pr(const struct xnvme_spec_ruhs *ruhs, int limit, int opts);
  * @return On success, the number of characters printed is returned.
  */
 int
-xnvme_spec_idfy_ns_fpr(FILE *stream, const struct xnvme_spec_idfy_ns *idfy, int opts);
+xnvme_spec_idfy_ns_fpr(FILE *stream, const struct xnvme_spec_nvm_identify_namespace *idfy,
+		       int opts);
 
 /**
- * Prints the given :;xnvme_spec_idfy_ns to stdout
+ * Prints the given :;xnvme_spec_nvm_identify_namespace to stdout
  *
  * @param idfy pointer to structure to print
  * @param opts printer options, see ::xnvme_pr
  * @return On success, the number of characters printed is returned.
  */
 int
-xnvme_spec_idfy_ns_pr(const struct xnvme_spec_idfy_ns *idfy, int opts);
+xnvme_spec_idfy_ns_pr(const struct xnvme_spec_nvm_identify_namespace *idfy, int opts);
 
 /**
- * Prints the given :;xnvme_spec_idfy_ctrlr to the given output stream
+ * Prints the given :;xnvme_spec_base_identify_controller to the given output stream
  *
  * @param stream output stream used for printing
  * @param idfy pointer to structure to print
@@ -336,23 +337,25 @@ xnvme_spec_idfy_ns_pr(const struct xnvme_spec_idfy_ns *idfy, int opts);
  * @return On success, the number of characters printed is returned.
  */
 int
-xnvme_spec_idfy_ctrlr_fpr(FILE *stream, const struct xnvme_spec_idfy_ctrlr *idfy, int opts);
+xnvme_spec_idfy_ctrlr_fpr(FILE *stream, const struct xnvme_spec_base_identify_controller *idfy,
+			  int opts);
 
 /**
- * Prints the given :;xnvme_spec_idfy_ctrlr to stdout
+ * Prints the given :;xnvme_spec_base_identify_controller to stdout
  *
  * @param idfy pointer to structure to print
  * @param opts printer options, see ::xnvme_pr
  * @return On success, the number of characters printed is returned.
  */
 int
-xnvme_spec_idfy_ctrlr_pr(const struct xnvme_spec_idfy_ctrlr *idfy, int opts);
+xnvme_spec_idfy_ctrlr_pr(const struct xnvme_spec_base_identify_controller *idfy, int opts);
 
 int
-xnvme_spec_idfy_cs_fpr(FILE *stream, const struct xnvme_spec_idfy_cs *idfy, int opts);
+xnvme_spec_idfy_cs_fpr(FILE *stream, const struct xnvme_spec_base_identify_io_command_set *idfy,
+		       int opts);
 
 int
-xnvme_spec_idfy_cs_pr(const struct xnvme_spec_idfy_cs *idfy, int opts);
+xnvme_spec_idfy_cs_pr(const struct xnvme_spec_base_identify_io_command_set *idfy, int opts);
 
 /**
  * Prints the given :;xnvme_spec_feat to the given output stream
@@ -494,7 +497,8 @@ xnvme_spec_nvm_scopy_source_range_pr(const struct xnvme_spec_nvm_scopy_source_ra
 				     uint8_t nr, int opts);
 
 /**
- * Prints the given ::xnvme_spec_nvm_idfy_ctrlr to the given output stream
+ * Prints the given ::xnvme_spec_nvm_io_command_set_specific_identify_controller to the given
+ * output stream
  *
  * @param stream output stream used for printing
  * @param idfy pointer to the structure to print
@@ -503,21 +507,26 @@ xnvme_spec_nvm_scopy_source_range_pr(const struct xnvme_spec_nvm_scopy_source_ra
  * @return On success, the number of characters printed is returned
  */
 int
-xnvme_spec_nvm_idfy_ctrlr_fpr(FILE *stream, struct xnvme_spec_nvm_idfy_ctrlr *idfy, int opts);
+xnvme_spec_nvm_idfy_ctrlr_fpr(
+	FILE *stream, struct xnvme_spec_nvm_io_command_set_specific_identify_controller *idfy,
+	int opts);
 
 /**
- * Prints the given ::xnvme_spec_nvm_idfy_ctrlr to stdout
+ * Prints the given ::xnvme_spec_nvm_io_command_set_specific_identify_controller to stdout
  *
- * @param idfy pointer to ::xnvme_spec_nvm_idfy_ctrlr
+ * @param idfy pointer to ::xnvme_spec_nvm_io_command_set_specific_identify_controller
  * @param opts printer options, see ::xnvme_pr
  *
  * @return On success, the number of characters printed is returned
  */
 int
-xnvme_spec_nvm_idfy_ctrlr_pr(struct xnvme_spec_nvm_idfy_ctrlr *idfy, int opts);
+xnvme_spec_nvm_idfy_ctrlr_pr(
+	struct xnvme_spec_nvm_io_command_set_specific_identify_controller *idfy, int opts);
 
 /**
- * Prints the given ::xnvme_spec_nvm_idfy_ns to the given output stream
+ * Prints the given
+ * ::xnvme_spec_nvm_io_command_set_specific_identify_namespace to
+ * the given output stream
  *
  * Only fields specific to Logical Block Namespaces are printed by this function
  *
@@ -528,18 +537,24 @@ xnvme_spec_nvm_idfy_ctrlr_pr(struct xnvme_spec_nvm_idfy_ctrlr *idfy, int opts);
  * @return On success, the number of characters printed is returned
  */
 int
-xnvme_spec_nvm_idfy_ns_fpr(FILE *stream, struct xnvme_spec_nvm_idfy_ns *idfy, int opts);
+xnvme_spec_nvm_idfy_ns_fpr(FILE *stream,
+			   struct xnvme_spec_nvm_io_command_set_specific_identify_namespace *idfy,
+			   int opts);
 
 /**
- * Prints the given ::xnvme_spec_nvm_idfy_ns to stdout
+ * Prints the given
+ * ::xnvme_spec_nvm_io_command_set_specific_identify_namespace to
+ * stdout
  *
- * @param idfy pointer to ::xnvme_spec_nvm_idfy_ns
+ * @param idfy pointer to
+ * ::xnvme_spec_nvm_io_command_set_specific_identify_namespace
  * @param opts printer options, see ::xnvme_pr
  *
  * @return On success, the number of characters printed is returned
  */
 int
-xnvme_spec_nvm_idfy_ns_pr(struct xnvme_spec_nvm_idfy_ns *idfy, int opts);
+xnvme_spec_nvm_idfy_ns_pr(struct xnvme_spec_nvm_io_command_set_specific_identify_namespace *idfy,
+			  int opts);
 
 /**
  * Prints the given ::xnvme_spec_znd_idfy_ctrlr to the given output stream
@@ -711,14 +726,14 @@ const char *
 xnvme_spec_adm_opc_str(enum xnvme_spec_admin_opcode eval);
 
 /**
- * Produces a string representation of the given ::xnvme_spec_csi
+ * Produces a string representation of the given ::xnvme_spec_base_csi
  *
  * @param eval the enum value to produce a string representation of
  * @return On success, a string representation is returned. On error, the string
  * "ENOSYS" is returned.
  */
 const char *
-xnvme_spec_csi_str(enum xnvme_spec_csi eval);
+xnvme_spec_csi_str(enum xnvme_spec_base_csi eval);
 
 /**
  * Produces a string representation of the given ::xnvme_spec_feat_id
@@ -751,14 +766,14 @@ const char *
 xnvme_spec_flag_str(enum xnvme_spec_flag eval);
 
 /**
- * Produces a string representation of the given ::xnvme_spec_idfy_cns
+ * Produces a string representation of the given value of ::xnvme_spec_base_cns
  *
  * @param eval the enum value to produce a string representation of
  * @return On success, a string representation is returned. On error, the string
  * "ENOSYS" is returned.
  */
 const char *
-xnvme_spec_idfy_cns_str(enum xnvme_spec_idfy_cns eval);
+xnvme_spec_idfy_cns_str(int eval);
 
 /**
  * Produces a string representation of the given ::xnvme_spec_log_lpi

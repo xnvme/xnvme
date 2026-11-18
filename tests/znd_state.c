@@ -82,11 +82,12 @@ static int
 cmd_changes(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
-	const struct xnvme_spec_idfy_ctrlr *idfy_ctrlr = xnvme_dev_get_ctrlr_css(dev);
+	const struct xnvme_spec_base_identify_controller *idfy_ctrlr =
+		xnvme_dev_get_ctrlr_css(dev);
 	struct xnvme_spec_znd_log_changes *changes;
 	int err = 0;
 
-	if (!xnvme_bits_get(idfy_ctrlr->oaes, XNVME_SPEC_IDFY_CTRLR_OAES_ZONE_CHANGES)) {
+	if (!xnvme_bits_get(idfy_ctrlr->oaes, XNVME_SPEC_BASE_IDENTIFY_CONTROLLER_OAES_ZDCN)) {
 		XNVME_DEBUG("INFO: skipping; not supported");
 		xnvme_cli_pinf("LGTM");
 		return 0;

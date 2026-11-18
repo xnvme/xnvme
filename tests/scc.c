@@ -21,8 +21,8 @@ static int
 sub_support(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
-	struct xnvme_spec_idfy_ctrlr *ctrlr;
-	struct xnvme_spec_idfy_ns *ns;
+	struct xnvme_spec_base_identify_controller *ctrlr;
+	struct xnvme_spec_nvm_identify_namespace *ns;
 	int err = 0;
 
 	ctrlr = (void *)xnvme_dev_get_ctrlr(dev);
@@ -40,11 +40,11 @@ sub_support(struct xnvme_cli *cli)
 	xnvme_spec_idfy_ctrlr_pr(ctrlr, XNVME_PR_DEF);
 	xnvme_spec_idfy_ns_pr(ns, XNVME_PR_DEF);
 
-	if (!xnvme_bits_get(ctrlr->oncs, XNVME_SPEC_IDFY_CTRLR_ONCS_COPY)) {
+	if (!xnvme_bits_get(ctrlr->oncs, XNVME_SPEC_BASE_IDENTIFY_CONTROLLER_ONCS_NVMCPYS)) {
 		err = -ENOSYS;
-		xnvme_cli_perr("!XNVME_SPEC_IDFY_CTRLR_ONCS_COPY", -err);
+		xnvme_cli_perr("!XNVME_SPEC_BASE_IDENTIFY_CONTROLLER_ONCS_NVMCPYS", -err);
 	}
-	if (!xnvme_bits_get(ctrlr->cdfs, XNVME_SPEC_IDFY_CTRLR_CDFS_FORMAT0)) {
+	if (!xnvme_bits_get(ctrlr->cdfs, XNVME_SPEC_BASE_IDENTIFY_CONTROLLER_CDFS_CDF0S)) {
 		err = -ENOSYS;
 		xnvme_cli_perr("!ctrlr->ocfs.copy_fmt0", -err);
 	}
@@ -67,8 +67,8 @@ static int
 sub_idfy(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
-	struct xnvme_spec_idfy_ctrlr *ctrlr;
-	struct xnvme_spec_idfy_ns *ns;
+	struct xnvme_spec_base_identify_controller *ctrlr;
+	struct xnvme_spec_nvm_identify_namespace *ns;
 	int err;
 
 	ctrlr = (void *)xnvme_dev_get_ctrlr(dev);
@@ -125,7 +125,7 @@ _scopy_helper(struct xnvme_cli *cli, uint64_t tlbas)
 	struct xnvme_dev *dev = cli->args.dev;
 	const struct xnvme_geo *geo = xnvme_dev_get_geo(dev);
 	uint32_t nsid = cli->args.nsid;
-	struct xnvme_spec_idfy_ns *ns;
+	struct xnvme_spec_nvm_identify_namespace *ns;
 	char *dbuf = NULL, *vbuf = NULL;
 	size_t buf_nbytes;
 	uint64_t sdlba;
@@ -409,7 +409,7 @@ sub_scopy(struct xnvme_cli *cli)
 static int
 sub_scopy_msrc(struct xnvme_cli *cli)
 {
-	struct xnvme_spec_idfy_ns *ns;
+	struct xnvme_spec_nvm_identify_namespace *ns;
 
 	ns = (void *)xnvme_dev_get_ns(cli->args.dev);
 	if (!ns) {

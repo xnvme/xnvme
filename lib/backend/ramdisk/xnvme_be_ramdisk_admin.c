@@ -18,19 +18,22 @@
 static int
 _idfy_ctrlr(struct xnvme_dev *XNVME_UNUSED(dev), void *dbuf)
 {
-	struct xnvme_spec_idfy_ctrlr *ctrlr = dbuf;
+	struct xnvme_spec_base_identify_controller *ctrlr = dbuf;
 	ctrlr->mdts = 0;
-	ctrlr->oncs = xnvme_bits_set(ctrlr->oncs, XNVME_SPEC_IDFY_CTRLR_ONCS_COPY, 1);
-	ctrlr->oncs = xnvme_bits_set(ctrlr->oncs, XNVME_SPEC_IDFY_CTRLR_ONCS_WRITE_ZEROES, 1);
+	ctrlr->oncs =
+		xnvme_bits_set(ctrlr->oncs, XNVME_SPEC_BASE_IDENTIFY_CONTROLLER_ONCS_NVMCPYS, 1);
+	ctrlr->oncs =
+		xnvme_bits_set(ctrlr->oncs, XNVME_SPEC_BASE_IDENTIFY_CONTROLLER_ONCS_NVMWZSV, 1);
 
-	ctrlr->cdfs = xnvme_bits_set(ctrlr->cdfs, XNVME_SPEC_IDFY_CTRLR_CDFS_FORMAT0, 1);
+	ctrlr->cdfs =
+		xnvme_bits_set(ctrlr->cdfs, XNVME_SPEC_BASE_IDENTIFY_CONTROLLER_CDFS_CDF0S, 1);
 	return 0;
 }
 
 static int
 _idfy_ns(struct xnvme_dev *dev, void *dbuf)
 {
-	struct xnvme_spec_idfy_ns *ns = dbuf;
+	struct xnvme_spec_nvm_identify_namespace *ns = dbuf;
 	size_t ramdisk_size;
 	const size_t lba_size = 512;
 
@@ -44,12 +47,10 @@ _idfy_ns(struct xnvme_dev *dev, void *dbuf)
 	ns->nuse = ramdisk_size / lba_size;
 
 	ns->nlbaf = 0; ///< This means that there is only one
-	ns->flbas = xnvme_bits_set(ns->flbas, XNVME_SPEC_IDFY_NS_FLBAS_FORMAT,
+	ns->flbas = xnvme_bits_set(ns->flbas, XNVME_SPEC_NVM_IDENTIFY_NAMESPACE_FLBAS_FIDXL,
 				   0); ///< using the first one
 
-	ns->lbaf[0].ms = 0;
-	ns->lbaf[0].ds = XNVME_ILOG2(lba_size);
-	ns->lbaf[0].rp = 0;
+	ns->lbaf[0] = xnvme_bits_set(0, XNVME_SPEC_NVM_LBA_FORMAT_LBADS, XNVME_ILOG2(lba_size));
 
 	ns->mcl = 128;
 	ns->mssrl = 128;
@@ -65,10 +66,10 @@ _idfy(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes)
 	memset(dbuf, 0, dbuf_nbytes);
 
 	switch (xnvme_bits_get(ctx->cmd.common.cdw10, XNVME_SPEC_ADMIN_IDENTIFY_CDW10_CNS)) {
-	case XNVME_SPEC_IDFY_NS:
+	case XNVME_SPEC_BASE_CNS_NVM_COMMAND_SET_IDENTIFY_NAMESPACE_DATA_STRUCTURE:
 		return _idfy_ns(ctx->dev, dbuf);
 
-	case XNVME_SPEC_IDFY_CTRLR:
+	case XNVME_SPEC_BASE_CNS_IDENTIFY_CONTROLLER_DATA_STRUCTURE:
 		return _idfy_ctrlr(ctx->dev, dbuf);
 
 	default:

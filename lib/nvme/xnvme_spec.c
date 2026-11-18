@@ -11,16 +11,17 @@
 int
 xnvme_spec_idfy_ns_desc_fill(void *dbuf, size_t dbuf_nbytes, uint8_t csi)
 {
-	struct xnvme_spec_ns_desc *desc = dbuf;
+	struct xnvme_spec_base_namespace_identification_descriptor *desc = dbuf;
 
-	if (dbuf_nbytes < sizeof(*desc)) {
+	// The header and the one byte of a Command Set Identifier, Base 2.4 Figure 342
+	if (dbuf_nbytes < sizeof(*desc) + 1) {
 		return -EINVAL;
 	}
 
 	memset(dbuf, 0, dbuf_nbytes);
-	desc->nidt = XNVME_SPEC_NS_DESC_NIDT_CSI;
+	desc->nidt = XNVME_SPEC_BASE_NIDT_COMMAND_SET_IDENTIFIER;
 	desc->nidl = 1;
-	desc->nid[0] = csi;
+	((uint8_t *)dbuf)[sizeof(*desc)] = csi;
 
 	return 0;
 }

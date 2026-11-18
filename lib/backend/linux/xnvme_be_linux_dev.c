@@ -108,7 +108,7 @@ xnvme_be_linux_dev_open(struct xnvme_dev *dev)
 			break;
 		}
 		dev->ident.dtype = XNVME_DEV_TYPE_NVME_NAMESPACE;
-		dev->ident.csi = XNVME_SPEC_CSI_NVM;
+		dev->ident.csi = XNVME_SPEC_BASE_CSI_NVM_COMMAND_SET;
 		dev->ident.nsid = err;
 		XNVME_DEBUG("INFO: open() : block-device file (is a NVMe namespace)");
 
@@ -128,7 +128,7 @@ xnvme_be_linux_dev_open(struct xnvme_dev *dev)
 			return -EINVAL;
 		} else { ///< Assuming a /dev/ngXnY -- nvme-namespace handle
 			dev->ident.dtype = XNVME_DEV_TYPE_NVME_NAMESPACE;
-			dev->ident.csi = XNVME_SPEC_CSI_NVM;
+			dev->ident.csi = XNVME_SPEC_BASE_CSI_NVM_COMMAND_SET;
 			dev->ident.nsid = err;
 		}
 

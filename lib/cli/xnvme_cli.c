@@ -2377,7 +2377,7 @@ _dev_open(const char *arg, const struct xnvme_opts *opts, struct xnvme_dev **dev
 {
 	struct xnvme_opts dev_opts = *opts;
 	char uri[XNVME_IDENT_URI_LEN];
-	const struct xnvme_spec_idfy_ns *ns;
+	const struct xnvme_spec_nvm_identify_namespace *ns;
 	int named;
 	int err;
 

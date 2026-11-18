@@ -2658,7 +2658,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_znd_idfy_ctrlr) == 4096, "Incorrect
  *
  * @struct xnvme_spec_znd_idfy_lbafe
  */
-struct xnvme_spec_znd_idfy_lbafe {
+struct __attribute__((packed)) xnvme_spec_znd_idfy_lbafe {
 	uint64_t zsze; ///< Zone Size in number of logical blocks
 	uint8_t zdes;  ///< Zone Descriptor Extensions Size
 
@@ -2672,7 +2672,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_znd_idfy_lbafe) == 16, "Incorrect s
  * @see TP4053, section 3
  * @struct xnvme_spec_znd_idfy_ns
  */
-struct xnvme_spec_znd_idfy_ns {
+struct __attribute__((packed)) xnvme_spec_znd_idfy_ns {
 	union {
 		struct {
 			uint16_t vzcap : 1; ///< Variable Zone Capacity
