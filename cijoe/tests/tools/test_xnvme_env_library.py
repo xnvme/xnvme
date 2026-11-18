@@ -192,7 +192,7 @@ def test_systemd_units_installed(cijoe):
     prefix = state.output().strip()
 
     err, state = cijoe.run(
-        f"pkg-config --define-variable=prefix={prefix} --variable=systemdsystemunitdir systemd"
+        f"pkg-config --define-variable=rootprefix={prefix} --variable=systemdsystemunitdir systemd"
     )
     assert not err
     unitdir = state.output().strip()
