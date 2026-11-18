@@ -9,6 +9,7 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <xnvme_be_upcie.h>
 #include <xnvme_be_upcie_cplane_client.h>
 #include <xnvme_be_state.h>
@@ -444,6 +445,252 @@ xnvme_be_upcie_buf_reg_unref(struct dmamem *dmem, uint64_t heap, size_t heap_nby
 	return 0;
 }
 
+/* The heap sits at an IOVA equal to its address, so any memory mapped that way translates alike */
+static int
+_heap_at_va(void)
+{
+	const struct dmamem *dmem = &g_upcie_rte.mem.dmem;
+
+	return g_upcie_rte.mem.dmem_alive && (dmem->translator == DMAMEM_XLATE_ARITHMETIC) &&
+	       (dmem->base_iova == (uint64_t)dmem->base_va);
+}
+
+int
+xnvme_be_upcie_mem_map_iommu(struct nvme_cplane_iommu_handle *iommu)
+{
+	if (!_heap_at_va() || g_upcie_rte.connection.alive) {
+		return 0;
+	}
+
+	switch (g_upcie_rte.mode) {
+	case XNVME_BE_UPCIE_MODE_VFIO_CDEV:
+		iommu->fd = g_upcie_rte.cdev.iommufd.fd;
+		iommu->ioas_id = g_upcie_rte.cdev.iommufd.ioas_id;
+		iommu->kind = NVME_CPLANE_IOMMU_IOMMUFD;
+		return 1;
+
+	case XNVME_BE_UPCIE_MODE_VFIO_TYPE1:
+		if (!g_upcie_rte.type1.iommu_set) {
+			return 0;
+		}
+		iommu->fd = g_upcie_rte.type1.container.fd;
+		iommu->ioas_id = 0;
+		iommu->kind = NVME_CPLANE_IOMMU_TYPE1;
+		return 1;
+
+	default:
+		return 0;
+	}
+}
+
+/**
+ * How memory of this process's own is made reachable, if at all
+ *
+ * Through an IOMMU it is mapped at an IOVA equal to its address, in this
+ * process's IOAS or container. Without one the device takes physical
+ * addresses, which the heap's registry reads from pagemap.
+ */
+enum _map_via {
+	_MAP_VIA_NONE,
+	_MAP_VIA_IOMMU,
+	_MAP_VIA_REGISTRY,
+};
+
+static enum _map_via
+_map_via(struct nvme_cplane_iommu_handle *iommu)
+{
+	const struct dmamem *dmem = &g_upcie_rte.mem.dmem;
+
+	if (xnvme_be_upcie_mem_map_iommu(iommu)) {
+		return _MAP_VIA_IOMMU;
+	}
+	if (g_upcie_rte.mem.dmem_alive && (dmem->translator == DMAMEM_XLATE_LUT) &&
+	    dmem->registry.populate) {
+		return _MAP_VIA_REGISTRY;
+	}
+
+	return _MAP_VIA_NONE;
+}
+
+static int
+_map(void *vaddr, size_t nbytes)
+{
+	struct nvme_cplane_iommu_handle iommu;
+
+	switch (_map_via(&iommu)) {
+	case _MAP_VIA_IOMMU:
+		return nvme_cplane_iommu_map(&iommu, vaddr, nbytes, (uint64_t)vaddr);
+
+	case _MAP_VIA_REGISTRY:
+		return xnvme_be_upcie_dmamem_map(&g_upcie_rte.mem.dmem, vaddr, nbytes, NULL);
+
+	case _MAP_VIA_NONE:
+		break;
+	}
+
+	return -ENOSYS;
+}
+
+static int
+_unmap(void *vaddr, size_t nbytes)
+{
+	struct nvme_cplane_iommu_handle iommu;
+
+	switch (_map_via(&iommu)) {
+	case _MAP_VIA_IOMMU:
+		return nvme_cplane_iommu_unmap(&iommu, (uint64_t)vaddr, nbytes);
+
+	case _MAP_VIA_REGISTRY:
+		return xnvme_be_upcie_dmamem_unmap(&g_upcie_rte.mem.dmem, vaddr);
+
+	case _MAP_VIA_NONE:
+		break;
+	}
+
+	return -ENOSYS;
+}
+
+void
+xnvme_be_upcie_buf_regs_term(void)
+{
+	struct xnvme_buf_reg *reg;
+
+	while ((reg = xnvme_buf_reg_any(&g_upcie_rte.mem.dmem))) {
+		xnvme_buf_reg_remove(reg);
+	}
+}
+
+/* The smallest page the IOMMU maps, where larger than the CPU's */
+static int
+_iommu_pagesize(const struct nvme_cplane_iommu_handle *iommu, size_t *pagesize)
+{
+	uint64_t granule = 0;
+
+	if (iommu->kind == NVME_CPLANE_IOMMU_TYPE1) {
+		struct vfio_container container = {.fd = iommu->fd};
+		struct vfio_iommu_type1_info info;
+
+		if (vfio_iommu_get_info(&container, &info)) {
+			XNVME_DEBUG("FAILED: vfio_iommu_get_info(); errno(%d)", errno);
+			return -errno;
+		}
+		if (info.flags & VFIO_IOMMU_INFO_PGSIZES) {
+			granule = info.iova_pgsizes & (~info.iova_pgsizes + 1);
+		}
+	} else {
+		struct iommufd ctx = {.fd = iommu->fd, .ioas_id = iommu->ioas_id};
+		struct iommu_iova_range ranges[16];
+		uint32_t nranges;
+		int err;
+
+		err = iommufd_ioas_iova_ranges(&ctx, ranges, 16, &nranges, &granule);
+		if (err) {
+			XNVME_DEBUG("FAILED: iommufd_ioas_iova_ranges(); err(%d)", err);
+			return err;
+		}
+	}
+
+	*pagesize = (size_t)sysconf(_SC_PAGESIZE);
+	if (granule > *pagesize) {
+		*pagesize = (size_t)granule;
+	}
+
+	return 0;
+}
+
+static int
+xnvme_be_upcie_buf_get_alignment(const struct xnvme_dev *XNVME_UNUSED(dev), size_t *align)
+{
+	struct nvme_cplane_iommu_handle iommu;
+
+	switch (_map_via(&iommu)) {
+	case _MAP_VIA_NONE:
+		return -ENOSYS;
+
+	case _MAP_VIA_REGISTRY:
+		/* Whole hugepages, see dmamem_hostmem_pagemap_populate() */
+		*align = g_upcie_rte.mem.dmem.registry.gran_mask + 1;
+		return 0;
+
+	case _MAP_VIA_IOMMU:
+		break;
+	}
+
+	return _iommu_pagesize(&iommu, align);
+}
+
+/* Mapped once however many devices register it, since they share the IOAS or container */
+static int
+xnvme_be_upcie_buf_register(const struct xnvme_dev *dev, void *vaddr, size_t nbytes)
+{
+	struct dmamem *dmem = &g_upcie_rte.mem.dmem;
+	struct nvme_cplane_iommu_handle iommu;
+	const enum _map_via via = _map_via(&iommu);
+	size_t align;
+	int err;
+
+	if (via == _MAP_VIA_NONE) {
+		return -ENOSYS;
+	}
+
+	err = xnvme_be_upcie_buf_reg_ref(dmem, (uint64_t)dmem->base_va, dmem->size, vaddr, nbytes);
+	if (err != -ENOENT) {
+		return err;
+	}
+
+	err = xnvme_be_upcie_buf_get_alignment(dev, &align);
+	if (err) {
+		return err;
+	}
+	if (!vaddr || !nbytes || ((uintptr_t)vaddr & (align - 1)) || (nbytes & (align - 1))) {
+		XNVME_DEBUG("FAILED: vaddr(%p) nbytes(%zu) not aligned to align(%zu)", vaddr,
+			    nbytes, align);
+		return -EINVAL;
+	}
+	if (via == _MAP_VIA_IOMMU) {
+		err = xnvme_be_upcie_iova_window_clear((uint64_t)vaddr, nbytes);
+		if (err) {
+			return err;
+		}
+	}
+
+	err = _map(vaddr, nbytes);
+	if (err) {
+		XNVME_DEBUG("FAILED: mapping vaddr(%p) nbytes(%zu); err(%d)", vaddr, nbytes, err);
+		return err;
+	}
+
+	err = xnvme_buf_reg_add(dmem, vaddr, nbytes, 0);
+	if (err) {
+		_unmap(vaddr, nbytes);
+	}
+
+	return err;
+}
+
+static int
+xnvme_be_upcie_buf_unregister(const struct xnvme_dev *XNVME_UNUSED(dev), void *vaddr)
+{
+	struct dmamem *dmem = &g_upcie_rte.mem.dmem;
+	struct xnvme_buf_reg *last;
+	int err;
+
+	err = xnvme_be_upcie_buf_reg_unref(dmem, (uint64_t)dmem->base_va, dmem->size, vaddr,
+					   &last);
+	if (err || !last) {
+		return err;
+	}
+
+	err = _unmap(last->vaddr, last->nbytes);
+	if (err) {
+		XNVME_DEBUG("FAILED: unmapping vaddr(%p); err(%d)", last->vaddr, err);
+		return err;
+	}
+	xnvme_buf_reg_remove(last);
+
+	return 0;
+}
+
 #endif
 
 struct xnvme_be_mem g_xnvme_be_upcie_mem = {
@@ -453,8 +700,9 @@ struct xnvme_be_mem g_xnvme_be_upcie_mem = {
 	.buf_realloc = xnvme_be_nosys_buf_realloc,
 	.buf_free = xnvme_be_upcie_buf_free,
 	.buf_vtophys = xnvme_be_upcie_buf_vtophys,
-	.buf_register = xnvme_be_nosys_buf_register,
-	.buf_unregister = xnvme_be_nosys_buf_unregister,
+	.buf_register = xnvme_be_upcie_buf_register,
+	.buf_unregister = xnvme_be_upcie_buf_unregister,
+	.buf_get_alignment = xnvme_be_upcie_buf_get_alignment,
 #else
 	.buf_alloc = xnvme_be_nosys_buf_alloc,
 	.buf_realloc = xnvme_be_nosys_buf_realloc,

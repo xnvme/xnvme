@@ -40,7 +40,7 @@ The rules are the same on every backend that registers memory:
 | `spdk` over PCIe | {ref}`Host memory, depending on the IOMMU <sec-backends-spdk-memory>` | {ref}`spdk_mem_register() <sec-backends-spdk-memory>` | 2 MiB |
 | `spdk` over RDMA | Any host memory | {ref}`spdk_mem_register() <sec-backends-spdk-memory>` | 2 MiB |
 | `spdk` over TCP | Any host memory | Nothing | See {ref}`sec-background-memory-io-path` |
-| `upcie` | {ref}`Nothing <sec-backends-upcie-host-limitations>`, `-ENOSYS` | | |
+| `upcie` | {ref}`Host memory, depending on the IOMMU <sec-backends-upcie-host-limitations>` | {ref}`An IOMMU mapping at an IOVA equal to its address; without an IOMMU, an entry in the heap's address table <sec-backends-upcie-host-limitations>` | Page, or the IOMMU's where larger; without an IOMMU, the heap's hugepage |
 | `upcie-cuda`, `upcie-hip` | GPU memory | {ref}`An entry in the device's address table, and under vfio-pci an IOMMU mapping; served, a dma-buf export registered with the server <sec-backends-upcie-cuda-memory-register>` | GPU page |
 | `driverkit` (macOS) | Nothing, `-ENOSYS` | | |
 
