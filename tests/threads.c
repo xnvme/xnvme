@@ -179,11 +179,11 @@ test_queues(struct xnvme_cli *cli, void *(*fn)(void *))
 
 	{
 		struct xnvme_cmd_ctx ctx = {0};
-		struct xnvme_spec_feat feat = {.val = 0};
+		uint32_t feat = 0;
 		struct xnvme_cmd_prep_adm_get_features_args gf = {
 			.args_nbytes = sizeof(gf),
-			.sel = XNVME_SPEC_FEAT_SEL_CURRENT,
-			.fid = XNVME_SPEC_FEAT_NQUEUES,
+			.sel = XNVME_SPEC_ADMIN_GET_FEATURES_CDW10_SEL_CURRENT,
+			.fid = XNVME_SPEC_BASE_FEATURE_NUMBER_OF_QUEUES,
 		};
 
 		xnvme_dev_get_cmd_ctx(dev, &ctx);
@@ -193,8 +193,12 @@ test_queues(struct xnvme_cli *cli, void *(*fn)(void *))
 			err = xnvme_cmd_pass_admin(&ctx, NULL, 0, NULL, 0);
 		}
 		if (!err && !xnvme_cmd_ctx_cpl_status(&ctx)) {
-			feat.val = ctx.cpl.dw0;
-			nthreads = XNVME_MIN(THREADS, (int)feat.nqueues.nsqa);
+			feat = ctx.cpl.dw0;
+			nthreads = XNVME_MIN(
+				THREADS,
+				(int)xnvme_bits_get(
+					feat,
+					XNVME_SPEC_BASE_FEATURE_NUMBER_OF_QUEUES_CQE_DW0_NSQA));
 		}
 	}
 	if (nthreads < 1) {

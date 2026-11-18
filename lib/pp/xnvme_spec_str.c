@@ -45,43 +45,45 @@ xnvme_spec_csi_str(enum xnvme_spec_admin_identify_cdw11_csi eval)
 }
 
 const char *
-xnvme_spec_feat_id_str(enum xnvme_spec_feat_id eval)
+xnvme_spec_feat_id_str(enum xnvme_spec_base_feature_identifier eval)
 {
 	switch (eval) {
-	case XNVME_SPEC_FEAT_ARBITRATION:
+	case XNVME_SPEC_BASE_FEATURE_ARBITRATION:
 		return "FEAT_ARBITRATION";
-	case XNVME_SPEC_FEAT_ERROR_RECOVERY:
+	case XNVME_SPEC_BASE_FEATURE_ERROR_RECOVERY:
 		return "FEAT_ERROR_RECOVERY";
-	case XNVME_SPEC_FEAT_LBA_RANGETYPE:
+	case XNVME_SPEC_BASE_FEATURE_LBA_RANGE_TYPE:
 		return "FEAT_LBA_RANGETYPE";
-	case XNVME_SPEC_FEAT_NQUEUES:
+	case XNVME_SPEC_BASE_FEATURE_NUMBER_OF_QUEUES:
 		return "FEAT_NQUEUES";
-	case XNVME_SPEC_FEAT_PWR_MGMT:
+	case XNVME_SPEC_BASE_FEATURE_POWER_MANAGEMENT:
 		return "FEAT_PWR_MGMT";
-	case XNVME_SPEC_FEAT_TEMP_THRESHOLD:
+	case XNVME_SPEC_BASE_FEATURE_TEMPERATURE_THRESHOLD:
 		return "FEAT_TEMP_THRESHOLD";
-	case XNVME_SPEC_FEAT_VWCACHE:
+	case XNVME_SPEC_BASE_FEATURE_VOLATILE_WRITE_CACHED:
 		return "FEAT_VWCACHE";
-	case XNVME_SPEC_FEAT_FDP_MODE:
+	case XNVME_SPEC_BASE_FEATURE_FLEXIBLE_DATA_PLACEMENT:
 		return "FEAT_FDP_MODE";
-	case XNVME_SPEC_FEAT_FDP_EVENTS:
+	case XNVME_SPEC_BASE_FEATURE_FLEXIBLE_DATA_PLACEMENT_EVENTS:
 		return "FEAT_FDP_EVENTS";
+	default:
+		break;
 	}
 
 	return "ENOSYS";
 }
 
 const char *
-xnvme_spec_feat_sel_str(enum xnvme_spec_feat_sel eval)
+xnvme_spec_feat_sel_str(enum xnvme_spec_admin_get_features_cdw10_sel eval)
 {
 	switch (eval) {
-	case XNVME_SPEC_FEAT_SEL_CURRENT:
+	case XNVME_SPEC_ADMIN_GET_FEATURES_CDW10_SEL_CURRENT:
 		return "FEAT_SEL_CURRENT";
-	case XNVME_SPEC_FEAT_SEL_DEFAULT:
+	case XNVME_SPEC_ADMIN_GET_FEATURES_CDW10_SEL_DEFAULT:
 		return "FEAT_SEL_DEFAULT";
-	case XNVME_SPEC_FEAT_SEL_SAVED:
+	case XNVME_SPEC_ADMIN_GET_FEATURES_CDW10_SEL_SAVED:
 		return "FEAT_SEL_SAVED";
-	case XNVME_SPEC_FEAT_SEL_SUPPORTED:
+	case XNVME_SPEC_ADMIN_GET_FEATURES_CDW10_SEL_SUPPORTED_CAPABILITIES:
 		return "FEAT_SEL_SUPPORTED";
 	}
 

@@ -174,10 +174,10 @@ test_ctrlr_gfeat_nqueues(struct xnvme_cli *cli)
 	struct xnvme_dev *dev = ctrlr_open(cli);
 	struct xnvme_cmd_prep_adm_get_features_args args = {
 		.args_nbytes = sizeof(args),
-		.sel = XNVME_SPEC_FEAT_SEL_CURRENT,
-		.fid = XNVME_SPEC_FEAT_NQUEUES,
+		.sel = XNVME_SPEC_ADMIN_GET_FEATURES_CDW10_SEL_CURRENT,
+		.fid = XNVME_SPEC_BASE_FEATURE_NUMBER_OF_QUEUES,
 	};
-	struct xnvme_spec_feat feat = {.val = 0};
+	uint32_t feat = 0;
 	struct xnvme_cmd_ctx ctx;
 	int err;
 
@@ -195,11 +195,16 @@ test_ctrlr_gfeat_nqueues(struct xnvme_cli *cli)
 		err = err ? err : -EIO;
 		goto exit;
 	}
-	feat.val = ctx.cpl.dw0;
+	feat = ctx.cpl.dw0;
 
 	// NSQA and NCQA are zero-based
-	xnvme_cli_pinf("nsq: %u, ncq: %u", (uint32_t)feat.nqueues.nsqa + 1,
-		       (uint32_t)feat.nqueues.ncqa + 1);
+	xnvme_cli_pinf("nsq: %u, ncq: %u",
+		       (uint32_t)xnvme_bits_get(
+			       feat, XNVME_SPEC_BASE_FEATURE_NUMBER_OF_QUEUES_CQE_DW0_NSQA) +
+			       1,
+		       (uint32_t)xnvme_bits_get(
+			       feat, XNVME_SPEC_BASE_FEATURE_NUMBER_OF_QUEUES_CQE_DW0_NCQA) +
+			       1);
 	err = 0;
 
 exit:

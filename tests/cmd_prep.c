@@ -83,7 +83,7 @@ sub_fields(struct xnvme_cli *XNVME_UNUSED(cli))
 
 	struct xnvme_cmd_prep_adm_set_features_args sf = {
 		.args_nbytes = sizeof(sf),
-		.fid = XNVME_SPEC_FEAT_NQUEUES,
+		.fid = XNVME_SPEC_BASE_FEATURE_NUMBER_OF_QUEUES,
 		.sv = 1,
 		.cdw11 = 0x00030003,
 	};

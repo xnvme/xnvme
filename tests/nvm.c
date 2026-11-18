@@ -402,17 +402,27 @@ sub_dir_send(struct xnvme_cli *cli)
 		nsid, doper, dtype, dspec, endir, tgtdir);
 
 	switch (dtype) {
-	case XNVME_SPEC_DIR_IDENTIFY:
-		if (doper == XNVME_SPEC_DSEND_IDFY_ENDIR) {
-			cdw12 = (tgtdir << 8) | endir;
+	case XNVME_SPEC_ADMIN_DIRECTIVE_SEND_CDW11_DTYPE_IDENTIFY:
+		if (doper ==
+		    XNVME_SPEC_ADMIN_DIRECTIVE_SEND_CDW11_DOPER_DTYPE0H_ENABLE_DIRECTIVE) {
+			cdw12 = xnvme_bits_set(
+				cdw12,
+				XNVME_SPEC_ADMIN_DIRECTIVE_SEND_ENABLE_DIRECTIVE_CDW12_ENDIR,
+				endir);
+			cdw12 = xnvme_bits_set(
+				cdw12,
+				XNVME_SPEC_ADMIN_DIRECTIVE_SEND_ENABLE_DIRECTIVE_CDW12_DTYPE,
+				tgtdir);
 			break;
 		} else {
 			xnvme_cli_perr("invalid directive operation for identify directives", err);
 			return err;
 		}
-	case XNVME_SPEC_DIR_STREAMS:
-		if ((doper == XNVME_SPEC_DSEND_STREAMS_RELID) ||
-		    (doper == XNVME_SPEC_DSEND_STREAMS_RELRS)) {
+	case XNVME_SPEC_ADMIN_DIRECTIVE_SEND_CDW11_DTYPE_STREAMS:
+		if ((doper ==
+		     XNVME_SPEC_ADMIN_DIRECTIVE_SEND_CDW11_DOPER_DTYPE1H_RELEASE_IDENTIFIER) ||
+		    (doper ==
+		     XNVME_SPEC_ADMIN_DIRECTIVE_SEND_CDW11_DOPER_DTYPE1H_RELEASE_RESOURCES)) {
 			break;
 		} else {
 			xnvme_cli_perr("invalid directive operation for stream directives", err);
@@ -465,24 +475,28 @@ sub_dir_receive(struct xnvme_cli *cli)
 		       dtype, nsr);
 
 	switch (dtype) {
-	case XNVME_SPEC_DIR_IDENTIFY:
-		if (doper == XNVME_SPEC_DRECV_IDFY_RETPR) {
+	case XNVME_SPEC_ADMIN_DIRECTIVE_RECEIVE_CDW11_DTYPE_IDENTIFY:
+		if (doper ==
+		    XNVME_SPEC_ADMIN_DIRECTIVE_RECEIVE_CDW11_DOPER_DTYPE0H_RETURN_PARAMETERS) {
 			dbuf_nbytes = 4096;
 			break;
 		} else {
 			xnvme_cli_perr("invalid directive operation for identify directive", err);
 			return err;
 		}
-	case XNVME_SPEC_DIR_STREAMS:
+	case XNVME_SPEC_ADMIN_DIRECTIVE_RECEIVE_CDW11_DTYPE_STREAMS:
 		switch (doper) {
-		case XNVME_SPEC_DRECV_STREAMS_RETPR:
+		case XNVME_SPEC_ADMIN_DIRECTIVE_RECEIVE_CDW11_DOPER_DTYPE1H_RETURN_PARAMETERS:
 			dbuf_nbytes = 32;
 			break;
-		case XNVME_SPEC_DRECV_STREAMS_GETST:
+		case XNVME_SPEC_ADMIN_DIRECTIVE_RECEIVE_CDW11_DOPER_DTYPE1H_GET_STATUS:
 			dbuf_nbytes = 128 * 1024;
 			break;
-		case XNVME_SPEC_DRECV_STREAMS_ALLRS:
-			cdw12 = nsr & 0xFFFF;
+		case XNVME_SPEC_ADMIN_DIRECTIVE_RECEIVE_CDW11_DOPER_DTYPE1H_ALLOCATE_RESOURCES:
+			cdw12 = xnvme_bits_set(
+				cdw12,
+				XNVME_SPEC_ADMIN_DIRECTIVE_RECEIVE_ALLOCATE_RESOURCES_CDW12_NSR,
+				nsr);
 			break;
 		default:
 			xnvme_cli_perr("invalid directive operation for streams directive", err);
@@ -523,29 +537,30 @@ sub_dir_receive(struct xnvme_cli *cli)
 	}
 
 	switch (dtype) {
-	case XNVME_SPEC_DIR_IDENTIFY:
-		if (doper == XNVME_SPEC_DRECV_IDFY_RETPR) {
-			xnvme_spec_drecv_idfy_pr((struct xnvme_spec_idfy_dir_rp *)dbuf,
+	case XNVME_SPEC_ADMIN_DIRECTIVE_RECEIVE_CDW11_DTYPE_IDENTIFY:
+		if (doper ==
+		    XNVME_SPEC_ADMIN_DIRECTIVE_RECEIVE_CDW11_DOPER_DTYPE0H_RETURN_PARAMETERS) {
+			xnvme_spec_drecv_idfy_pr((struct xnvme_spec_base_return_parameters *)dbuf,
 						 XNVME_PR_DEF);
 			break;
 		} else {
 			xnvme_cli_perr("invalid directive operation for identify directive", err);
 			goto exit;
 		}
-	case XNVME_SPEC_DIR_STREAMS:
+	case XNVME_SPEC_ADMIN_DIRECTIVE_RECEIVE_CDW11_DTYPE_STREAMS:
 		switch (doper) {
-		case XNVME_SPEC_DRECV_STREAMS_RETPR:
-			xnvme_spec_drecv_srp_pr((struct xnvme_spec_streams_dir_rp *)dbuf,
+		case XNVME_SPEC_ADMIN_DIRECTIVE_RECEIVE_CDW11_DOPER_DTYPE1H_RETURN_PARAMETERS:
+			xnvme_spec_drecv_srp_pr(
+				(struct xnvme_spec_base_return_parameters_figure712 *)dbuf,
+				XNVME_PR_DEF);
+			break;
+		case XNVME_SPEC_ADMIN_DIRECTIVE_RECEIVE_CDW11_DOPER_DTYPE1H_GET_STATUS:
+			xnvme_spec_drecv_sgs_pr((struct xnvme_spec_base_get_status *)dbuf,
 						XNVME_PR_DEF);
 			break;
-		case XNVME_SPEC_DRECV_STREAMS_GETST:
-			xnvme_spec_drecv_sgs_pr((struct xnvme_spec_streams_dir_gs *)dbuf,
-						XNVME_PR_DEF);
+		case XNVME_SPEC_ADMIN_DIRECTIVE_RECEIVE_CDW11_DOPER_DTYPE1H_ALLOCATE_RESOURCES:
+			xnvme_spec_drecv_sar_pr(ctx.cpl.dw0, XNVME_PR_DEF);
 			break;
-		case XNVME_SPEC_DRECV_STREAMS_ALLRS: {
-			struct xnvme_spec_alloc_resource ar = {.val = ctx.cpl.dw0};
-			xnvme_spec_drecv_sar_pr(&ar, XNVME_PR_DEF);
-		} break;
 		default:
 			xnvme_cli_perr("invalid directive operation for streams directive", err);
 			goto exit;
