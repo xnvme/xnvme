@@ -298,6 +298,18 @@ int
 xnvme_be_upcie_buf_reg_unref(struct dmamem *dmem, uint64_t heap, size_t heap_nbytes, void *vaddr,
 			     struct xnvme_buf_reg **last);
 
+/**
+ * The IOAS or container that memory of this process maps into, at an IOVA equal to its address
+ *
+ * @return 1 with iommu filled where the heap sits in it that way, 0 otherwise
+ */
+int
+xnvme_be_upcie_mem_map_iommu(struct nvme_cplane_iommu_handle *iommu);
+
+/** Drop what was registered; the IOAS or the connection holding it is going away */
+void
+xnvme_be_upcie_buf_regs_term(void);
+
 int
 xnvme_be_upcie_queue_init(struct xnvme_queue *queue, int opts);
 int
