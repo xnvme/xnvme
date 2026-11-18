@@ -176,18 +176,36 @@ be_windows = conf_data.get('XNVME_PLATFORM_WINDOWS_ENABLED')
 conf_data.set('XNVME_BE_IOCP_ENABLED', be_windows and get_option('with-iocp').allowed())
 conf_data.set('XNVME_BE_IORING_ENABLED', be_windows and get_option('with-ioring').allowed())
 
-xnvme_cuse_has_fuse = is_linux ? cc.has_header('linux/fuse.h', required: get_option('with-cuse')) : false
-# Also gate on the 5.17+ NVME_IOCTL_IO64_CMD_VEC symbol, or an older kernel header degrades instead of failing the build.
-xnvme_cuse_has_vec = is_linux ? cc.has_header_symbol(
-  'linux/nvme_ioctl.h',
-  'NVME_IOCTL_IO64_CMD_VEC',
-  required: get_option('with-cuse'),
-) : false
-xnvme_cuse_has_header = xnvme_cuse_has_fuse and xnvme_cuse_has_vec
-conf_data.set('XNVME_CUSE_ENABLED', xnvme_cuse_has_header)
-if not xnvme_cuse_has_header and is_linux and get_option('with-cuse').allowed()
-  warning('No linux/fuse.h or too old linux/nvme_ioctl.h, the NVMe ioctl() CUSE mimic is unavailable')
+# The character devices of homi and qublk take the CUSE protocol from uFuse.
+# ufuse.h stops with an #error on a linux/fuse.h older than protocol 7.39
+# (Linux 6.6), so compiling it checks the kernel headers too.
+cuse_opt = get_option('with-cuse').require(is_linux, error_message: 'CUSE is a Linux interface')
+ufuse_dep = dependency(
+  'ufuse',
+  version: ['>=0.4.0', '<0.5.0'],
+  required: cuse_opt,
+  allow_fallback: true,
+  default_options: ['skip-install=true'],
+)
+# Before meson 1.3, cc.compiles() does not take the include directories of a subproject's dependency
+ufuse_inc = []
+if ufuse_dep.found() and ufuse_dep.type_name() == 'internal'
+  ufuse_inc = subproject('ufuse').get_variable('inc')
 endif
+cuse_enabled = ufuse_dep.found() and cc.compiles(
+  '''
+  #include <linux/nvme_ioctl.h>
+  #include <ufuse.h>
+  unsigned long cmd = NVME_IOCTL_IO64_CMD_VEC;
+  ''',
+  dependencies: ufuse_dep,
+  include_directories: ufuse_inc,
+  name: 'ufuse.h (Linux 6.6) and NVME_IOCTL_IO64_CMD_VEC (Linux 5.17)',
+)
+if cuse_opt.enabled() and not cuse_enabled
+  error('-Dwith-cuse=enabled, but the kernel headers are older than Linux 6.6')
+endif
+conf_data.set('XNVME_CUSE_ENABLED', cuse_enabled)
 
 conf_data.set('XNVME_PLATFORM_LINUX_ENABLED', is_linux)
 conf_data.set('XNVME_BE_LINUX_BLOCK_ENABLED', is_linux ? cc.has_header('linux/blkzoned.h') : false)

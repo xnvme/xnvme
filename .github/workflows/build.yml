@@ -63,6 +63,18 @@ jobs:
         meson compile -C builddir-none
         rm -rf builddir-none
 
+    - name: Build without the CUSE devices on a linux/fuse.h older than uFuse needs
+      # A linux/fuse.h of protocol 7.38 stands in for the headers of a kernel before 6.6
+      if: ${{ matrix.os == 'debian' && matrix.ver == 'trixie' }}
+      run: |
+        mkdir -p fuse-7.38/linux
+        sed 's/^#define FUSE_KERNEL_MINOR_VERSION .*/#define FUSE_KERNEL_MINOR_VERSION 38/' /usr/include/linux/fuse.h > fuse-7.38/linux/fuse.h
+        meson setup builddir-fuse-7.38 -Dwerror=true -Dc_args=-I$PWD/fuse-7.38 | tee fuse-7.38.log
+        grep -F 'NVME_IOCTL_IO64_CMD_VEC (Linux 5.17)" compiles: NO' fuse-7.38.log
+        meson compile -C builddir-fuse-7.38
+        if meson setup builddir-fuse-7.38-enabled -Dc_args=-I$PWD/fuse-7.38 -Dwith-cuse=enabled; then exit 1; fi
+        rm -rf fuse-7.38 fuse-7.38.log builddir-fuse-7.38 builddir-fuse-7.38-enabled
+
     - name: Configure, Build, and Install
       env:
         BSCRIPT_DEF: toolbox/pkgs/default-build.sh

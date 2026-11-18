@@ -12,9 +12,9 @@
  * CUSE is a mode of the kernel's FUSE subsystem, not a separate mechanism:
  * a CUSE session speaks the same /dev/fuse request/reply wire protocol as
  * a filesystem session, just entered via /dev/cuse and backing one
- * character device instead of a mounted tree. This talks that protocol
- * directly (linux/fuse.h has every struct involved) rather than linking
- * libfuse3.
+ * character device instead of a mounted tree. The protocol is spoken by
+ * uFuse, a header-only library, rather than libfuse3; what is here decodes
+ * the NVMe-driver ioctls and runs their commands.
  *
  * @file xnvme_cuse.h
  */

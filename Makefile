@@ -859,7 +859,8 @@ gen-libconf:
 
 define gen-src-archive-help
 # Produce a source-archive (.tar.gz) without the source of SPDK, carrying only
-# the header-only uPCIe every Linux build needs
+# the header-only uPCIe every Linux build needs, and the header-only uFuse the
+# CUSE devices need
 endef
 .PHONY: gen-src-archive
 gen-src-archive:

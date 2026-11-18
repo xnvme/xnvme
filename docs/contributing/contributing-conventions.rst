@@ -187,7 +187,8 @@ Layout
   ``libxnvme_cli.h``, and a ``static inline`` printer, which has no symbol for
   a binding to call, stays with what it prints, such as ``xnvme_timer_pr()``
 * ``lib/cuse/`` is a static library of its own for the tools, not part of
-  ``libxnvme``
+  ``libxnvme``. It holds the NVMe-driver ioctl() mimic; the CUSE protocol
+  under it comes from uFuse, ``subprojects/ufuse.wrap``
 * ``lib/platform/`` holds what selects among the backend configs:
   ``xnvme_platform.c``, the device-open loop, and per OS
   ``lib/platform/<os>/xnvme_platform_<os>.c``, the scan, the classify and the
