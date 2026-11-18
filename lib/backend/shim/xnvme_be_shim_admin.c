@@ -151,13 +151,14 @@ idfy(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes)
 static int
 gfeat(struct xnvme_cmd_ctx *ctx, void *XNVME_UNUSED(dbuf))
 {
-	struct xnvme_spec_feat feat = {0};
 
 	switch (xnvme_bits_get(ctx->cmd.common.cdw10, XNVME_SPEC_ADMIN_GET_FEATURES_CDW10_FID)) {
-	case XNVME_SPEC_FEAT_NQUEUES:
-		feat.nqueues.nsqa = 63;
-		feat.nqueues.ncqa = 63;
-		ctx->cpl.dw0 = feat.val;
+	case XNVME_SPEC_BASE_FEATURE_NUMBER_OF_QUEUES:
+		ctx->cpl.dw0 =
+			xnvme_bits_set(0, XNVME_SPEC_BASE_FEATURE_NUMBER_OF_QUEUES_CQE_DW0_NSQA,
+				       63) |
+			xnvme_bits_set(0, XNVME_SPEC_BASE_FEATURE_NUMBER_OF_QUEUES_CQE_DW0_NCQA,
+				       63);
 		break;
 
 	default:

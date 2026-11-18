@@ -36,11 +36,11 @@ test_init_term(struct xnvme_cli *cli)
 	if (!cli->args.clear) {
 		// Ask how many queues are supported
 		struct xnvme_cmd_ctx ctx = {0};
-		struct xnvme_spec_feat feat = {.val = 0};
+		uint32_t feat = 0;
 		struct xnvme_cmd_prep_adm_get_features_args gf = {
 			.args_nbytes = sizeof(gf),
-			.sel = XNVME_SPEC_FEAT_SEL_CURRENT,
-			.fid = XNVME_SPEC_FEAT_NQUEUES,
+			.sel = XNVME_SPEC_ADMIN_GET_FEATURES_CDW10_SEL_CURRENT,
+			.fid = XNVME_SPEC_BASE_FEATURE_NUMBER_OF_QUEUES,
 		};
 
 		xnvme_dev_get_cmd_ctx(dev, &ctx);
@@ -56,13 +56,18 @@ test_init_term(struct xnvme_cli *cli)
 			return err;
 		}
 
-		feat.val = ctx.cpl.dw0;
+		feat = ctx.cpl.dw0;
 
-		xnvme_spec_feat_pr(XNVME_SPEC_FEAT_NQUEUES, &feat, XNVME_PR_DEF);
+		xnvme_spec_feat_pr(XNVME_SPEC_BASE_FEATURE_NUMBER_OF_QUEUES, feat, XNVME_PR_DEF);
 
-		if (count >= (uint64_t)(feat.nqueues.nsqa + 1)) {
-			xnvme_cli_pinf("skipping -- count: %" PRIu64 " > (nsqa + 1): %u", count,
-				       feat.nqueues.nsqa);
+		if (count >=
+		    xnvme_bits_get(feat, XNVME_SPEC_BASE_FEATURE_NUMBER_OF_QUEUES_CQE_DW0_NSQA) +
+			    1) {
+			xnvme_cli_pinf(
+				"skipping -- count: %" PRIu64 " > (nsqa + 1): %u", count,
+				(unsigned int)xnvme_bits_get(
+					feat,
+					XNVME_SPEC_BASE_FEATURE_NUMBER_OF_QUEUES_CQE_DW0_NSQA));
 			return 0;
 		}
 	}

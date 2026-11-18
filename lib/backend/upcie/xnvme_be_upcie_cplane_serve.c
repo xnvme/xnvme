@@ -481,8 +481,8 @@ cplane_serve_totals_read(void)
 {
 	struct xnvme_cmd_prep_adm_get_features_args args = {
 		.args_nbytes = sizeof(args),
-		.fid = XNVME_SPEC_FEAT_NQUEUES,
-		.sel = XNVME_SPEC_FEAT_SEL_CURRENT,
+		.fid = XNVME_SPEC_BASE_FEATURE_NUMBER_OF_QUEUES,
+		.sel = XNVME_SPEC_ADMIN_GET_FEATURES_CDW10_SEL_CURRENT,
 	};
 
 	for (int i = 0; i < g_upcie_cplane_serve.ndevs; ++i) {
