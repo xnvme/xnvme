@@ -365,38 +365,38 @@ int
 xnvme_spec_idfy_cs_pr(const struct xnvme_spec_base_identify_io_command_set *idfy, int opts);
 
 /**
- * Prints the given :;xnvme_spec_feat to the given output stream
+ * Prints the attributes of the given feature to the given output stream
  *
  * @param stream output stream used for printing
- * @param fid feature identifier
- * @param feat feature values
+ * @param fid feature identifier, a value of ::xnvme_spec_base_feature_identifier
+ * @param dw0 the attributes, as Get Features returns them in Dword 0 of the completion
  * @param opts printer options, see ::xnvme_pr
  * @return On success, the number of characters printed is returned.
  */
 int
-xnvme_spec_feat_fpr(FILE *stream, uint8_t fid, const struct xnvme_spec_feat *feat, int opts);
+xnvme_spec_feat_fpr(FILE *stream, uint8_t fid, uint32_t dw0, int opts);
 
 /**
- * Prints the given :;xnvme_spec_feat to the given output stream
+ * Prints the attributes of the given feature to stdout
  *
- * @param fid feature identifier
- * @param feat feature values
+ * @param fid feature identifier, a value of ::xnvme_spec_base_feature_identifier
+ * @param dw0 the attributes, as Get Features returns them in Dword 0 of the completion
  * @param opts printer options, see ::xnvme_pr
  * @return On success, the number of characters printed is returned.
  */
 int
-xnvme_spec_feat_pr(uint8_t fid, const struct xnvme_spec_feat *feat, int opts);
+xnvme_spec_feat_pr(uint8_t fid, uint32_t dw0, int opts);
 
 /**
- * Prints the :;xnvme_spec_fdp_event_desc to the given output stream
+ * Prints the :;xnvme_spec_base_supported_fdp_event_descriptor to the given output stream
  *
- * @param buf Buffer which contains xnvme_spec_fdp_event_desc
- * @param feat to get number of events
+ * @param buf Buffer which contains xnvme_spec_base_supported_fdp_event_descriptor
+ * @param dw0 Dword 0 of the completion of Get Features of FDP Events, the number of events
  * @param opts printer options, see ::xnvme_pr
  * @return On success, the number of characters printed is returned.
  */
 int
-xnvme_spec_feat_fdp_events_pr(void *buf, const struct xnvme_spec_feat *feat, int opts);
+xnvme_spec_feat_fdp_events_pr(void *buf, uint32_t dw0, int opts);
 
 /**
  * Prints the given :;xnvme_cmd_sqe to the given output stream
@@ -420,44 +420,45 @@ int
 xnvme_spec_sqe_pr(union xnvme_cmd_sqe *cmd, int opts);
 
 /**
- * Prints the given :;xnvme_spec_idfy_dir_rp to stdout
+ * Prints the given ::xnvme_spec_base_identify_directive_return_parameters to stdout
  *
  * @param idfy pointer to structure to print
  * @param opts printer options, see ::xnvme_pr
  * @return On success, the number of characters printed is returned.
  */
 int
-xnvme_spec_drecv_idfy_pr(struct xnvme_spec_idfy_dir_rp *idfy, int opts);
+xnvme_spec_drecv_idfy_pr(struct xnvme_spec_base_identify_directive_return_parameters *idfy,
+			 int opts);
 
 /**
- * Prints the given :;xnvme_spec_streams_dir_rp to stdout
+ * Prints the given :;xnvme_spec_base_streams_directive_return_parameters to stdout
  *
  * @param srp pointer to structure to print
  * @param opts printer options, see ::xnvme_pr
  * @return On success, the number of characters printed is returned.
  */
 int
-xnvme_spec_drecv_srp_pr(struct xnvme_spec_streams_dir_rp *srp, int opts);
+xnvme_spec_drecv_srp_pr(struct xnvme_spec_base_streams_directive_return_parameters *srp, int opts);
 
 /**
- * Prints the given :;xnvme_spec_streams_dir_gs to stdout
+ * Prints the given :;xnvme_spec_base_get_status to stdout
  *
  * @param sgs pointer to structure to print
  * @param opts printer options, see ::xnvme_pr
  * @return On success, the number of characters printed is returned.
  */
 int
-xnvme_spec_drecv_sgs_pr(struct xnvme_spec_streams_dir_gs *sgs, int opts);
+xnvme_spec_drecv_sgs_pr(struct xnvme_spec_base_get_status *sgs, int opts);
 
 /**
- * Prints the given :;xnvme_spec_alloc_resource to stdout
+ * Prints Dword 0 of the completion of Directive Receive Allocate Resources to stdout
  *
- * @param sar structure to print
+ * @param dw0 Dword 0 of the completion queue entry
  * @param opts printer options, see ::xnvme_pr
  * @return On success, the number of characters printed is returned.
  */
 int
-xnvme_spec_drecv_sar_pr(const struct xnvme_spec_alloc_resource *sar, int opts);
+xnvme_spec_drecv_sar_pr(uint32_t dw0, int opts);
 
 int
 xnvme_spec_nvm_scopy_fmt_zero_fpr(FILE *stream, const struct xnvme_spec_nvm_scopy_fmt_zero *entry,
@@ -754,24 +755,24 @@ const char *
 xnvme_spec_csi_str(enum xnvme_spec_base_csi eval);
 
 /**
- * Produces a string representation of the given ::xnvme_spec_feat_id
+ * Produces a string representation of the given ::xnvme_spec_base_feature_identifier
  *
  * @param eval the enum value to produce a string representation of
  * @return On success, a string representation is returned. On error, the string
  * "ENOSYS" is returned.
  */
 const char *
-xnvme_spec_feat_id_str(enum xnvme_spec_feat_id eval);
+xnvme_spec_feat_id_str(enum xnvme_spec_base_feature_identifier eval);
 
 /**
- * Produces a string representation of the given ::xnvme_spec_feat_sel
+ * Produces a string representation of the given ::xnvme_spec_admin_get_features_cdw10_sel
  *
  * @param eval the enum value to produce a string representation of
  * @return On success, a string representation is returned. On error, the string
  * "ENOSYS" is returned.
  */
 const char *
-xnvme_spec_feat_sel_str(enum xnvme_spec_feat_sel eval);
+xnvme_spec_feat_sel_str(enum xnvme_spec_admin_get_features_cdw10_sel eval);
 
 /**
  * Produces a string representation of the given ::xnvme_spec_flag

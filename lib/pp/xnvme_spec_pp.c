@@ -964,7 +964,7 @@ xnvme_spec_sqe_pr(union xnvme_cmd_sqe *cmd, int opts)
 }
 
 int
-xnvme_spec_feat_fpr(FILE *stream, uint8_t fid, const struct xnvme_spec_feat *feat, int opts)
+xnvme_spec_feat_fpr(FILE *stream, uint8_t fid, uint32_t dw0, int opts)
 {
 	int wrtn = 0;
 
@@ -979,37 +979,56 @@ xnvme_spec_feat_fpr(FILE *stream, uint8_t fid, const struct xnvme_spec_feat *fea
 	}
 
 	switch (fid) {
-	case XNVME_SPEC_FEAT_ERROR_RECOVERY:
-		wrtn += fprintf(stream, "feat: {dulbe: %" PRIx32 ", tler: %" PRIx32 ")\n",
-				feat->error_recovery.dulbe, feat->error_recovery.tler);
+	case XNVME_SPEC_BASE_FEATURE_ERROR_RECOVERY:
+		wrtn += fprintf(
+			stream, "feat: {dulbe: %" PRIx64 ", tler: %" PRIx64 ")\n",
+			xnvme_bits_get(dw0, XNVME_SPEC_BASE_FEATURE_ERROR_RECOVERY_CDW11_DULBE),
+			xnvme_bits_get(dw0, XNVME_SPEC_BASE_FEATURE_ERROR_RECOVERY_CDW11_TLER));
 		return wrtn;
 
-	case XNVME_SPEC_FEAT_TEMP_THRESHOLD:
-		wrtn += fprintf(stream,
-				"feat: {"
-				"tmpth: %" PRIu32 ", tmpsel: 0x%" PRIx32 ", thsel: 0x%" PRIx32
-				"}\n",
-				feat->temp_threshold.tmpth, feat->temp_threshold.tmpsel,
-				feat->temp_threshold.thsel);
+	case XNVME_SPEC_BASE_FEATURE_TEMPERATURE_THRESHOLD:
+		wrtn += fprintf(
+			stream,
+			"feat: {"
+			"tmpth: %" PRIu64 ", tmpsel: 0x%" PRIx64 ", thsel: 0x%" PRIx64 "}\n",
+			xnvme_bits_get(dw0,
+				       XNVME_SPEC_BASE_FEATURE_TEMPERATURE_THRESHOLD_CDW11_TMPTH),
+			xnvme_bits_get(dw0,
+				       XNVME_SPEC_BASE_FEATURE_TEMPERATURE_THRESHOLD_CDW11_TMPSEL),
+			xnvme_bits_get(dw0,
+				       XNVME_SPEC_BASE_FEATURE_TEMPERATURE_THRESHOLD_CDW11_THSEL));
 		return wrtn;
 
-	case XNVME_SPEC_FEAT_NQUEUES:
-		wrtn += fprintf(stream, "feat: { nsqa: %" PRIu32 ", ncqa: %" PRIu32 " }\n",
-				feat->nqueues.nsqa, feat->nqueues.ncqa);
+	case XNVME_SPEC_BASE_FEATURE_NUMBER_OF_QUEUES:
+		wrtn += fprintf(
+			stream, "feat: { nsqa: %" PRIu16 ", ncqa: %" PRIu16 " }\n",
+			(uint16_t)xnvme_bits_get(
+				dw0, XNVME_SPEC_BASE_FEATURE_NUMBER_OF_QUEUES_CQE_DW0_NSQA),
+			(uint16_t)xnvme_bits_get(
+				dw0, XNVME_SPEC_BASE_FEATURE_NUMBER_OF_QUEUES_CQE_DW0_NCQA));
 		return wrtn;
 
-	case XNVME_SPEC_FEAT_FDP_MODE:
-		wrtn += fprintf(stream, "feat: { fdpe: %" PRIu32 ", fdpci: %" PRIu32 " }\n",
-				feat->fdp_mode.fdpe, feat->fdp_mode.fdpci);
+	case XNVME_SPEC_BASE_FEATURE_FLEXIBLE_DATA_PLACEMENT:
+		wrtn += fprintf(
+			stream, "feat: { fdpe: %" PRIu64 ", fdpci: %" PRIu64 " }\n",
+			xnvme_bits_get(dw0,
+				       XNVME_SPEC_BASE_FEATURE_FLEXIBLE_DATA_PLACEMENT_CDW12_FDPE),
+			xnvme_bits_get(
+				dw0,
+				XNVME_SPEC_BASE_FEATURE_FLEXIBLE_DATA_PLACEMENT_CDW12_FDPCIDX));
 		return wrtn;
 
-	case XNVME_SPEC_FEAT_FDP_EVENTS:
-		wrtn += fprintf(stream, "nevents: %" PRIu32 " }\n", feat->val);
+	case XNVME_SPEC_BASE_FEATURE_FLEXIBLE_DATA_PLACEMENT_EVENTS:
+		wrtn += fprintf(
+			stream, "nevents: %" PRIu64 " }\n",
+			xnvme_bits_get(
+				dw0,
+				XNVME_SPEC_BASE_FEATURE_FLEXIBLE_DATA_PLACEMENT_EVENTS_CQE_DW0_NOET));
 		return wrtn;
 
-	case XNVME_SPEC_FEAT_ARBITRATION:
-	case XNVME_SPEC_FEAT_PWR_MGMT:
-	case XNVME_SPEC_FEAT_LBA_RANGETYPE:
+	case XNVME_SPEC_BASE_FEATURE_ARBITRATION:
+	case XNVME_SPEC_BASE_FEATURE_POWER_MANAGEMENT:
+	case XNVME_SPEC_BASE_FEATURE_LBA_RANGE_TYPE:
 	default:
 		wrtn += fprintf(stream, "# ENOSYS: printer not implemented for fid: %" PRIx8, fid);
 	}
@@ -1018,14 +1037,13 @@ xnvme_spec_feat_fpr(FILE *stream, uint8_t fid, const struct xnvme_spec_feat *fea
 }
 
 int
-xnvme_spec_feat_pr(uint8_t fid, const struct xnvme_spec_feat *feat, int opts)
+xnvme_spec_feat_pr(uint8_t fid, uint32_t dw0, int opts)
 {
-	return xnvme_spec_feat_fpr(stdout, fid, feat, opts);
+	return xnvme_spec_feat_fpr(stdout, fid, dw0, opts);
 }
 
 int
-xnvme_spec_feat_fdp_events_fpr(FILE *stream, void *buf, const struct xnvme_spec_feat *feat,
-			       int opts)
+xnvme_spec_feat_fdp_events_fpr(FILE *stream, void *buf, uint32_t dw0, int opts)
 {
 	int wrtn = 0;
 
@@ -1039,21 +1057,24 @@ xnvme_spec_feat_fdp_events_fpr(FILE *stream, void *buf, const struct xnvme_spec_
 		break;
 	}
 
-	for (uint32_t i = 0; i < feat->val; i++) {
-		struct xnvme_spec_fdp_event_desc *desc =
-			&((struct xnvme_spec_fdp_event_desc *)buf)[i];
-		wrtn += fprintf(stream, "{ type: %#" PRIx8 ", event enabled: %" PRIu8 " }\n",
-				desc->type, desc->fdpeta.ee);
-		desc += sizeof(struct xnvme_spec_fdp_event_desc);
+	for (uint32_t i = 0; i < dw0; i++) {
+		struct xnvme_spec_base_supported_fdp_event_descriptor *desc =
+			&((struct xnvme_spec_base_supported_fdp_event_descriptor *)buf)[i];
+		wrtn += fprintf(
+			stream, "{ type: %#" PRIx8 ", event enabled: %" PRIu64 " }\n", desc->fdpet,
+			xnvme_bits_get(
+				desc->fdpeta,
+				XNVME_SPEC_BASE_SUPPORTED_FDP_EVENT_DESCRIPTOR_FDPETA_FDPEE));
+		desc += sizeof(struct xnvme_spec_base_supported_fdp_event_descriptor);
 	}
 
 	return wrtn;
 }
 
 int
-xnvme_spec_feat_fdp_events_pr(void *buf, const struct xnvme_spec_feat *feat, int opts)
+xnvme_spec_feat_fdp_events_pr(void *buf, uint32_t dw0, int opts)
 {
-	return xnvme_spec_feat_fdp_events_fpr(stdout, buf, feat, opts);
+	return xnvme_spec_feat_fdp_events_fpr(stdout, buf, dw0, opts);
 }
 
 static int
@@ -1260,7 +1281,9 @@ xnvme_spec_nvm_idfy_ns_pr(struct xnvme_spec_nvm_io_command_set_specific_identify
 }
 
 int
-xnvme_spec_drecv_idfy_fpr(FILE *stream, struct xnvme_spec_idfy_dir_rp *idfy, int opts)
+xnvme_spec_drecv_idfy_fpr(FILE *stream,
+			  struct xnvme_spec_base_identify_directive_return_parameters *idfy,
+			  int opts)
 {
 	int wrtn = 0;
 
@@ -1282,33 +1305,67 @@ xnvme_spec_drecv_idfy_fpr(FILE *stream, struct xnvme_spec_idfy_dir_rp *idfy, int
 
 	wrtn += fprintf(stream, "\n");
 	wrtn += fprintf(stream, "  directives_supported:\n");
-	wrtn += fprintf(stream, "    identify: %" PRIu8 "\n", idfy->directives_supported.identify);
-	wrtn += fprintf(stream, "    streams: %" PRIu8 "\n", idfy->directives_supported.streams);
-	wrtn += fprintf(stream, "    data placement: %" PRIu8 "\n",
-			idfy->directives_supported.data_placement);
+	wrtn += fprintf(
+		stream, "    identify: %" PRIu64 "\n",
+		xnvme_bits_get(
+			idfy->directives_supported[0],
+			XNVME_SPEC_BASE_IDENTIFY_DIRECTIVE_RETURN_PARAMETERS_DIRECTIVES_SUPPORTED_IDIRS));
+	wrtn += fprintf(
+		stream, "    streams: %" PRIu64 "\n",
+		xnvme_bits_get(
+			idfy->directives_supported[0],
+			XNVME_SPEC_BASE_IDENTIFY_DIRECTIVE_RETURN_PARAMETERS_DIRECTIVES_SUPPORTED_SDIRS));
+	wrtn += fprintf(
+		stream, "    data placement: %" PRIu64 "\n",
+		xnvme_bits_get(
+			idfy->directives_supported[0],
+			XNVME_SPEC_BASE_IDENTIFY_DIRECTIVE_RETURN_PARAMETERS_DIRECTIVES_SUPPORTED_DPDIRS));
 	wrtn += fprintf(stream, "  directives_enabled:\n");
-	wrtn += fprintf(stream, "    identify: %" PRIu8 "\n", idfy->directives_enabled.identify);
-	wrtn += fprintf(stream, "    streams: %" PRIu8 "\n", idfy->directives_enabled.streams);
-	wrtn += fprintf(stream, "    data_placement: %" PRIu8 "\n",
-			idfy->directives_enabled.data_placement);
+	wrtn += fprintf(
+		stream, "    identify: %" PRIu64 "\n",
+		xnvme_bits_get(
+			idfy->directives_enabled[0],
+			XNVME_SPEC_BASE_IDENTIFY_DIRECTIVE_RETURN_PARAMETERS_DIRECTIVES_ENABLED_IDIRE));
+	wrtn += fprintf(
+		stream, "    streams: %" PRIu64 "\n",
+		xnvme_bits_get(
+			idfy->directives_enabled[0],
+			XNVME_SPEC_BASE_IDENTIFY_DIRECTIVE_RETURN_PARAMETERS_DIRECTIVES_ENABLED_SDIRE));
+	wrtn += fprintf(
+		stream, "    data_placement: %" PRIu64 "\n",
+		xnvme_bits_get(
+			idfy->directives_enabled[0],
+			XNVME_SPEC_BASE_IDENTIFY_DIRECTIVE_RETURN_PARAMETERS_DIRECTIVES_ENABLED_DPDIRE));
 	wrtn += fprintf(stream, "  directives_persistence:\n");
-	wrtn += fprintf(stream, "    identify: %" PRIu8 "\n",
-			idfy->directives_persistence.identify);
-	wrtn += fprintf(stream, "    streams: %" PRIu8 "\n", idfy->directives_persistence.streams);
-	wrtn += fprintf(stream, "    data_placement: %" PRIu8 "\n",
-			idfy->directives_persistence.data_placement);
+	wrtn += fprintf(
+		stream, "    identify: %" PRIu64 "\n",
+		xnvme_bits_get(
+			idfy->directive_persistent_across_controller_level_resets[0],
+			XNVME_SPEC_BASE_IDENTIFY_DIRECTIVE_RETURN_PARAMETERS_DIRECTIVE_PERSISTENT_ACROSS_CONTROLLER_LEVEL_RESETS_IDIRCLR));
+	wrtn += fprintf(
+		stream, "    streams: %" PRIu64 "\n",
+		xnvme_bits_get(
+			idfy->directive_persistent_across_controller_level_resets[0],
+			XNVME_SPEC_BASE_IDENTIFY_DIRECTIVE_RETURN_PARAMETERS_DIRECTIVE_PERSISTENT_ACROSS_CONTROLLER_LEVEL_RESETS_SDIRCLR));
+	wrtn += fprintf(
+		stream, "    data_placement: %" PRIu64 "\n",
+		xnvme_bits_get(
+			idfy->directive_persistent_across_controller_level_resets[0],
+			XNVME_SPEC_BASE_IDENTIFY_DIRECTIVE_RETURN_PARAMETERS_DIRECTIVE_PERSISTENT_ACROSS_CONTROLLER_LEVEL_RESETS_DPDIRCLR));
 
 	return wrtn;
 }
 
 int
-xnvme_spec_drecv_idfy_pr(struct xnvme_spec_idfy_dir_rp *idfy, int opts)
+xnvme_spec_drecv_idfy_pr(struct xnvme_spec_base_identify_directive_return_parameters *idfy,
+			 int opts)
 {
 	return xnvme_spec_drecv_idfy_fpr(stdout, idfy, opts);
 }
 
 int
-xnvme_spec_drecv_srp_fpr(FILE *stream, struct xnvme_spec_streams_dir_rp *srp, int opts)
+xnvme_spec_drecv_srp_fpr(FILE *stream,
+			 struct xnvme_spec_base_streams_directive_return_parameters *srp, int opts)
 {
 	int wrtn = 0;
 
@@ -1332,7 +1389,10 @@ xnvme_spec_drecv_srp_fpr(FILE *stream, struct xnvme_spec_streams_dir_rp *srp, in
 	wrtn += fprintf(stream, "  msl: %" PRIu16 "\n", srp->msl);
 	wrtn += fprintf(stream, "  nssa: %" PRIu16 "\n", srp->nssa);
 	wrtn += fprintf(stream, "  nsso: %" PRIu16 "\n", srp->nsso);
-	wrtn += fprintf(stream, "  multi_host: %" PRIu8 "\n", srp->nssc.bits.multi_host);
+	wrtn += fprintf(
+		stream, "  multi_host: %" PRIu64 "\n",
+		xnvme_bits_get(srp->nssc,
+			       XNVME_SPEC_BASE_STREAMS_DIRECTIVE_RETURN_PARAMETERS_NSSC_SSID));
 	wrtn += fprintf(stream, "  sws: %" PRIu32 "\n", srp->sws);
 	wrtn += fprintf(stream, "  sgs: %" PRIu16 "\n", srp->sgs);
 	wrtn += fprintf(stream, "  nsa: %" PRIu16 "\n", srp->nsa);
@@ -1342,13 +1402,13 @@ xnvme_spec_drecv_srp_fpr(FILE *stream, struct xnvme_spec_streams_dir_rp *srp, in
 }
 
 int
-xnvme_spec_drecv_srp_pr(struct xnvme_spec_streams_dir_rp *srp, int opts)
+xnvme_spec_drecv_srp_pr(struct xnvme_spec_base_streams_directive_return_parameters *srp, int opts)
 {
 	return xnvme_spec_drecv_srp_fpr(stdout, srp, opts);
 }
 
 int
-xnvme_spec_drecv_sgs_fpr(FILE *stream, struct xnvme_spec_streams_dir_gs *sgs, int opts)
+xnvme_spec_drecv_sgs_fpr(FILE *stream, struct xnvme_spec_base_get_status *sgs, int opts)
 {
 	int wrtn = 0;
 
@@ -1369,8 +1429,8 @@ xnvme_spec_drecv_sgs_fpr(FILE *stream, struct xnvme_spec_streams_dir_gs *sgs, in
 	}
 
 	wrtn += fprintf(stream, "\n");
-	wrtn += fprintf(stream, "  open_sc: %" PRIu16 "\n", sgs->open_sc);
-	for (int osc = 0; osc < sgs->open_sc; ++osc) {
+	wrtn += fprintf(stream, "  open_sc: %" PRIu16 "\n", sgs->osc);
+	for (int osc = 0; osc < sgs->osc; ++osc) {
 		wrtn += fprintf(stream, "  - sid[%d]: %" PRIu16 "\n", osc, sgs->sid[osc]);
 	}
 
@@ -1378,13 +1438,13 @@ xnvme_spec_drecv_sgs_fpr(FILE *stream, struct xnvme_spec_streams_dir_gs *sgs, in
 }
 
 int
-xnvme_spec_drecv_sgs_pr(struct xnvme_spec_streams_dir_gs *sgs, int opts)
+xnvme_spec_drecv_sgs_pr(struct xnvme_spec_base_get_status *sgs, int opts)
 {
 	return xnvme_spec_drecv_sgs_fpr(stdout, sgs, opts);
 }
 
 int
-xnvme_spec_drecv_sar_fpr(FILE *stream, const struct xnvme_spec_alloc_resource *sar, int opts)
+xnvme_spec_drecv_sar_fpr(FILE *stream, uint32_t dw0, int opts)
 {
 	int wrtn = 0;
 
@@ -1400,15 +1460,18 @@ xnvme_spec_drecv_sar_fpr(FILE *stream, const struct xnvme_spec_alloc_resource *s
 
 	wrtn += fprintf(stream, "xnvme_spec_alloc_resource:");
 	wrtn += fprintf(stream, "\n");
-	wrtn += fprintf(stream, "  nsa: %" PRIu32 "\n", sar->bits.nsa);
+	wrtn += fprintf(
+		stream, "  nsa: %" PRIu64 "\n",
+		xnvme_bits_get(dw0,
+			       XNVME_SPEC_ADMIN_DIRECTIVE_RECEIVE_ALLOCATE_RESOURCES_CQE_DW0_NSA));
 
 	return wrtn;
 }
 
 int
-xnvme_spec_drecv_sar_pr(const struct xnvme_spec_alloc_resource *sar, int opts)
+xnvme_spec_drecv_sar_pr(uint32_t dw0, int opts)
 {
-	return xnvme_spec_drecv_sar_fpr(stdout, sar, opts);
+	return xnvme_spec_drecv_sar_fpr(stdout, dw0, opts);
 }
 
 int

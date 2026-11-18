@@ -79,7 +79,7 @@ sub_fields(struct xnvme_cli *XNVME_UNUSED(cli))
 	CHECK(sqe.cdw[14] == 0x0C0B0A09 && sqe.cdw[15] == 0x100F0E0D);
 
 	struct xnvme_cmd_prep_adm_set_features_args sf = {
-		.fid = XNVME_SPEC_FEAT_NQUEUES,
+		.fid = XNVME_SPEC_BASE_FEATURE_NUMBER_OF_QUEUES,
 		.sv = 1,
 		.cdw11 = 0x00030003,
 	};

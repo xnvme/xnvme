@@ -135,7 +135,7 @@ _be_windows_nvme_storage_property(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t 
 		query->SetType = PropertyStandardSet;
 		if (xnvme_bits_get(ctx->cmd.common.cdw10,
 				   XNVME_SPEC_ADMIN_SET_FEATURES_CDW10_FID) ==
-		    XNVME_SPEC_FEAT_VWCACHE) {
+		    XNVME_SPEC_BASE_FEATURE_VOLATILE_WRITE_CACHED) {
 			query->PropertyId = StorageAdapterProtocolSpecificProperty;
 		}
 

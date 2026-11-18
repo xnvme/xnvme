@@ -702,11 +702,10 @@ sub_gfeat(struct xnvme_cli *cli)
 	}
 
 	{
-		struct xnvme_spec_feat feat = {.val = ctx.cpl.dw0};
-		xnvme_spec_feat_pr(fid, &feat, XNVME_PR_DEF);
+		xnvme_spec_feat_pr(fid, ctx.cpl.dw0, XNVME_PR_DEF);
 
-		if (fid == XNVME_SPEC_FEAT_FDP_EVENTS) {
-			xnvme_spec_feat_fdp_events_pr(dbuf, &feat, XNVME_PR_DEF);
+		if (fid == XNVME_SPEC_BASE_FEATURE_FLEXIBLE_DATA_PLACEMENT_EVENTS) {
+			xnvme_spec_feat_fdp_events_pr(dbuf, ctx.cpl.dw0, XNVME_PR_DEF);
 		}
 	}
 
