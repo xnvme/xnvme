@@ -3,9 +3,7 @@ import argparse
 import ctypes
 import sys
 
-import xnvme.ctypes_bindings as xnvme
-
-xnvme.guard_unloadable()
+import xnvme
 
 
 def parse_args():
@@ -34,10 +32,11 @@ def parse_args():
 def main(args):
     """Example of xNVMe C API bindings to open a device"""
 
-    opts = xnvme.xnvme_opts()
+    opts = xnvme.XnvmeOpts()
+    xnvme.xnvme_opts_set_defaults(ctypes.byref(opts))
     opts.nsid = args.dev_nsid
 
-    dev = ctypes.POINTER(xnvme.xnvme_dev)()
+    dev = ctypes.POINTER(xnvme.XnvmeDev)()
     err = xnvme.xnvme_dev_open_uri(
         args.uri.encode(), ctypes.byref(opts), ctypes.byref(dev)
     )
@@ -45,7 +44,8 @@ def main(args):
         print(f"FAILED: xnvme_dev_open_uri({args.uri}), err({err})")
         return 1
 
-    xnvme.xnvme_dev_pr(dev, xnvme.XNVME_PR_DEF)
+    xnvme.XnvmeIdent.pr(xnvme.xnvme_dev_get_ident(dev), xnvme.XNVME_PR_DEF)
+    xnvme.XnvmeGeo.pr(xnvme.xnvme_dev_get_geo(dev), xnvme.XNVME_PR_DEF)
     xnvme.xnvme_dev_close(dev)
 
     return 0

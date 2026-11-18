@@ -6,20 +6,9 @@ PY ?= python3
 BUILD_ENV_ACTIVATE = . .build-py-env/bin/activate
 BUILD_ENV = ${BUILD_ENV_ACTIVATE} && python
 
-# Auto-detect libclang path for Linux
-LIBCLANG_PATH := $(shell \
-	for d in /usr/lib/llvm-*/lib /usr/lib64/llvm*/lib /usr/local/lib; do \
-		if [ -d "$$d" ] && ls "$$d"/libclang*.so* >/dev/null 2>&1; then \
-			echo "$$d"; break; \
-		fi; \
-	done)
-ifneq ($(LIBCLANG_PATH),)
-export LIBCLANG_LIBRARY_PATH := $(LIBCLANG_PATH)
-endif
 WORKSPACE_ROOT ?= ..
 TOOLBOX_DIR?=../../toolbox
 PROJECT_NAME=xnvme
-XNVME_CAPI_HEADERS=../../include/libxnvme.h $(shell ls ../../include/libxnvme_*.h | grep -v util | grep -v compat | grep -v libxnvmec)
 
 define default-help
 # invoke: 'make uninstall', 'make install'
@@ -39,15 +28,6 @@ endef
 	@${BUILD_ENV} -m pip install --upgrade pip
 	@echo "Install python dependencies"
 	@${BUILD_ENV} -m pip install -r requirements.txt
-	@echo "Install clang Python package matching system libclang"
-	@LLVM_VER=$$(echo "${LIBCLANG_SO}" | grep -oP 'llvm-\K[0-9]+' || \
-		ls -d /usr/lib/llvm-*/lib/libclang*.so.1 2>/dev/null | sort -V | tail -1 | grep -oP 'llvm-\K[0-9]+'); \
-	if [ -n "$$LLVM_VER" ]; then \
-		echo "Detected LLVM version: $$LLVM_VER (from libclang)"; \
-		${BUILD_ENV} -m pip install "clang>=$$LLVM_VER,<$$((LLVM_VER+1))" 2>/dev/null || \
-		${BUILD_ENV} -m pip install "clang==$$LLVM_VER.1.7" 2>/dev/null || \
-		echo "Warning: Could not install matching clang version"; \
-	fi
 
 define all-help
 # Do the common task during development of: uninstall clean build install test
@@ -56,10 +36,10 @@ endef
 all: uninstall clean build install test
 
 define build-help
-# Generate ctypes, patch them, then create a source package
+# Generate the bindings, then create a source package
 endef
 .PHONY: build
-build: .build-py-env generate-ctypes patch-ctypes
+build: .build-py-env generate
 	@echo "## py: make build-sdist"
 	@${BUILD_ENV} setup.py sdist
 	@echo "## py: make build-sdist [DONE]"
@@ -97,48 +77,17 @@ endef
 .PHONY: test
 test:
 	@echo "## py: make test"
-	@pytest --pyargs xnvme
+	@pytest --pyargs xnvme.tests
 	@echo "## py: make test [DONE]"
 
-define generate-ctypes-help
-# Generate definitions (xnvme_ctypes.header) from xNVMe public C API headers
+define generate-help
+# Generate the bindings, xnvme/__init__.py, from the xNVMe C API headers with yace
 endef
-# Detect libclang library for clang2py (Linux)
-LIBCLANG_SO := $(shell ls /usr/lib/llvm-*/lib/libclang*.so.1 2>/dev/null | sort -V | tail -1)
-
-# Platform-specific clang args
-ifeq ($(shell uname -s),Darwin)
-CLANG_EXTRA_ARGS := -I/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/ -I/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/Kernel.framework/Versions/A/Headers/
-else
-CLANG_EXTRA_ARGS :=
-endif
-
-.PHONY: generate-ctypes
-generate-ctypes: .build-py-env
-	@echo "## py: gen"
-	@echo "## py:headers: ${XNVME_CAPI_HEADERS}"
-ifeq ($(LIBCLANG_SO),)
-	${BUILD_ENV_ACTIVATE} && clang2py ${XNVME_CAPI_HEADERS} --clang-args="-I../../include ${CLANG_EXTRA_ARGS}" > xnvme/ctypes_bindings/api.py
-else
-	${BUILD_ENV_ACTIVATE} && python3 -c "\
-from clang.cindex import Config; \
-Config.set_library_file('${LIBCLANG_SO}'); \
-from ctypeslib.clang2py import main; \
-import sys; sys.argv = ['clang2py'] + '${XNVME_CAPI_HEADERS}'.split() + ['--clang-args=-I../../include ${CLANG_EXTRA_ARGS}']; \
-main()" > xnvme/ctypes_bindings/api.py
-endif
-	@echo "## Remember to also call 'make patch-ctypes' to fix format"
-	@echo "## py: gen [DONE]"
-
-define patch-ctypes-help
-# Patch definitions (xnvme_ctypes.header)
-endef
-.PHONY: patch-ctypes
-patch-ctypes: .build-py-env
-	@echo "## py: gen"
-	@${BUILD_ENV} auxiliary/patch_ctypes_bindings.py --path xnvme/ctypes_bindings/api.py
-	@${BUILD_ENV_ACTIVATE} && black xnvme/ctypes_bindings/api.py || echo "could not fix format"
-	@echo "## py: gen [DONE]"
+.PHONY: generate
+generate: .build-py-env
+	@echo "## py: generate"
+	@${BUILD_ENV} ${TOOLBOX_DIR}/xnvme_bindings.py python xnvme/__init__.py
+	@echo "## py: generate [DONE]"
 
 define clean-help
 # clean the Python build dirs (build, dist)
@@ -151,7 +100,7 @@ clean:
 	@rm -f -r dist
 	@rm -f -r *.egg-info
 	@rm -f MANIFEST
-	@rm -f xnvme/ctypes_bindings/api.py
+	@rm -f xnvme/__init__.py
 	@echo "## py: clean [DONE]"
 
 define help-help

@@ -318,6 +318,8 @@ xnvme_timer_elapsed_nsecs(struct xnvme_timer *t)
  *
  * @param t
  * @param prefix
+ *
+ * @nobind
  */
 static inline void
 xnvme_timer_pr(struct xnvme_timer *t, const char *prefix)
