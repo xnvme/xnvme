@@ -715,7 +715,8 @@ xnvme_spec_znd_descr_fpr_yaml(FILE *stream, const struct xnvme_spec_zns_zone_des
 			      int indent, const char *sep);
 
 /**
- * Prints the given xnvme_spec_kvs_idfy to the given output stream
+ * Prints the given ::xnvme_spec_kv_io_command_set_specific_identify_namespace to the given output
+ * stream
  *
  * @param stream output stream used for printing
  * @param idfy pointer to structure to print
@@ -723,17 +724,20 @@ xnvme_spec_znd_descr_fpr_yaml(FILE *stream, const struct xnvme_spec_zns_zone_des
  * @return On success, the number of characters printed is returned.
  */
 int
-xnvme_spec_kvs_idfy_ns_fpr(FILE *stream, const struct xnvme_spec_kvs_idfy_ns *idfy, int opts);
+xnvme_spec_kvs_idfy_ns_fpr(
+	FILE *stream, const struct xnvme_spec_kv_io_command_set_specific_identify_namespace *idfy,
+	int opts);
 
 /**
- * Prints the given :;xnvme_spec_kvs_idfy to stdout
+ * Prints the given ::xnvme_spec_kv_io_command_set_specific_identify_namespace to stdout
  *
  * @param idfy pointer to structure to print
  * @param opts printer options, see ::xnvme_pr
  * @return On success, the number of characters printed is returned.
  */
 int
-xnvme_spec_kvs_idfy_ns_pr(const struct xnvme_spec_kvs_idfy_ns *idfy, int opts);
+xnvme_spec_kvs_idfy_ns_pr(
+	const struct xnvme_spec_kv_io_command_set_specific_identify_namespace *idfy, int opts);
 
 /**
  * Produces a string representation of the given ::xnvme_spec_admin_opcode

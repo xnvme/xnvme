@@ -175,7 +175,10 @@ class TestKeyValue:
         with pytest.raises(KVException) as assertion:
             kvs_exist(dev, kbuf, len(key))
         assert assertion.value.status_code_type == xnvme.XNVME_STATUS_CODE_TYPE_CMDSPEC
-        assert assertion.value.status_code == xnvme.XNVME_SPEC_KV_SC_KEY_NOT_EXISTS
+        assert (
+            assertion.value.status_code
+            == xnvme.XNVME_SPEC_KV_GENERIC_COMMAND_STATUS_KV_KEY_DOES_NOT_EXIST
+        )
 
         xnvme.xnvme_dev_close(dev)
 
@@ -241,7 +244,10 @@ class TestKeyValue:
                 opts=xnvme.XNVME_KVS_STORE_OPT_DONT_STORE_IF_KEY_EXISTS,
             )
         assert assertion.value.status_code_type == xnvme.XNVME_STATUS_CODE_TYPE_CMDSPEC
-        assert assertion.value.status_code == xnvme.XNVME_SPEC_KV_SC_KEY_EXISTS
+        assert (
+            assertion.value.status_code
+            == xnvme.XNVME_SPEC_KV_GENERIC_COMMAND_STATUS_KEY_EXISTS
+        )
 
         # Deleting the key first should now make it work
         kvs_delete(dev, kbuf, len(key))
@@ -300,7 +306,10 @@ class TestKeyValue:
                 opts=xnvme.XNVME_KVS_STORE_OPT_DONT_STORE_IF_KEY_NOT_EXISTS,
             )
         assert assertion.value.status_code_type == xnvme.XNVME_STATUS_CODE_TYPE_CMDSPEC
-        assert assertion.value.status_code == xnvme.XNVME_SPEC_KV_SC_KEY_NOT_EXISTS
+        assert (
+            assertion.value.status_code
+            == xnvme.XNVME_SPEC_KV_GENERIC_COMMAND_STATUS_KV_KEY_DOES_NOT_EXIST
+        )
 
         xnvme.xnvme_buf_free(dev, vbuf)
         xnvme.xnvme_buf_free(dev, kbuf)
@@ -438,7 +447,10 @@ class TestKeyValue:
         "expected_sc, buffer_size",
         [
             (0, 4096),
-            (xnvme.XNVME_SPEC_KV_SC_INVALID_VAL_SIZE, 4096 + 1),  # QEMU limitation
+            (
+                xnvme.XNVME_SPEC_KV_GENERIC_COMMAND_STATUS_INVALID_VALUE_SIZE,
+                4096 + 1,
+            ),  # QEMU limitation
         ],
     )
     @xnvme_parametrize(labels=["kvs"], opts=["be"])
@@ -483,7 +495,10 @@ class TestKeyValue:
         with pytest.raises(KVException) as assertion:
             kvs_store(dev, kbuf, len(key), vbuf, buffer_size)
         assert assertion.value.status_code_type == xnvme.XNVME_STATUS_CODE_TYPE_CMDSPEC
-        assert assertion.value.status_code == xnvme.XNVME_SPEC_KV_SC_INVALID_KEY_SIZE
+        assert (
+            assertion.value.status_code
+            == xnvme.XNVME_SPEC_KV_GENERIC_COMMAND_STATUS_INVALID_KEY_SIZE
+        )
 
         kvs_retrieve(dev, kbuf, 16, vbuf, buffer_size)
         with pytest.raises(KVException) as assertion:
