@@ -78,10 +78,10 @@ xnvme_be_spdk_sync_cmd_pseudo(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf
 
 	switch (xnvme_cmd_sqe_get_opc(&ctx->cmd)) {
 	case XNVME_SPEC_PSEUDO_OPC_SHOW_REGS:
-		if (dbuf_nbytes != sizeof(struct xnvme_spec_ctrlr_bar)) {
-			XNVME_DEBUG(
-				"FAILED: dbuf_nbytes(%zu) != sizeof(struct xnvme_spec_ctrlr_bar)",
-				dbuf_nbytes);
+		if (dbuf_nbytes != sizeof(struct xnvme_spec_base_registers)) {
+			XNVME_DEBUG("FAILED: dbuf_nbytes(%zu) != sizeof(struct "
+				    "xnvme_spec_base_registers)",
+				    dbuf_nbytes);
 			return -EINVAL;
 		}
 		memcpy(dbuf, (void *)spdk_nvme_ctrlr_get_registers(state->ctrlr), dbuf_nbytes);

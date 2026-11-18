@@ -86,4 +86,4 @@ xnvme_namespace_rescan(struct xnvme_dev *dev);
  * @return On success, 0 is return. On error, a non-zero value is returned.
  */
 int
-xnvme_controller_get_registers(struct xnvme_dev *dev, struct xnvme_spec_ctrlr_bar *bar);
+xnvme_controller_get_registers(struct xnvme_dev *dev, struct xnvme_spec_base_registers *bar);
