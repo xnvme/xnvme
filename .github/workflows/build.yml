@@ -121,6 +121,8 @@ jobs:
         pkg-config xnvme --variable=libdir
         pkg-config xnvme --variable=pcfiledir
         pkg-config xnvme --variable=prefix
+        # An extension installs into libexecdir, where xnvme looks for its programs
+        test "$(pkg-config xnvme --variable=libexecdir)" = "$(xnvme --exec-path)"
         ls -lh $(pkg-config xnvme --variable=libdir) | grep xnvme
 
     - name: Check Python, pip, pipx, platform, sysconfig and setup PATH for pipx
@@ -283,6 +285,8 @@ jobs:
         pkg-config xnvme --variable=libdir
         pkg-config xnvme --variable=pcfiledir
         pkg-config xnvme --variable=prefix
+        # An extension installs into libexecdir, where xnvme looks for its programs
+        test "$(pkg-config xnvme --variable=libexecdir)" = "$(xnvme --exec-path)"
         ls -lh $(pkg-config xnvme --variable=libdir) | grep xnvme
 
     - name: Check Python, pip, platform, and sysconfig

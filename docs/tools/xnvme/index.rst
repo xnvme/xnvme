@@ -19,6 +19,23 @@ the install directory unless ``XNVME_EXEC_PATH`` names others;
 ``xnvme env library`` shows it as ``exec_path``, and ``xnvme --exec-path``
 prints it alone, for scripts.
 
+A project outside xNVMe adds a command as an extension. It installs its
+program ``xnvme-<name>`` into the directory that ``pkg-config
+--variable=libexecdir xnvme`` prints, and ``xnvme <name>`` runs it. To be
+listed in the overview, it also installs ``<name>.extension`` into the
+directory that ``pkg-config --variable=extensiondir xnvme`` prints:
+
+.. code-block:: ini
+
+   section=serve
+   description=Serve an xNVMe device over a protocol of its own
+
+``section`` is ``start``, ``host``, ``serve`` or ``passthru``, and lines
+starting with ``#`` are comments. A test or an example installs as
+``xnvme-test-<name>`` or ``xnvme-example-<name>``, and ``xnvme test`` or
+``xnvme example`` lists it without a ``.extension``. A program named after a
+command of ``xnvme`` itself is never run.
+
 ``xnvme env`` says, as YAML, whether the host is ready for the userspace
 drivers: the IOMMU groups, whether each kernel module is available, built in
 and loaded, the hugepages of each size and NUMA node, where hugetlbfs is

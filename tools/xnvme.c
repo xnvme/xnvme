@@ -250,6 +250,7 @@ static struct xnvme_cli g_cli = {
 #endif
 
 #define CLI_PROG_PREFIX "xnvme-"
+#define CLI_EXTENSION_SUFFIX ".extension"
 #define CLI_TEST_PREFIX "xnvme-test-"
 #define CLI_EXAMPLE_PREFIX "xnvme-example-"
 #define CLI_NAMES_MAX 256
@@ -274,6 +275,14 @@ cli_exec_path(void)
 	const char *env = getenv("XNVME_EXEC_PATH");
 
 	return (env && env[0]) ? env : XNVME_LIBEXECDIR;
+}
+
+static const char *
+cli_extension_dir(void)
+{
+	const char *env = getenv("XNVME_EXTENSION_DIR");
+
+	return (env && env[0]) ? env : XNVME_EXTENSIONDIR;
 }
 
 static int
@@ -374,6 +383,62 @@ cli_cmp_names(const void *a, const void *b)
 	return strcmp(*(char *const *)a, *(char *const *)b);
 }
 
+/**
+ * The length of the control character at 's': 1 for a C0 control or DEL, 2 for a C1 control as
+ * UTF-8 encodes it, and 0 for any other character
+ */
+static size_t
+cli_ctrl_len(const char *s)
+{
+	const unsigned char *c = (const unsigned char *)s;
+
+	if (c[0] < 0x20 || c[0] == 0x7f) {
+		return 1;
+	}
+	if (c[0] == 0xc2 && c[1] >= 0x80 && c[1] <= 0x9f) {
+		return 2;
+	}
+
+	return 0;
+}
+
+static bool
+cli_has_ctrl(const char *s)
+{
+	for (; *s; ++s) {
+		if (cli_ctrl_len(s)) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/**
+ * Removes the control characters from 's', so that text from an extension cannot send an escape
+ * sequence to the terminal
+ */
+static void
+cli_strip_ctrl(char *s)
+{
+	char *dst = s;
+
+	while (*s) {
+		size_t len = cli_ctrl_len(s);
+
+		if (len) {
+			s += len;
+			continue;
+		}
+		*dst++ = *s++;
+	}
+	*dst = '\0';
+}
+
+/**
+ * Lists the programs on the exec path whose names start with 'prefix', without it; a name with a
+ * control character is left out, as cli_strip_ctrl() describes
+ */
 static int
 cli_names(const char *prefix, char **names, int names_max)
 {
@@ -397,7 +462,8 @@ cli_names(const char *prefix, char **names, int names_max)
 			struct stat st;
 
 			if (len <= prefix_len + suffix_len ||
-			    strncmp(ent->d_name, prefix, prefix_len)) {
+			    strncmp(ent->d_name, prefix, prefix_len) ||
+			    cli_has_ctrl(ent->d_name)) {
 				continue;
 			}
 			if (suffix_len && strcmp(ent->d_name + len - suffix_len, CLI_EXE_SUFFIX)) {
@@ -498,6 +564,115 @@ cli_listed_pr(const char *heading, const struct cli_listed *listed, size_t nlist
 	return nrows;
 }
 
+static bool
+cli_is_fe_builtin(const char *name);
+
+static bool
+cli_is_listed(const char *name, const struct cli_listed *listed, size_t nlisted)
+{
+	for (size_t i = 0; i < nlisted; ++i) {
+		if (!strcmp(listed[i].name, name)) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/**
+ * Copies at most 'dst_len' - 1 bytes of 'src' and terminates 'dst'
+ */
+static void
+cli_strlcpy(char *dst, const char *src, size_t dst_len)
+{
+	size_t len = strnlen(src, dst_len - 1);
+
+	memcpy(dst, src, len);
+	dst[len] = '\0';
+}
+
+/**
+ * Reads the section and the description of an extension from '<name>.extension' in
+ * cli_extension_dir(), lines of 'section=<section>' and 'description=<text>'; other lines, such
+ * as comments starting with '#', are skipped.
+ *
+ * @return 0 when the file names a section, -ENOENT otherwise
+ */
+static int
+cli_extension_read(const char *name, char *section, size_t section_len, char *descr,
+		   size_t descr_len)
+{
+	char path[4096];
+	char line[512];
+	FILE *fp;
+
+	if (snprintf(path, sizeof(path), "%s/%s%s", cli_extension_dir(), name,
+		     CLI_EXTENSION_SUFFIX) >= (int)sizeof(path)) {
+		return -ENOENT;
+	}
+
+	fp = fopen(path, "r");
+	if (!fp) {
+		return -ENOENT;
+	}
+	section[0] = '\0';
+	descr[0] = '\0';
+	while (fgets(line, sizeof(line), fp)) {
+		line[strcspn(line, "\r\n")] = '\0';
+		if (!strncmp(line, "section=", 8)) {
+			cli_strlcpy(section, line + 8, section_len);
+		} else if (!strncmp(line, "description=", 12)) {
+			cli_strlcpy(descr, line + 12, descr_len);
+		}
+	}
+	fclose(fp);
+	cli_strip_ctrl(descr);
+
+	return section[0] ? 0 : -ENOENT;
+}
+
+/**
+ * Lists the programs on the exec path that xNVMe does not install and whose '<name>.extension'
+ * names 'section', such as 'xnvme-foo' as 'xnvme foo'; a name xnvme handles itself is left
+ * out, since it never runs. The heading is printed before the first row when 'nrows' is zero.
+ *
+ * @return 'nrows' plus the number of rows printed
+ */
+static int
+cli_extensions_pr(struct xnvme_cli *cli, const char *section, const char *heading, int nrows)
+{
+	char *names[CLI_NAMES_MAX];
+	int count = cli_names(CLI_PROG_PREFIX, names, CLI_NAMES_MAX);
+
+	for (int i = 0; i < count; ++i) {
+		char ext_section[32];
+		char descr[256];
+		char cmd[64];
+
+		if (!strncmp(names[i], "test-", 5) || !strncmp(names[i], "example-", 8) ||
+		    cli_is_fe_builtin(names[i]) || cli_builtin(cli, names[i]) ||
+		    cli_is_listed(names[i], g_cli_listed,
+				  sizeof g_cli_listed / sizeof(*g_cli_listed)) ||
+		    cli_is_listed(names[i], g_cli_served,
+				  sizeof g_cli_served / sizeof(*g_cli_served))) {
+			continue;
+		}
+		if (cli_extension_read(names[i], ext_section, sizeof(ext_section), descr,
+				       sizeof(descr)) ||
+		    strcmp(ext_section, section)) {
+			continue;
+		}
+		if (!nrows++ && heading) {
+			printf("%s\n", heading);
+		}
+		snprintf(cmd, sizeof(cmd), "xnvme %s", names[i]);
+		cli_row(cmd, descr);
+	}
+	cli_names_free(names, count);
+
+	return nrows;
+}
+
 static int
 cli_overview(struct xnvme_cli *cli)
 {
@@ -514,19 +689,23 @@ cli_overview(struct xnvme_cli *cli)
 	cli_row("xnvme info <uri>", cli_builtin(cli, "info")->descr_short);
 	cli_row("xnvme enum", cli_builtin(cli, "enum")->descr_short);
 	cli_listed_pr(NULL, g_cli_listed, sizeof g_cli_listed / sizeof(*g_cli_listed));
+	cli_extensions_pr(cli, "start", NULL, 1);
 	printf("\n");
 	printf("Set up the host:\n");
 	cli_row("xnvme env", "Relevant system config and library introspection");
 	cli_row("xnvme driver", "Bind the driver a backend needs, or show them");
+	cli_extensions_pr(cli, "host", NULL, 1);
 	printf("\n");
-	if (cli_listed_pr("Serve devices:", g_cli_served,
-			  sizeof g_cli_served / sizeof(*g_cli_served))) {
+	if (cli_extensions_pr(cli, "serve", "Serve devices:",
+			      cli_listed_pr("Serve devices:", g_cli_served,
+					    sizeof g_cli_served / sizeof(*g_cli_served)))) {
 		printf("\n");
 	}
 	printf("Command passthru:\n");
 	cli_row("xnvme cmd-admin", "An admin command, as 'nvme admin-passthru' takes it");
 	cli_row("xnvme cmd-io", "An I/O command, as 'nvme io-passthru' takes it");
 	cli_row("xnvme cmd-iov", "An I/O command with its data in --vec-cnt segments");
+	cli_extensions_pr(cli, "passthru", NULL, 1);
 	printf("\n");
 	printf("Groups, run one to list its commands:\n");
 	cli_row("xnvme test", "installed test programs");
