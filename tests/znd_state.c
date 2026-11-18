@@ -6,15 +6,15 @@
 #include <libxnvme.h>
 
 struct action {
-	enum xnvme_spec_znd_cmd_mgmt_send_action action;
-	enum xnvme_spec_znd_state state;
+	enum xnvme_spec_zns_zsa action;
+	enum xnvme_spec_zns_zs state;
 };
 
 static struct action actions[] = {
-	{.action = XNVME_SPEC_ZND_CMD_MGMT_SEND_RESET, .state = XNVME_SPEC_ZND_STATE_EMPTY},
-	{.action = XNVME_SPEC_ZND_CMD_MGMT_SEND_OPEN, .state = XNVME_SPEC_ZND_STATE_EOPEN},
-	{.action = XNVME_SPEC_ZND_CMD_MGMT_SEND_CLOSE, .state = XNVME_SPEC_ZND_STATE_CLOSED},
-	{.action = XNVME_SPEC_ZND_CMD_MGMT_SEND_FINISH, .state = XNVME_SPEC_ZND_STATE_FULL},
+	{.action = XNVME_SPEC_ZNS_ZSA_RESET_ZONE, .state = XNVME_SPEC_ZNS_ZS_EMPTY},
+	{.action = XNVME_SPEC_ZNS_ZSA_OPEN_ZONE, .state = XNVME_SPEC_ZNS_ZS_EXPLICITLY_OPENED},
+	{.action = XNVME_SPEC_ZNS_ZSA_CLOSE_ZONE, .state = XNVME_SPEC_ZNS_ZS_CLOSED},
+	{.action = XNVME_SPEC_ZNS_ZSA_FINISH_ZONE, .state = XNVME_SPEC_ZNS_ZS_FULL},
 };
 size_t nactions = sizeof actions / sizeof *actions;
 
@@ -35,7 +35,7 @@ cmd_transition(struct xnvme_cli *cli)
 
 	for (size_t i = 0; i < nactions; ++i) {
 		struct xnvme_cmd_ctx ctx = {0};
-		struct xnvme_spec_znd_descr zone = {0};
+		struct xnvme_spec_zns_zone_descriptor zone = {0};
 
 		xnvme_dev_get_cmd_ctx(dev, &ctx);
 
@@ -62,8 +62,9 @@ cmd_transition(struct xnvme_cli *cli)
 			goto exit;
 		}
 
-		if (zone.zs != actions[i].state) {
-			xnvme_cli_perr("zone.zs: %u != expected: %u", actions[i].state);
+		if (xnvme_bits_get(zone.zsattr, XNVME_SPEC_ZNS_ZONE_DESCRIPTOR_ZSATTR_ZS) !=
+		    actions[i].state) {
+			xnvme_cli_perr("zone.zsattr: %u != expected: %u", actions[i].state);
 			err = EIO;
 			goto exit;
 		}
@@ -84,7 +85,7 @@ cmd_changes(struct xnvme_cli *cli)
 	struct xnvme_dev *dev = cli->args.dev;
 	const struct xnvme_spec_base_identify_controller *idfy_ctrlr =
 		xnvme_dev_get_ctrlr_css(dev);
-	struct xnvme_spec_znd_log_changes *changes;
+	struct xnvme_spec_zns_log_changed_zone_list *changes;
 	int err = 0;
 
 	if (!xnvme_bits_get(idfy_ctrlr->oaes, XNVME_SPEC_BASE_IDENTIFY_CONTROLLER_OAES_ZDCN)) {

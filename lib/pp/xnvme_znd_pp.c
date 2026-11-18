@@ -48,7 +48,7 @@ xnvme_znd_report_fpr(FILE *stream, const struct xnvme_znd_report *report, int fl
 
 	wrtn += fprintf(stream, "\n");
 	for (uint32_t idx = 0; idx < report->nentries; ++idx) {
-		struct xnvme_spec_znd_descr *descr;
+		struct xnvme_spec_zns_zone_descriptor *descr;
 		int err;
 
 		err = xnvme_znd_report_get_descr(report, idx, &descr, NULL);

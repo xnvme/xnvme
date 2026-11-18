@@ -166,6 +166,15 @@
  		}
  	} else {
  		if (fwrap->md_nbytes && fwrap->lba_pow2)
+@@ -913,7 +944,7 @@ static int xnvme_fioe_get_max_open_zones(struct thread_data *td, struct fio_file
+ {
+ 	struct xnvme_opts opts = xnvme_opts_from_fioe(td);
+ 	struct xnvme_dev *dev;
+-	const struct xnvme_spec_znd_idfy_ns *zns;
++	const struct xnvme_spec_zns_identify_namespace *zns;
+ 	int err = 0, err_lock;
+ 
+ 	if (f->filetype != FIO_TYPE_FILE && f->filetype != FIO_TYPE_BLOCK &&
 @@ -927,7 +958,7 @@ static int xnvme_fioe_get_max_open_zones(struct thread_data *td, struct fio_file
  		return -err_lock;
  	}
@@ -184,6 +193,15 @@
  	if (!dev) {
  		log_err("ioeng->get_zoned_model(): xnvme_dev_open(%s) failed, errno: %d\n",
  			f->file_name, errno);
+@@ -1051,7 +1082,7 @@ static int xnvme_fioe_report_zones(struct thread_data *td, struct fio_file *f, u
+ 				   struct zbd_zone *zbdz, unsigned int nr_zones)
+ {
+ 	struct xnvme_opts opts = xnvme_opts_from_fioe(td);
+-	const struct xnvme_spec_znd_idfy_lbafe *lbafe = NULL;
++	const struct xnvme_spec_zns_lba_format_extension *lbafe = NULL;
+ 	struct xnvme_dev *dev = NULL;
+ 	const struct xnvme_geo *geo = NULL;
+ 	struct xnvme_znd_report *rprt = NULL;
 @@ -1070,7 +1101,7 @@ static int xnvme_fioe_report_zones(struct thread_data *td, struct fio_file *f, u
  		return -err;
  	}
@@ -193,12 +211,12 @@
  	if (!dev) {
  		log_err("ioeng->report_zones(%s): xnvme_dev_open(), err(%d)\n", f->file_name,
  			errno);
-@@ -1106,14 +1137,16 @@ static int xnvme_fioe_report_zones(struct thread_data *td, struct fio_file *f, u
+@@ -1106,15 +1137,17 @@ static int xnvme_fioe_report_zones(struct thread_data *td, struct fio_file *f, u
  
  	/* Transform the zone-report */
  	for (uint32_t idx = 0; idx < rprt->nentries; ++idx) {
 -		struct xnvme_spec_znd_descr *descr = XNVME_ZND_REPORT_DESCR(rprt, idx);
-+		struct xnvme_spec_znd_descr *descr;
++		struct xnvme_spec_zns_zone_descriptor *descr;
 +
 +		xnvme_znd_report_get_descr(rprt, idx, &descr, NULL);
  
@@ -208,18 +226,45 @@
  		zbdz[idx].wp = descr->wp << ssw;
  
 -		switch (descr->zt) {
-+		switch (xnvme_bits_get(descr->ztattr, XNVME_SPEC_ZND_DESCR_ZTATTR_ZT)) {
- 		case XNVME_SPEC_ZND_TYPE_SEQWR:
+-		case XNVME_SPEC_ZND_TYPE_SEQWR:
++		switch (xnvme_bits_get(descr->ztattr, XNVME_SPEC_ZNS_ZONE_DESCRIPTOR_ZTATTR_ZT)) {
++		case XNVME_SPEC_ZNS_ZT_SEQUENTIAL_WRITE_REQUIRED:
  			zbdz[idx].type = ZBD_ZONE_TYPE_SWR;
  			break;
-@@ -1125,7 +1158,7 @@ static int xnvme_fioe_report_zones(struct thread_data *td, struct fio_file *f, u
+ 
+@@ -1125,25 +1158,25 @@ static int xnvme_fioe_report_zones(struct thread_data *td, struct fio_file *f, u
  			goto exit;
  		}
  
 -		switch (descr->zs) {
-+		switch (xnvme_bits_get(descr->zsattr, XNVME_SPEC_ZND_DESCR_ZSATTR_ZS)) {
- 		case XNVME_SPEC_ZND_STATE_EMPTY:
+-		case XNVME_SPEC_ZND_STATE_EMPTY:
++		switch (xnvme_bits_get(descr->zsattr, XNVME_SPEC_ZNS_ZONE_DESCRIPTOR_ZSATTR_ZS)) {
++		case XNVME_SPEC_ZNS_ZS_EMPTY:
  			zbdz[idx].cond = ZBD_ZONE_COND_EMPTY;
+ 			break;
+-		case XNVME_SPEC_ZND_STATE_IOPEN:
++		case XNVME_SPEC_ZNS_ZS_IMPLICITLY_OPENED:
+ 			zbdz[idx].cond = ZBD_ZONE_COND_IMP_OPEN;
+ 			break;
+-		case XNVME_SPEC_ZND_STATE_EOPEN:
++		case XNVME_SPEC_ZNS_ZS_EXPLICITLY_OPENED:
+ 			zbdz[idx].cond = ZBD_ZONE_COND_EXP_OPEN;
+ 			break;
+-		case XNVME_SPEC_ZND_STATE_CLOSED:
++		case XNVME_SPEC_ZNS_ZS_CLOSED:
+ 			zbdz[idx].cond = ZBD_ZONE_COND_CLOSED;
+ 			break;
+-		case XNVME_SPEC_ZND_STATE_FULL:
++		case XNVME_SPEC_ZNS_ZS_FULL:
+ 			zbdz[idx].cond = ZBD_ZONE_COND_FULL;
+ 			break;
+ 
+-		case XNVME_SPEC_ZND_STATE_RONLY:
+-		case XNVME_SPEC_ZND_STATE_OFFLINE:
++		case XNVME_SPEC_ZNS_ZS_READ_ONLY:
++		case XNVME_SPEC_ZNS_ZS_OFFLINE:
+ 		default:
+ 			zbdz[idx].cond = ZBD_ZONE_COND_OFFLINE;
  			break;
 @@ -1200,7 +1233,7 @@ static int xnvme_fioe_reset_wp(struct thread_data *td, struct fio_file *f, uint6
  			return -err;
@@ -239,7 +284,7 @@
 +		struct xnvme_cmd_prep_zns_zone_management_send_args args = {
 +			.nsid = nsid,
 +			.slba = zslba,
-+			.zsa = XNVME_SPEC_ZND_CMD_MGMT_SEND_RESET,
++			.zsa = XNVME_SPEC_ZNS_ZSA_RESET_ZONE,
 +		};
 +
 +		xnvme_dev_get_cmd_ctx(dev, &ctx);
