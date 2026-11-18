@@ -37,13 +37,20 @@ test_init_term(struct xnvme_cli *cli)
 		// Ask how many queues are supported
 		struct xnvme_cmd_ctx ctx = {0};
 		struct xnvme_spec_feat feat = {.val = 0};
+		struct xnvme_cmd_prep_adm_get_features_args gf = {
+			.args_nbytes = sizeof(gf),
+			.sel = XNVME_SPEC_FEAT_SEL_CURRENT,
+			.fid = XNVME_SPEC_FEAT_NQUEUES,
+		};
 
 		xnvme_dev_get_cmd_ctx(dev, &ctx);
 
-		err = xnvme_adm_gfeat(&ctx, 0x0, XNVME_SPEC_FEAT_NQUEUES,
-				      XNVME_SPEC_FEAT_SEL_CURRENT, NULL, 0);
+		err = xnvme_cmd_prep_adm_get_features(&ctx.cmd, &gf);
+		if (!err) {
+			err = xnvme_cmd_pass_admin(&ctx, NULL, 0, NULL, 0);
+		}
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-			xnvme_cli_perr("xnvme_adm_gfeat()", err);
+			xnvme_cli_perr("get_features(NQUEUES)", err);
 			xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 			err = err ? err : -EIO;
 			return err;
@@ -156,10 +163,20 @@ test_init_io_term(struct xnvme_cli *cli)
 			struct xnvme_cmd_ctx *ctx = xnvme_queue_get_cmd_ctx(queue);
 			uint64_t slba = (round * qd + i) % geo->nsect;
 
-			err = xnvme_nvm_read(ctx, nsid, slba, 0, (char *)buf + i * geo->lba_nbytes,
-					     NULL);
+			struct xnvme_cmd_prep_nvm_read_args rd = {
+				.args_nbytes = sizeof(rd),
+				.nsid = nsid,
+				.slba = slba,
+			};
+
+			err = xnvme_cmd_prep_nvm_read(&ctx->cmd, &rd);
+			if (!err) {
+				err = xnvme_cmd_pass(
+					ctx, (char *)buf + i * geo->lba_nbytes,
+					(size_t)xnvme_dev_get_geo(ctx->dev)->lba_nbytes, NULL, 0);
+			}
 			if (err) {
-				xnvme_cli_perr("xnvme_nvm_read()", err);
+				xnvme_cli_perr("read", err);
 				xnvme_queue_put_cmd_ctx(queue, ctx);
 				break;
 			}
@@ -243,16 +260,30 @@ reap_round(struct xnvme_queue *queue, uint32_t nsid, const struct xnvme_geo *geo
 		xnvme_cmd_ctx_set_data(ctx, &records[i]);
 
 		if (i < nflush) {
-			memset(&ctx->cmd, 0, sizeof(ctx->cmd));
-			ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_FLUSH;
-			ctx->cmd.common.nsid = nsid;
-			err = xnvme_cmd_pass(ctx, NULL, 0, NULL, 0);
+			struct xnvme_cmd_prep_io_flush_args fl = {
+				.args_nbytes = sizeof(fl),
+				.nsid = nsid,
+			};
+
+			err = xnvme_cmd_prep_io_flush(&ctx->cmd, &fl);
+			if (!err) {
+				err = xnvme_cmd_pass(ctx, NULL, 0, NULL, 0);
+			}
 		} else {
-			err = xnvme_nvm_read(ctx, nsid, records[i].slba, 0,
-					     buf + i * geo->lba_nbytes, NULL);
+			struct xnvme_cmd_prep_nvm_read_args rd = {
+				.args_nbytes = sizeof(rd),
+				.nsid = nsid,
+				.slba = records[i].slba,
+			};
+
+			err = xnvme_cmd_prep_nvm_read(&ctx->cmd, &rd);
+			if (!err) {
+				err = xnvme_cmd_pass(ctx, buf + i * geo->lba_nbytes,
+						     geo->lba_nbytes, NULL, 0);
+			}
 		}
 		if (err) {
-			xnvme_cli_perr(i < nflush ? "xnvme_cmd_pass()" : "xnvme_nvm_read()", err);
+			xnvme_cli_perr(i < nflush ? "flush" : "read", err);
 			xnvme_queue_put_cmd_ctx(queue, ctx);
 			return err;
 		}
@@ -458,10 +489,21 @@ submit_reads(struct xnvme_queue *queue, uint32_t nsid, const struct xnvme_geo *g
 		struct xnvme_cmd_ctx *ctx = xnvme_queue_get_cmd_ctx(queue);
 		int err;
 
-		err = xnvme_nvm_read(ctx, nsid, i % geo->nsect, 0, buf + i * geo->lba_nbytes,
-				     NULL);
+		struct xnvme_cmd_prep_nvm_read_args rd = {
+			.args_nbytes = sizeof(rd),
+			.nsid = nsid,
+			.slba = i % geo->nsect,
+		};
+
+		err = xnvme_cmd_prep_nvm_read(&ctx->cmd, &rd);
+		if (!err) {
+			err = xnvme_cmd_pass(ctx, buf + i * geo->lba_nbytes,
+					     (size_t)xnvme_dev_get_geo(ctx->dev)->lba_nbytes *
+						     (0 + 1),
+					     NULL, 0);
+		}
 		if (err) {
-			xnvme_cli_perr("xnvme_nvm_read()", err);
+			xnvme_cli_perr("read", err);
 			xnvme_queue_put_cmd_ctx(queue, ctx);
 			return err;
 		}
@@ -503,10 +545,22 @@ test_reap_cmd_fail(struct xnvme_cli *cli)
 		return err;
 	}
 
+	struct xnvme_cmd_prep_nvm_read_args rd = {
+		.args_nbytes = sizeof(rd),
+		.nsid = nsid,
+	};
+	struct xnvme_cmd_prep_nvm_compare_args cmp = {
+		.args_nbytes = sizeof(cmp),
+		.nsid = nsid,
+	};
+
 	xnvme_dev_get_cmd_ctx(dev, &sync);
-	err = xnvme_nvm_read(&sync, nsid, 0, 0, buf, NULL);
+	err = xnvme_cmd_prep_nvm_read(&sync.cmd, &rd);
+	if (!err) {
+		err = xnvme_cmd_pass(&sync, buf, geo->lba_nbytes, NULL, 0);
+	}
 	if (err || xnvme_cmd_ctx_cpl_status(&sync)) {
-		xnvme_cli_perr("xnvme_nvm_read()", err);
+		xnvme_cli_perr("read", err);
 		err = err ? err : -EIO;
 		goto exit;
 	}
@@ -522,9 +576,12 @@ test_reap_cmd_fail(struct xnvme_cli *cli)
 
 	ctx = xnvme_queue_get_cmd_ctx(queue);
 	xnvme_cmd_ctx_set_data(ctx, &compare);
-	err = xnvme_nvm_compare(ctx, nsid, 0, 0, buf, NULL);
+	err = xnvme_cmd_prep_nvm_compare(&ctx->cmd, &cmp);
+	if (!err) {
+		err = xnvme_cmd_pass(ctx, buf, geo->lba_nbytes, NULL, 0);
+	}
 	if (err) {
-		xnvme_cli_perr("xnvme_nvm_compare()", err);
+		xnvme_cli_perr("compare", err);
 		xnvme_queue_put_cmd_ctx(queue, ctx);
 		goto exit;
 	}

@@ -79,7 +79,16 @@ read_into(struct xnvme_dev *dev, void *buf)
 
 	xnvme_dev_get_cmd_ctx(dev, &ctx);
 
-	err = xnvme_nvm_read(&ctx, xnvme_dev_get_nsid(dev), 0x0, 0, buf, NULL);
+	struct xnvme_cmd_prep_nvm_read_args rd = {
+		.args_nbytes = sizeof(rd),
+		.nsid = xnvme_dev_get_nsid(dev),
+	};
+
+	err = xnvme_cmd_prep_nvm_read(&ctx.cmd, &rd);
+	if (!err) {
+		err = xnvme_cmd_pass(&ctx, buf, (size_t)xnvme_dev_get_geo(ctx.dev)->lba_nbytes,
+				     NULL, 0);
+	}
 	if (!err && xnvme_cmd_ctx_cpl_status(&ctx)) {
 		err = -EIO;
 	}
@@ -203,7 +212,16 @@ mptr_write(struct xnvme_dev *dev, void *mbuf)
 	}
 	memset(dbuf, 0, geo->lba_nbytes);
 
-	err = xnvme_nvm_write(&ctx, xnvme_dev_get_nsid(dev), 0x0, 0, dbuf, mbuf);
+	struct xnvme_cmd_prep_nvm_write_args wr = {
+		.args_nbytes = sizeof(wr),
+		.nsid = xnvme_dev_get_nsid(dev),
+	};
+
+	err = xnvme_cmd_prep_nvm_write(&ctx.cmd, &wr);
+	if (!err) {
+		err = xnvme_cmd_pass(&ctx, dbuf, (size_t)xnvme_dev_get_geo(ctx.dev)->lba_nbytes,
+				     mbuf, (size_t)xnvme_dev_get_geo(ctx.dev)->nbytes_oob);
+	}
 	if (!err && xnvme_cmd_ctx_cpl_status(&ctx)) {
 		err = -EIO;
 	}
