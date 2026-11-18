@@ -82,7 +82,28 @@ int
 xnvme_be_linux_nvme_ioctl(struct xnvme_dev *dev, unsigned long ioctl_req,
 			  struct xnvme_cmd_ctx *ctx);
 
+/**
+ * Fill the completion of the given command context from an NVMe status
+ *
+ * @param ctx Pointer to the ::xnvme_cmd_ctx that the kernel completed
+ * @param ioctl_req The ioctl request that the completion came back through
+ * @param status The NVMe status that the kernel returned, 0 on success
+ *
+ * @return On success, 0 is returned. On error, negative errno is returned.
+ */
 int
-xnvme_be_linux_nvme_map_cpl(struct xnvme_cmd_ctx *ctx, unsigned long ioctl_req, int err);
+xnvme_be_linux_nvme_map_cpl(struct xnvme_cmd_ctx *ctx, unsigned long ioctl_req, int status);
+
+/**
+ * Fill the completion of the given command context from a kernel errno
+ *
+ * The errno is recorded as a vendor specific status: Status Code Type 7 with
+ * the errno in the Status Code, as the other backends record errno.
+ *
+ * @param ctx Pointer to the ::xnvme_cmd_ctx that the kernel failed
+ * @param err The positive errno that the kernel returned
+ */
+void
+xnvme_be_linux_nvme_map_errno(struct xnvme_cmd_ctx *ctx, int err);
 
 #endif /* __INTERNAL_XNVME_BE_LINUX */

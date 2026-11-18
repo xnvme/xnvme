@@ -105,11 +105,16 @@ xnvme_be_liburing_ucmd_poke(struct xnvme_queue *q, uint32_t max)
 
 		ctx->cpl.result = cqe->big_cqe[0];
 
-		/** IO64-quirky-handling: this is also for NVME_URING_CMD_IO_VEC */
-		err = xnvme_be_linux_nvme_map_cpl(ctx, NVME_URING_CMD_IO, cqe->res);
-		if (err) {
-			XNVME_DEBUG("FAILED: xnvme_be_linux_nvme_map_cpl(), err: %d", err);
-			return err;
+		if (cqe->res < 0) {
+			///< The kernel failed the command before the device answered
+			xnvme_be_linux_nvme_map_errno(ctx, -cqe->res);
+		} else {
+			/** IO64-quirky-handling: this is also for NVME_URING_CMD_IO_VEC */
+			err = xnvme_be_linux_nvme_map_cpl(ctx, NVME_URING_CMD_IO, cqe->res);
+			if (err) {
+				XNVME_DEBUG("FAILED: xnvme_be_linux_nvme_map_cpl(), err: %d", err);
+				return err;
+			}
 		}
 
 		queue->base.outstanding--;
