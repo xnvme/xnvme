@@ -942,10 +942,10 @@ const char *
 xnvme_spec_znd_type_str(enum xnvme_spec_zns_zone_descriptor_ztattr_zt eval);
 
 int
-xnvme_spec_ctrlr_bar_fpr(FILE *stream, struct xnvme_spec_ctrlr_bar *bar, int opts);
+xnvme_spec_ctrlr_bar_fpr(FILE *stream, struct xnvme_spec_base_registers *bar, int opts);
 
 int
-xnvme_spec_ctrlr_bar_pp(struct xnvme_spec_ctrlr_bar *bar, int opts);
+xnvme_spec_ctrlr_bar_pp(struct xnvme_spec_base_registers *bar, int opts);
 
 /* Printers of libxnvme_cmd.h */
 
