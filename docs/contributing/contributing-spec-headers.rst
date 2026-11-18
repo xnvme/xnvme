@@ -27,11 +27,12 @@ Prerequisites
   .. code-block:: bash
 
      python3 -m venv ~/venvs/spec
-     ~/venvs/spec/bin/pip install senfd==0.26.0 yace==0.14.2
+     ~/venvs/spec/bin/pip install senfd==0.26.0 -r python/bindings/requirements.txt
 
-  CI runs the tests of the generators with these versions. The generator
-  stops on a data model of a format other than 8, the format that senfd
-  0.26.0 writes.
+  CI runs the tests of the generators with senfd 0.26.0 and the yace that
+  ``python/bindings/requirements.txt`` pins, the yace that generates the
+  bindings. The generator stops on a data model of a format other than 8, the
+  format that senfd 0.26.0 writes.
 
 * A C compiler, which yace uses to check what it parses.
 
