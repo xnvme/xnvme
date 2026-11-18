@@ -121,16 +121,18 @@ geo_type_rejection(enum xnvme_geo_type type)
  * sectors, else UINT32_MAX sectors rounded down to whole blocks.
  */
 static void
-dev_init_discard(struct qublk_dev *dev, const struct xnvme_spec_idfy_ctrlr *ctrlr,
+dev_init_discard(struct qublk_dev *dev, const struct xnvme_spec_base_identify_controller *ctrlr,
 		 uint8_t passes_nvme)
 {
-	const struct xnvme_spec_nvm_idfy_ctrlr *nvm =
-		(const struct xnvme_spec_nvm_idfy_ctrlr *)xnvme_dev_get_ctrlr_css(dev->xdev);
+	const struct xnvme_spec_nvm_io_command_set_specific_identify_controller *nvm =
+		(const struct xnvme_spec_nvm_io_command_set_specific_identify_controller *)
+			xnvme_dev_get_ctrlr_css(dev->xdev);
 	uint8_t sect_shift = dev->lba_shift - XNVME_UNIVERSAL_SECT_SH;
 	uint64_t max_lbas = UINT32_MAX >> sect_shift;
 
-	dev->has_dsm = passes_nvme && ctrlr && dev->geo->type != XNVME_GEO_ZONED &&
-		       xnvme_bits_get(ctrlr->oncs, XNVME_SPEC_IDFY_CTRLR_ONCS_DSM);
+	dev->has_dsm =
+		passes_nvme && ctrlr && dev->geo->type != XNVME_GEO_ZONED &&
+		xnvme_bits_get(ctrlr->oncs, XNVME_SPEC_BASE_IDENTIFY_CONTROLLER_ONCS_NVMDSMSV);
 	if (!dev->has_dsm) {
 		return;
 	}
@@ -150,18 +152,20 @@ dev_init_discard(struct qublk_dev *dev, const struct xnvme_spec_idfy_ctrlr *ctrl
  * xNVMe does not expose CAP.MPSMIN; a larger page only allows more.
  */
 static void
-dev_init_write_zeroes(struct qublk_dev *dev, const struct xnvme_spec_idfy_ctrlr *ctrlr,
-		      uint8_t passes_nvme, uint32_t cap_max)
+dev_init_write_zeroes(struct qublk_dev *dev,
+		      const struct xnvme_spec_base_identify_controller *ctrlr, uint8_t passes_nvme,
+		      uint32_t cap_max)
 {
-	const struct xnvme_spec_nvm_idfy_ctrlr *nvm =
-		(const struct xnvme_spec_nvm_idfy_ctrlr *)xnvme_dev_get_ctrlr_css(dev->xdev);
-	const struct xnvme_spec_idfy_ns *ns = xnvme_dev_get_ns(dev->xdev);
+	const struct xnvme_spec_nvm_io_command_set_specific_identify_controller *nvm =
+		(const struct xnvme_spec_nvm_io_command_set_specific_identify_controller *)
+			xnvme_dev_get_ctrlr_css(dev->xdev);
+	const struct xnvme_spec_nvm_identify_namespace *ns = xnvme_dev_get_ns(dev->xdev);
 	uint8_t sect_shift = dev->lba_shift - XNVME_UNIVERSAL_SECT_SH;
 	uint64_t max_lbas = cap_max >> dev->lba_shift;
 
 	dev->has_write_zeroes =
 		passes_nvme && ctrlr && dev->geo->type != XNVME_GEO_ZONED &&
-		xnvme_bits_get(ctrlr->oncs, XNVME_SPEC_IDFY_CTRLR_ONCS_WRITE_ZEROES);
+		xnvme_bits_get(ctrlr->oncs, XNVME_SPEC_BASE_IDENTIFY_CONTROLLER_ONCS_NVMWZSV);
 	if (!dev->has_write_zeroes) {
 		return;
 	}
@@ -177,14 +181,15 @@ dev_init_write_zeroes(struct qublk_dev *dev, const struct xnvme_spec_idfy_ctrlr 
 
 	// The kernel's NVME_NS_DEAC: deallocated blocks read as zeroes, and
 	// Write Zeroes may deallocate
-	dev->wz_deac = (ns->dlfeat & XNVME_SPEC_IDFY_NS_DLFEAT_READ_VALUE) == 1 &&
-		       (ns->dlfeat & XNVME_SPEC_IDFY_NS_DLFEAT_WRITE_ZERO_DEALLOCATE);
+	dev->wz_deac =
+		xnvme_bits_get(ns->dlfeat, XNVME_SPEC_NVM_IDENTIFY_NAMESPACE_DLFEAT_DRB) == 1 &&
+		xnvme_bits_get(ns->dlfeat, XNVME_SPEC_NVM_IDENTIFY_NAMESPACE_DLFEAT_WZDS);
 }
 
 static int
 dev_init(struct qublk_dev *dev, uint32_t want_max_io)
 {
-	const struct xnvme_spec_idfy_ctrlr *ctrlr;
+	const struct xnvme_spec_base_identify_controller *ctrlr;
 	uint8_t passes_nvme;
 	uint32_t cap_max;
 
@@ -206,8 +211,9 @@ dev_init(struct qublk_dev *dev, uint32_t want_max_io)
 
 	ctrlr = xnvme_dev_get_ctrlr(dev->xdev);
 	passes_nvme = backend_passes_nvme(dev->xdev);
-	dev->has_vwc =
-		ctrlr ? (uint8_t)xnvme_bits_get(ctrlr->vwc, XNVME_SPEC_IDFY_CTRLR_VWC_PRESENT) : 1;
+	dev->has_vwc = ctrlr ? (uint8_t)xnvme_bits_get(
+				       ctrlr->vwc, XNVME_SPEC_BASE_IDENTIFY_CONTROLLER_VWC_VWCP)
+			     : 1;
 	dev->has_fua = backend_honours_fua(dev->xdev);
 	dev_init_discard(dev, ctrlr, passes_nvme);
 

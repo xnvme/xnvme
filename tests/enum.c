@@ -167,7 +167,7 @@ test_enum_keep_open(struct xnvme_cli *cli)
 	struct xnvme_dev *devs[MAX_DEVS];
 	struct xnvme_opts enum_opts = {0};
 	struct xnvme_cmd_ctx ctx = {0};
-	union xnvme_spec_idfy *idfy_ctrlr = NULL;
+	struct xnvme_spec_base_identify_controller *idfy_ctrlr = NULL;
 	int err;
 	int found = 0;
 
@@ -204,7 +204,7 @@ test_enum_keep_open(struct xnvme_cli *cli)
 		}
 		struct xnvme_cmd_prep_adm_identify_args id = {
 			.args_nbytes = sizeof(id),
-			.cns = XNVME_SPEC_IDFY_CTRLR,
+			.cns = XNVME_SPEC_ADMIN_IDENTIFY_CDW10_CNS_IDENTIFY_CONTROLLER_DATA_STRUCTURE,
 		};
 
 		xnvme_dev_get_cmd_ctx(devs[i], &ctx);

@@ -199,7 +199,7 @@ sub_sizes(struct xnvme_cli *XNVME_UNUSED(cli))
 	// A field that a newer caller has where this record is reserved: refused, not dropped
 	struct xnvme_cmd_prep_adm_identify_args id = {
 		.args_nbytes = sizeof(id),
-		.cns = XNVME_SPEC_IDFY_CTRLR,
+		.cns = XNVME_SPEC_ADMIN_IDENTIFY_CDW10_CNS_IDENTIFY_CONTROLLER_DATA_STRUCTURE,
 	};
 	CHECK(!xnvme_cmd_prep_adm_identify(&sqe, &id));
 	id.rsvd15[0] = 0x7;
