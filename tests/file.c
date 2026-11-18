@@ -54,8 +54,9 @@ cb_func_copy(struct xnvme_cmd_ctx *ctx, void *cb_arg)
 	} else {
 		ssize_t res;
 
-		res = xnvme_file_pwrite(&work->dst_ctx, work->buf, ctx->cpl.result,
-					ctx->cmd.nvm.slba);
+		res = xnvme_file_pwrite(
+			&work->dst_ctx, work->buf, ctx->cpl.dw0,
+			((uint64_t)ctx->cmd.common.cdw11 << 32 | ctx->cmd.common.cdw10));
 		if (res || xnvme_cmd_ctx_cpl_status(&work->dst_ctx)) {
 			xnvme_cli_perr("xnvme_file_pwrite(dst)", res);
 			xnvme_cmd_ctx_pr(&work->dst_ctx, XNVME_PR_DEF);
@@ -230,8 +231,11 @@ dump_sync_iovec(struct xnvme_cli *cli)
 
 	xnvme_dev_get_cmd_ctx(fh, &ctx);
 	ctx.cmd.common.nsid = xnvme_dev_get_nsid(ctx.dev);
-	ctx.cmd.common.opcode = XNVME_SPEC_FS_OPC_WRITE;
-	ctx.cmd.nvm.slba = ofz;
+	ctx.cmd.common.cdw0 =
+		xnvme_bits_set(ctx.cmd.common.cdw0, XNVME_SPEC_BASE_COMMON_COMMAND_FORMAT_CDW0_OPC,
+			       XNVME_SPEC_FS_OPC_WRITE);
+	ctx.cmd.common.cdw10 = (uint32_t)(ofz);
+	ctx.cmd.common.cdw11 = (uint32_t)((ofz) >> 32);
 
 	npayloads = (buf_nbytes + iosize - 1) / iosize;
 	nios = (npayloads + dvec_cnt - 1) / dvec_cnt;
@@ -439,8 +443,11 @@ dump_async_iovec(struct xnvme_cli *cli)
 		size_t nbytes = 0;
 
 		ctx->cmd.common.nsid = xnvme_dev_get_nsid(ctx->dev);
-		ctx->cmd.common.opcode = XNVME_SPEC_FS_OPC_WRITE;
-		ctx->cmd.nvm.slba = ofz;
+		ctx->cmd.common.cdw0 = xnvme_bits_set(
+			ctx->cmd.common.cdw0, XNVME_SPEC_BASE_COMMON_COMMAND_FORMAT_CDW0_OPC,
+			XNVME_SPEC_FS_OPC_WRITE);
+		ctx->cmd.common.cdw10 = (uint32_t)(ofz);
+		ctx->cmd.common.cdw11 = (uint32_t)((ofz) >> 32);
 
 		for (int k = 0; k < ndvec; k++) {
 			size_t iov_len = XNVME_MIN_U64(iosize, tbytes_left);

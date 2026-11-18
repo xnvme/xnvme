@@ -56,7 +56,7 @@ test_init_term(struct xnvme_cli *cli)
 			return err;
 		}
 
-		feat.val = ctx.cpl.cdw0;
+		feat.val = ctx.cpl.dw0;
 
 		xnvme_spec_feat_pr(XNVME_SPEC_FEAT_NQUEUES, &feat, XNVME_PR_DEF);
 
@@ -323,10 +323,13 @@ reap_round(struct xnvme_queue *queue, uint32_t nsid, const struct xnvme_geo *geo
 					       (void *)record);
 				return -EIO;
 			}
-			if (record->slba != ctx->cmd.nvm.slba) {
+			if (record->slba !=
+			    ((uint64_t)ctx->cmd.common.cdw11 << 32 | ctx->cmd.common.cdw10)) {
 				xnvme_cli_pinf("FAILED: data: slba: 0x%" PRIx64
-					       " != cmd.nvm.slba: 0x%" PRIx64,
-					       record->slba, (uint64_t)ctx->cmd.nvm.slba);
+					       " != cdw10_11: 0x%" PRIx64,
+					       record->slba,
+					       ((uint64_t)ctx->cmd.common.cdw11 << 32 |
+						ctx->cmd.common.cdw10));
 				return -EIO;
 			}
 			if (record->reaped) {

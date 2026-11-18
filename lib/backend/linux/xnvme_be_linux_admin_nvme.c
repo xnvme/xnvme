@@ -6,6 +6,7 @@
 #define _GNU_SOURCE
 #endif
 #include <libxnvme.h>
+#include <xnvme_cmd.h>
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
 #ifdef XNVME_PLATFORM_LINUX_ENABLED
@@ -71,13 +72,15 @@ static int
 xnvme_be_linux_nvme_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
 			      void *mbuf, size_t mbuf_nbytes)
 {
+	struct xnvme_spec_dptr_linux_ioctl dptr = {0};
 	int err;
 
-	ctx->cmd.common.dptr.lnx_ioctl.data = (uint64_t)dbuf;
-	ctx->cmd.common.dptr.lnx_ioctl.data_len = dbuf_nbytes;
+	dptr.data = (uint64_t)dbuf;
+	dptr.data_len = dbuf_nbytes;
+	dptr.metadata_len = mbuf_nbytes;
+	memcpy(&ctx->cmd.common.dptr, &dptr, sizeof(dptr));
 
 	ctx->cmd.common.mptr = (uint64_t)mbuf;
-	ctx->cmd.common.dptr.lnx_ioctl.metadata_len = mbuf_nbytes;
 
 	err = xnvme_be_linux_nvme_ioctl(ctx->dev, NVME_IOCTL_ADMIN_CMD, ctx);
 	if (err) {
@@ -96,7 +99,7 @@ xnvme_be_linux_nvme_cmd_pseudo(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbu
 	int ioctl_req;
 	int err;
 
-	switch (ctx->cmd.common.opcode) {
+	switch (xnvme_cmd_sqe_get_opc(&ctx->cmd)) {
 	case XNVME_SPEC_PSEUDO_OPC_SHOW_REGS:
 		if (dbuf_nbytes != sizeof(struct xnvme_spec_ctrlr_bar)) {
 			XNVME_DEBUG(
@@ -118,7 +121,7 @@ xnvme_be_linux_nvme_cmd_pseudo(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbu
 		ioctl_req = NVME_IOCTL_RESCAN;
 		break;
 	default:
-		XNVME_DEBUG("FAILED: unsupported opcode: %d", ctx->cmd.common.opcode);
+		XNVME_DEBUG("FAILED: unsupported opcode: %d", xnvme_cmd_sqe_get_opc(&ctx->cmd));
 		return -ENOSYS;
 	}
 

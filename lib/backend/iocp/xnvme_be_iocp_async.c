@@ -6,6 +6,7 @@
 #define _XOPEN_SOURCE 700
 #endif
 #include <libxnvme.h>
+#include <xnvme_cmd.h>
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
 #ifdef XNVME_BE_IOCP_ENABLED
@@ -116,13 +117,15 @@ _windows_async_iocp_poke(struct xnvme_queue *q, uint32_t max)
 		cmd_ctx = (struct xnvme_cmd_ctx *)req->data;
 
 		if (overlapped->Internal == ERROR_SUCCESS) {
-			cmd_ctx->cpl.result = byte_count;
+			xnvme_cmd_cpl_set_dw0_1(&cmd_ctx->cpl, byte_count);
 		} else {
-			cmd_ctx->cpl.result = 0;
+			xnvme_cmd_cpl_set_dw0_1(&cmd_ctx->cpl, 0);
 			cmd_ctx->cpl.status = xnvme_bits_set(
-				cmd_ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC, GetLastError());
+				cmd_ctx->cpl.status,
+				XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SC, GetLastError());
 			cmd_ctx->cpl.status =
-				xnvme_bits_set(cmd_ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT,
+				xnvme_bits_set(cmd_ctx->cpl.status,
+					       XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SCT,
 					       XNVME_STATUS_CODE_TYPE_VENDOR);
 		}
 
@@ -171,13 +174,15 @@ _windows_async_iocp_reap(struct xnvme_queue *q, struct xnvme_cmd_ctx **completio
 		cmd_ctx = (struct xnvme_cmd_ctx *)req->data;
 
 		if (overlapped->Internal == ERROR_SUCCESS) {
-			cmd_ctx->cpl.result = byte_count;
+			xnvme_cmd_cpl_set_dw0_1(&cmd_ctx->cpl, byte_count);
 		} else {
-			cmd_ctx->cpl.result = 0;
+			xnvme_cmd_cpl_set_dw0_1(&cmd_ctx->cpl, 0);
 			cmd_ctx->cpl.status = xnvme_bits_set(
-				cmd_ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC, GetLastError());
+				cmd_ctx->cpl.status,
+				XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SC, GetLastError());
 			cmd_ctx->cpl.status =
-				xnvme_bits_set(cmd_ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT,
+				xnvme_bits_set(cmd_ctx->cpl.status,
+					       XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SCT,
 					       XNVME_STATUS_CODE_TYPE_VENDOR);
 		}
 
@@ -202,7 +207,7 @@ _windows_async_iocp_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nb
 	int err = 0;
 	struct _ov_request *req;
 	const uint64_t ssw = ctx->dev->geo.ssw;
-	uint64_t slba = ctx->cmd.nvm.slba << ssw;
+	uint64_t slba = xnvme_cmd_sqe_get_cdw10_11(&ctx->cmd) << ssw;
 	bool ret = 0;
 
 	if (mbuf || mbuf_nbytes) {
@@ -219,10 +224,10 @@ _windows_async_iocp_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nb
 
 	req->data = ctx;
 
-	switch (ctx->cmd.common.opcode) {
+	switch (xnvme_cmd_sqe_get_opc(&ctx->cmd)) {
 	case XNVME_SPEC_FS_OPC_WRITE:
-		ovl->Offset = ctx->cmd.nvm.slba & 0xFFFFFFFF;
-		ovl->OffsetHigh = (ctx->cmd.nvm.slba >> 32);
+		ovl->Offset = xnvme_cmd_sqe_get_cdw10_11(&ctx->cmd) & 0xFFFFFFFF;
+		ovl->OffsetHigh = (xnvme_cmd_sqe_get_cdw10_11(&ctx->cmd) >> 32);
 		ret = WriteFile(state->async_handle, dbuf, dbuf_nbytes, 0, ovl);
 		if (!ret) {
 			err = GetLastError();
@@ -233,7 +238,7 @@ _windows_async_iocp_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nb
 		}
 		break;
 
-	case XNVME_SPEC_NVM_OPC_WRITE:
+	case XNVME_SPEC_NVM_WRITE_OPCODE:
 		ovl->Offset = slba & 0xFFFFFFFF;
 		ovl->OffsetHigh = (slba >> 32);
 		ret = WriteFile(state->async_handle, dbuf, dbuf_nbytes, 0, ovl);
@@ -247,8 +252,8 @@ _windows_async_iocp_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nb
 		break;
 
 	case XNVME_SPEC_FS_OPC_READ:
-		ovl->Offset = ctx->cmd.nvm.slba & 0xFFFFFFFF;
-		ovl->OffsetHigh = (ctx->cmd.nvm.slba >> 32);
+		ovl->Offset = xnvme_cmd_sqe_get_cdw10_11(&ctx->cmd) & 0xFFFFFFFF;
+		ovl->OffsetHigh = (xnvme_cmd_sqe_get_cdw10_11(&ctx->cmd) >> 32);
 		ret = ReadFile(state->async_handle, dbuf, dbuf_nbytes, 0, ovl);
 		if (!ret) {
 			err = GetLastError();
@@ -259,7 +264,7 @@ _windows_async_iocp_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nb
 		}
 		break;
 
-	case XNVME_SPEC_NVM_OPC_READ:
+	case XNVME_SPEC_NVM_READ_OPCODE:
 		ovl->Offset = slba & 0xFFFFFFFF;
 		ovl->OffsetHigh = (slba >> 32);
 		ret = ReadFile(state->async_handle, dbuf, dbuf_nbytes, 0, ovl);
@@ -283,7 +288,7 @@ _windows_async_iocp_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nb
 		break;
 
 	default:
-		XNVME_DEBUG("FAILED: nosys opcode: %d", ctx->cmd.common.opcode);
+		XNVME_DEBUG("FAILED: nosys opcode: %d", xnvme_cmd_sqe_get_opc(&ctx->cmd));
 		return -ENOSYS;
 	}
 

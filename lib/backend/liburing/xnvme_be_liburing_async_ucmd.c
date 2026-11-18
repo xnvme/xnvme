@@ -6,6 +6,7 @@
 #define _GNU_SOURCE
 #endif
 #include <libxnvme.h>
+#include <xnvme_cmd.h>
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
 #ifdef XNVME_BE_LIBURING_ENABLED
@@ -103,7 +104,7 @@ xnvme_be_liburing_ucmd_poke(struct xnvme_queue *q, uint32_t max)
 		}
 #endif
 
-		ctx->cpl.result = cqe->big_cqe[0];
+		xnvme_cmd_cpl_set_dw0_1(&ctx->cpl, cqe->big_cqe[0]);
 
 		/** IO64-quirky-handling: this is also for NVME_URING_CMD_IO_VEC */
 		err = xnvme_be_linux_nvme_map_cpl(ctx, NVME_URING_CMD_IO, cqe->res);
@@ -170,7 +171,7 @@ xnvme_be_liburing_ucmd_reap(struct xnvme_queue *q, struct xnvme_cmd_ctx **comple
 		}
 #endif
 
-		ctx->cpl.result = cqe->big_cqe[0];
+		xnvme_cmd_cpl_set_dw0_1(&ctx->cpl, cqe->big_cqe[0]);
 
 		/** IO64-quirky-handling: this is also for NVME_URING_CMD_IO_VEC */
 		err = xnvme_be_linux_nvme_map_cpl(ctx, NVME_URING_CMD_IO, cqe->res);
@@ -217,6 +218,7 @@ xnvme_be_liburing_ucmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nby
 {
 	struct xnvme_queue_liburing *queue = (void *)ctx->async.queue;
 	struct xnvme_be_linux_state *state = &xnvme_be_state(queue->base.dev)->linux_state;
+	struct xnvme_spec_dptr_linux_ioctl dptr = {0};
 	struct io_uring_sqe *sqe = NULL;
 	int err = 0;
 
@@ -233,11 +235,12 @@ xnvme_be_liburing_ucmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nby
 	sqe->fd = queue->poll_sq ? 0 : state->posix.fd;
 	sqe->user_data = (unsigned long)ctx;
 
-	ctx->cmd.common.dptr.lnx_ioctl.data = (uint64_t)dbuf;
-	ctx->cmd.common.dptr.lnx_ioctl.data_len = dbuf_nbytes;
+	dptr.data = (uint64_t)dbuf;
+	dptr.data_len = dbuf_nbytes;
+	dptr.metadata_len = mbuf_nbytes;
+	memcpy(&ctx->cmd.common.dptr, &dptr, sizeof(dptr));
 
 	ctx->cmd.common.mptr = (uint64_t)mbuf;
-	ctx->cmd.common.dptr.lnx_ioctl.metadata_len = mbuf_nbytes;
 
 	memcpy(&sqe->addr3, &ctx->cmd.common, 64);
 
@@ -247,7 +250,7 @@ xnvme_be_liburing_ucmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nby
 
 	err = io_uring_submit(&queue->ring);
 	if (err < 0) {
-		XNVME_DEBUG("io_uring_submit(%d), err: %d", ctx->cmd.common.opcode, err);
+		XNVME_DEBUG("io_uring_submit(%d), err: %d", xnvme_cmd_sqe_get_opc(&ctx->cmd), err);
 		return err;
 	}
 
@@ -273,6 +276,7 @@ xnvme_be_liburing_ucmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t
 {
 	struct xnvme_queue_liburing *queue = (void *)ctx->async.queue;
 	struct xnvme_be_linux_state *state = &xnvme_be_state(queue->base.dev)->linux_state;
+	struct xnvme_spec_dptr_linux_ioctl dptr = {0};
 	struct io_uring_sqe *sqe = NULL;
 	int err = 0;
 
@@ -289,11 +293,12 @@ xnvme_be_liburing_ucmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t
 	sqe->fd = queue->poll_sq ? 0 : state->posix.fd;
 	sqe->user_data = (unsigned long)ctx;
 
-	ctx->cmd.common.dptr.lnx_ioctl.data = (uint64_t)dvec;
-	ctx->cmd.common.dptr.lnx_ioctl.data_len = dvec_cnt;
+	dptr.data = (uint64_t)dvec;
+	dptr.data_len = dvec_cnt;
+	dptr.metadata_len = mbuf_nbytes;
+	memcpy(&ctx->cmd.common.dptr, &dptr, sizeof(dptr));
 
 	ctx->cmd.common.mptr = (uint64_t)mbuf;
-	ctx->cmd.common.dptr.lnx_ioctl.metadata_len = mbuf_nbytes;
 
 	memcpy(&sqe->addr3, &ctx->cmd.common, 64);
 
@@ -303,7 +308,7 @@ xnvme_be_liburing_ucmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t
 
 	err = io_uring_submit(&queue->ring);
 	if (err < 0) {
-		XNVME_DEBUG("io_uring_submit(%d), err: %d", ctx->cmd.common.opcode, err);
+		XNVME_DEBUG("io_uring_submit(%d), err: %d", xnvme_cmd_sqe_get_opc(&ctx->cmd), err);
 		return err;
 	}
 

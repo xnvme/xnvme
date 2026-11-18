@@ -22,6 +22,19 @@ iowork_stats_reset(struct iowork_stats *stats)
 	return;
 }
 
+static uint64_t
+cmd_get_slba(struct xnvme_cmd_ctx *ctx)
+{
+	return (uint64_t)ctx->cmd.common.cdw11 << 32 | ctx->cmd.common.cdw10;
+}
+
+static void
+cmd_set_slba(struct xnvme_cmd_ctx *ctx, uint64_t slba)
+{
+	ctx->cmd.common.cdw10 = (uint32_t)slba;
+	ctx->cmd.common.cdw11 = (uint32_t)(slba >> 32);
+}
+
 struct iowork_range {
 	uint32_t slba;   ///< First LBA of the range
 	uint64_t nbytes; ///< Number of bytes in range
@@ -109,7 +122,7 @@ _submit(struct iowork *work, struct ioworker *worker, struct xnvme_cmd_ctx *ctx)
 	int err;
 	if (work->vectored) {
 		for (int j = 0; j < work->vec_cnt; ++j) {
-			uint64_t vec_slba = ctx->cmd.nvm.slba + j * (work->io.nlb + 1);
+			uint64_t vec_slba = cmd_get_slba(ctx) + j * (work->io.nlb + 1);
 			worker->vec[j].iov_base = work->buf + vec_slba * work->geo->lba_nbytes;
 			worker->vec[j].iov_len = (work->io.nlb + 1) * work->geo->lba_nbytes;
 		}
@@ -134,7 +147,7 @@ submitv:
 			return err;
 		}
 	} else {
-		void *dbuf = work->buf + ctx->cmd.nvm.slba * work->geo->lba_nbytes;
+		void *dbuf = work->buf + cmd_get_slba(ctx) * work->geo->lba_nbytes;
 		size_t dbuf_nbytes = work->io.nbytes;
 submit:
 		err = xnvme_cmd_pass(ctx, dbuf, dbuf_nbytes, NULL, 0);
@@ -168,14 +181,16 @@ _submit_sync(struct iowork *work)
 	xnvme_dev_get_cmd_ctx(work->dev, &ctx);
 
 	ctx.cmd.common.nsid = work->nsid;
-	ctx.cmd.common.opcode = work->opc;
-	ctx.cmd.nvm.nlb = work->io.naddr - 1;
-	ctx.cmd.nvm.slba = work->range.slba;
+	ctx.cmd.common.cdw0 = xnvme_bits_set(
+		ctx.cmd.common.cdw0, XNVME_SPEC_BASE_COMMON_COMMAND_FORMAT_CDW0_OPC, work->opc);
+	ctx.cmd.common.cdw12 = xnvme_bits_set(ctx.cmd.common.cdw12, XNVME_SPEC_NVM_WRITE_CDW12_NLB,
+					      work->io.naddr - 1);
+	cmd_set_slba(&ctx, work->range.slba);
 
 	if (work->vectored) {
 		for (uint64_t i = 0; i < work->nio; ++i) {
 			for (int j = 0; j < work->vec_cnt; ++j) {
-				uint64_t vec_slba = ctx.cmd.nvm.slba + j * (work->io.nlb + 1);
+				uint64_t vec_slba = cmd_get_slba(&ctx) + j * (work->io.nlb + 1);
 				worker->vec[j].iov_base =
 					work->buf + vec_slba * work->geo->lba_nbytes;
 				worker->vec[j].iov_len =
@@ -190,12 +205,12 @@ _submit_sync(struct iowork *work)
 			} else {
 				work->stats.nsubmissions += 1;
 				work->stats.ncompletions += 1;
-				ctx.cmd.nvm.slba += work->io.naddr;
+				cmd_set_slba(&ctx, cmd_get_slba(&ctx) + work->io.naddr);
 			}
 		}
 	} else {
 		for (uint64_t i = 0; i < work->nio; ++i) {
-			void *dbuf = work->buf + ctx.cmd.nvm.slba * work->geo->lba_nbytes;
+			void *dbuf = work->buf + cmd_get_slba(&ctx) * work->geo->lba_nbytes;
 			size_t dbuf_nbytes = work->io.nbytes;
 			err = xnvme_cmd_pass(&ctx, dbuf, dbuf_nbytes, NULL, 0);
 			if (err) {
@@ -204,7 +219,7 @@ _submit_sync(struct iowork *work)
 			} else {
 				work->stats.nsubmissions += 1;
 				work->stats.ncompletions += 1;
-				ctx.cmd.nvm.slba += work->io.naddr;
+				cmd_set_slba(&ctx, cmd_get_slba(&ctx) + work->io.naddr);
 			}
 		}
 	}
@@ -233,7 +248,7 @@ on_completion(struct xnvme_cmd_ctx *ctx, void *cb_arg)
 
 	// Workers interleave, each striding by 'nworkers * io.naddr'; stop this worker when its
 	// next I/O would fall outside the range.
-	if (ctx->cmd.nvm.slba + (work->nworkers + 1) * work->io.naddr >
+	if (cmd_get_slba(ctx) + (work->nworkers + 1) * work->io.naddr >
 	    work->range.slba + work->range.naddr) {
 		xnvme_queue_put_cmd_ctx(work->queue, ctx);
 		return;
@@ -241,10 +256,14 @@ on_completion(struct xnvme_cmd_ctx *ctx, void *cb_arg)
 
 	// Recreate context
 	ctx->cmd.common.nsid = work->nsid;
-	ctx->cmd.common.opcode = work->opc;
-	ctx->cmd.nvm.nlb = work->io.naddr - 1;
-	ctx->cmd.nvm.slba += work->nworkers * work->io.naddr;
-	ctx->cmd.nvm.fua = work->fua && (work->opc == XNVME_SPEC_NVM_OPC_WRITE);
+	ctx->cmd.common.cdw0 = xnvme_bits_set(
+		ctx->cmd.common.cdw0, XNVME_SPEC_BASE_COMMON_COMMAND_FORMAT_CDW0_OPC, work->opc);
+	ctx->cmd.common.cdw12 = xnvme_bits_set(ctx->cmd.common.cdw12,
+					       XNVME_SPEC_NVM_WRITE_CDW12_NLB, work->io.naddr - 1);
+	cmd_set_slba(ctx, cmd_get_slba(ctx) + work->nworkers * work->io.naddr);
+	ctx->cmd.common.cdw12 =
+		xnvme_bits_set(ctx->cmd.common.cdw12, XNVME_SPEC_NVM_WRITE_CDW12_FUA,
+			       work->fua && (work->opc == XNVME_SPEC_NVM_WRITE_OPCODE));
 
 	_submit(work, worker, ctx);
 
@@ -396,10 +415,15 @@ start_workers(struct iowork *work)
 		struct xnvme_cmd_ctx *ctx = xnvme_queue_get_cmd_ctx(work->queue);
 		struct ioworker *worker = &work->workers[i];
 		ctx->cmd.common.nsid = work->nsid;
-		ctx->cmd.common.opcode = work->opc;
-		ctx->cmd.nvm.nlb = work->io.naddr - 1;
-		ctx->cmd.nvm.slba = work->range.slba + i * work->io.naddr;
-		ctx->cmd.nvm.fua = work->fua && (work->opc == XNVME_SPEC_NVM_OPC_WRITE);
+		ctx->cmd.common.cdw0 =
+			xnvme_bits_set(ctx->cmd.common.cdw0,
+				       XNVME_SPEC_BASE_COMMON_COMMAND_FORMAT_CDW0_OPC, work->opc);
+		ctx->cmd.common.cdw12 = xnvme_bits_set(
+			ctx->cmd.common.cdw12, XNVME_SPEC_NVM_WRITE_CDW12_NLB, work->io.naddr - 1);
+		cmd_set_slba(ctx, work->range.slba + i * work->io.naddr);
+		ctx->cmd.common.cdw12 =
+			xnvme_bits_set(ctx->cmd.common.cdw12, XNVME_SPEC_NVM_WRITE_CDW12_FUA,
+				       work->fua && (work->opc == XNVME_SPEC_NVM_WRITE_OPCODE));
 		ctx->async.cb_arg = worker;
 		err = _submit(work, worker, ctx);
 		if (err) {
@@ -448,7 +472,9 @@ iowork_flush(struct iowork *work)
 	}
 
 	memset(&ctx->cmd, 0x0, sizeof(ctx->cmd));
-	ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_FLUSH;
+	ctx->cmd.common.cdw0 = xnvme_bits_set(ctx->cmd.common.cdw0,
+					      XNVME_SPEC_BASE_COMMON_COMMAND_FORMAT_CDW0_OPC,
+					      XNVME_SPEC_IO_FLUSH_OPCODE);
 	ctx->cmd.common.nsid = work->nsid;
 	xnvme_cmd_ctx_set_cb(ctx, on_flush_completion, &state);
 
@@ -540,7 +566,7 @@ _verify(struct xnvme_cli *cli, bool flush)
 
 		iowork_stats_reset(&work.stats);
 		work.buf = i ? work.rbuf : work.wbuf;
-		work.opc = i ? XNVME_SPEC_NVM_OPC_READ : XNVME_SPEC_NVM_OPC_WRITE;
+		work.opc = i ? XNVME_SPEC_NVM_READ_OPCODE : XNVME_SPEC_NVM_WRITE_OPCODE;
 
 		// Fill queue with commands
 		err = start_workers(&work);
@@ -612,7 +638,7 @@ test_verify_sync(struct xnvme_cli *cli)
 
 		iowork_stats_reset(&work.stats);
 		work.buf = i ? work.rbuf : work.wbuf;
-		work.opc = i ? XNVME_SPEC_NVM_OPC_READ : XNVME_SPEC_NVM_OPC_WRITE;
+		work.opc = i ? XNVME_SPEC_NVM_READ_OPCODE : XNVME_SPEC_NVM_WRITE_OPCODE;
 
 		err = _submit_sync(&work);
 		if (err) {

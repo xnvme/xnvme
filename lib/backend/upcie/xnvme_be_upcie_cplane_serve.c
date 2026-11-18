@@ -503,11 +503,11 @@ cplane_serve_totals_read(void)
 			continue;
 		}
 		g_upcie_cplane_serve.nsq_total[i] =
-			xnvme_bits_get(ctx.cpl.result,
+			xnvme_bits_get(ctx.cpl.dw0,
 				       XNVME_SPEC_BASE_FEATURE_NUMBER_OF_QUEUES_CQE_DW0_NSQA) +
 			1;
 		g_upcie_cplane_serve.ncq_total[i] =
-			xnvme_bits_get(ctx.cpl.result,
+			xnvme_bits_get(ctx.cpl.dw0,
 				       XNVME_SPEC_BASE_FEATURE_NUMBER_OF_QUEUES_CQE_DW0_NCQA) +
 			1;
 	}

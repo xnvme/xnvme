@@ -17,6 +17,7 @@
 #include <sys/event.h>
 #include <xnvme_queue.h>
 #include <xnvme_be_freebsd.h>
+#include <xnvme_cmd.h>
 #include <xnvme_dev.h>
 #include <xnvme_be_state.h>
 
@@ -135,16 +136,17 @@ xnvme_be_freebsd_kqueue_poke(struct xnvme_queue *q, uint32_t max)
 		res = aio_return(&req->aiocb);
 
 		ctx = req->ctx;
-		ctx->cpl.result = res;
+		xnvme_cmd_cpl_set_dw0_1(&ctx->cpl, res);
 		if (err || (res < 0)) {
-			ctx->cpl.result = 0;
+			xnvme_cmd_cpl_set_dw0_1(&ctx->cpl, 0);
 			// When aio_error() fails, we use 'err'
 			// When aio_return() fails, we use 'errno'
-			ctx->cpl.status = xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC,
-							 err ? err : errno);
-			ctx->cpl.status =
-				xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT,
-					       XNVME_STATUS_CODE_TYPE_VENDOR);
+			ctx->cpl.status = xnvme_bits_set(
+				ctx->cpl.status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SC,
+				err ? err : errno);
+			ctx->cpl.status = xnvme_bits_set(
+				ctx->cpl.status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SCT,
+				XNVME_STATUS_CODE_TYPE_VENDOR);
 		}
 
 		ctx->async.cb(ctx, ctx->async.cb_arg);
@@ -222,16 +224,17 @@ xnvme_be_freebsd_kqueue_reap(struct xnvme_queue *q, struct xnvme_cmd_ctx **compl
 		res = aio_return(&req->aiocb);
 
 		ctx = req->ctx;
-		ctx->cpl.result = res;
+		xnvme_cmd_cpl_set_dw0_1(&ctx->cpl, res);
 		if (err || (res < 0)) {
-			ctx->cpl.result = 0;
+			xnvme_cmd_cpl_set_dw0_1(&ctx->cpl, 0);
 			// When aio_error() fails, we use 'err'
 			// When aio_return() fails, we use 'errno'
-			ctx->cpl.status = xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC,
-							 err ? err : errno);
-			ctx->cpl.status =
-				xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT,
-					       XNVME_STATUS_CODE_TYPE_VENDOR);
+			ctx->cpl.status = xnvme_bits_set(
+				ctx->cpl.status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SC,
+				err ? err : errno);
+			ctx->cpl.status = xnvme_bits_set(
+				ctx->cpl.status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SCT,
+				XNVME_STATUS_CODE_TYPE_VENDOR);
 		}
 
 		*completions++ = ctx;
@@ -278,7 +281,7 @@ kqueue_flush(struct xnvme_cmd_ctx *ctx, int fd)
 		return -errno;
 	}
 
-	ctx->cpl.result = 0;
+	xnvme_cmd_cpl_set_dw0_1(&ctx->cpl, 0);
 	ctx->cpl.status = 0;
 
 	if (queue->base.opts & XNVME_QUEUE_REAP) {
@@ -310,8 +313,8 @@ xnvme_be_freebsd_kqueue_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbu
 		return -ENOTSUP;
 	}
 
-	switch (ctx->cmd.common.opcode) {
-	case XNVME_SPEC_NVM_OPC_FLUSH:
+	switch (xnvme_cmd_sqe_get_opc(&ctx->cmd)) {
+	case XNVME_SPEC_IO_FLUSH_OPCODE:
 	case XNVME_SPEC_FS_OPC_FLUSH:
 		return kqueue_flush(ctx, state->posix.fd);
 
@@ -333,29 +336,29 @@ xnvme_be_freebsd_kqueue_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbu
 
 	///< Literally convert the NVMe command / sqe memory to an aio-control-block
 	///< NOTE: opcode-dispatch (io)
-	switch (ctx->cmd.common.opcode) {
-	case XNVME_SPEC_NVM_OPC_WRITE:
-		aiocb->aio_offset = ctx->cmd.nvm.slba << ssw;
+	switch (xnvme_cmd_sqe_get_opc(&ctx->cmd)) {
+	case XNVME_SPEC_NVM_WRITE_OPCODE:
+		aiocb->aio_offset = xnvme_cmd_sqe_get_cdw10_11(&ctx->cmd) << ssw;
 		err = aio_write(aiocb);
 		break;
 
-	case XNVME_SPEC_NVM_OPC_READ:
-		aiocb->aio_offset = ctx->cmd.nvm.slba << ssw;
+	case XNVME_SPEC_NVM_READ_OPCODE:
+		aiocb->aio_offset = xnvme_cmd_sqe_get_cdw10_11(&ctx->cmd) << ssw;
 		err = aio_read(aiocb);
 		break;
 
 	case XNVME_SPEC_FS_OPC_WRITE:
-		aiocb->aio_offset = ctx->cmd.nvm.slba;
+		aiocb->aio_offset = xnvme_cmd_sqe_get_cdw10_11(&ctx->cmd);
 		err = aio_write(aiocb);
 		break;
 
 	case XNVME_SPEC_FS_OPC_READ:
-		aiocb->aio_offset = ctx->cmd.nvm.slba;
+		aiocb->aio_offset = xnvme_cmd_sqe_get_cdw10_11(&ctx->cmd);
 		err = aio_read(aiocb);
 		break;
 
 	default:
-		XNVME_DEBUG("FAILED: unsupported opcode: %d", ctx->cmd.common.opcode);
+		XNVME_DEBUG("FAILED: unsupported opcode: %d", xnvme_cmd_sqe_get_opc(&ctx->cmd));
 		return -ENOSYS;
 	}
 
@@ -394,8 +397,8 @@ xnvme_be_freebsd_kqueue_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, s
 	}
 
 	///< A flush has no payload, thus the vectored path defers to the same helper
-	switch (ctx->cmd.common.opcode) {
-	case XNVME_SPEC_NVM_OPC_FLUSH:
+	switch (xnvme_cmd_sqe_get_opc(&ctx->cmd)) {
+	case XNVME_SPEC_IO_FLUSH_OPCODE:
 	case XNVME_SPEC_FS_OPC_FLUSH:
 		return kqueue_flush(ctx, state->posix.fd);
 
@@ -417,29 +420,29 @@ xnvme_be_freebsd_kqueue_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, s
 
 	///< Convert the NVMe command/sqe to an Linux aio io-control-block
 	///< NOTE: opcode-dispatch (io)
-	switch (ctx->cmd.common.opcode) {
-	case XNVME_SPEC_NVM_OPC_WRITE:
-		aiocb->aio_offset = ctx->cmd.nvm.slba << ssw;
+	switch (xnvme_cmd_sqe_get_opc(&ctx->cmd)) {
+	case XNVME_SPEC_NVM_WRITE_OPCODE:
+		aiocb->aio_offset = xnvme_cmd_sqe_get_cdw10_11(&ctx->cmd) << ssw;
 		err = aio_writev(aiocb);
 		break;
 
-	case XNVME_SPEC_NVM_OPC_READ:
-		aiocb->aio_offset = ctx->cmd.nvm.slba << ssw;
+	case XNVME_SPEC_NVM_READ_OPCODE:
+		aiocb->aio_offset = xnvme_cmd_sqe_get_cdw10_11(&ctx->cmd) << ssw;
 		err = aio_readv(aiocb);
 		break;
 
 	case XNVME_SPEC_FS_OPC_WRITE:
-		aiocb->aio_offset = ctx->cmd.nvm.slba;
+		aiocb->aio_offset = xnvme_cmd_sqe_get_cdw10_11(&ctx->cmd);
 		err = aio_writev(aiocb);
 		break;
 
 	case XNVME_SPEC_FS_OPC_READ:
-		aiocb->aio_offset = ctx->cmd.nvm.slba;
+		aiocb->aio_offset = xnvme_cmd_sqe_get_cdw10_11(&ctx->cmd);
 		err = aio_readv(aiocb);
 		break;
 
 	default:
-		XNVME_DEBUG("FAILED: unsupported opcode: %d", ctx->cmd.common.opcode);
+		XNVME_DEBUG("FAILED: unsupported opcode: %d", xnvme_cmd_sqe_get_opc(&ctx->cmd));
 		return -ENOSYS;
 	}
 

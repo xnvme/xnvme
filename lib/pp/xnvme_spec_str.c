@@ -5,21 +5,23 @@
 #include <libxnvme.h>
 
 const char *
-xnvme_spec_adm_opc_str(enum xnvme_spec_adm_opc eval)
+xnvme_spec_adm_opc_str(enum xnvme_spec_admin_opcode eval)
 {
 	switch (eval) {
-	case XNVME_SPEC_ADM_OPC_GFEAT:
+	case XNVME_SPEC_ADMIN_GET_FEATURES_OPCODE:
 		return "ADM_OPC_GFEAT";
-	case XNVME_SPEC_ADM_OPC_IDFY:
+	case XNVME_SPEC_ADMIN_IDENTIFY_OPCODE:
 		return "ADM_OPC_IDFY";
-	case XNVME_SPEC_ADM_OPC_LOG:
+	case XNVME_SPEC_ADMIN_GET_LOG_PAGE_OPCODE:
 		return "ADM_OPC_LOG";
-	case XNVME_SPEC_ADM_OPC_SFEAT:
+	case XNVME_SPEC_ADMIN_SET_FEATURES_OPCODE:
 		return "ADM_OPC_SFEAT";
-	case XNVME_SPEC_ADM_OPC_DSEND:
+	case XNVME_SPEC_ADMIN_DIRECTIVE_SEND_OPCODE:
 		return "ADM_OPC_DSEND";
-	case XNVME_SPEC_ADM_OPC_DRECV:
+	case XNVME_SPEC_ADMIN_DIRECTIVE_RECEIVE_OPCODE:
 		return "ADM_OPC_DRECV";
+	default:
+		break;
 	}
 
 	return "ENOSYS";
@@ -212,32 +214,32 @@ xnvme_spec_nvm_cmd_cpl_sc_str(enum xnvme_spec_nvm_cmd_cpl_sc eval)
 }
 
 const char *
-xnvme_spec_nvm_opc_str(enum xnvme_spec_nvm_opc eval)
+xnvme_spec_nvm_opc_str(int eval)
 {
 	switch (eval) {
-	case XNVME_SPEC_NVM_OPC_FMT:
+	case XNVME_SPEC_ADMIN_FORMAT_NVM_OPCODE:
 		return "NVM_OPC_FMT";
-	case XNVME_SPEC_NVM_OPC_READ:
+	case XNVME_SPEC_NVM_READ_OPCODE:
 		return "NVM_OPC_READ";
-	case XNVME_SPEC_NVM_OPC_SANITIZE:
+	case XNVME_SPEC_ADMIN_SANITIZE_OPCODE:
 		return "NVM_OPC_SANITIZE";
-	case XNVME_SPEC_NVM_OPC_SCOPY:
+	case XNVME_SPEC_NVM_COPY_OPCODE:
 		return "NVM_OPC_SCOPY";
-	case XNVME_SPEC_NVM_OPC_WRITE:
+	case XNVME_SPEC_NVM_WRITE_OPCODE:
 		return "NVM_OPC_WRITE";
-	case XNVME_SPEC_NVM_OPC_WRITE_UNCORRECTABLE:
+	case XNVME_SPEC_NVM_WRITE_UNCORRECTABLE_OPCODE:
 		return "NVM_OPC_WRITE_UNCORRECTABLE";
-	case XNVME_SPEC_NVM_OPC_COMPARE:
+	case XNVME_SPEC_NVM_COMPARE_OPCODE:
 		return "NVM_OPC_COMPARE";
-	case XNVME_SPEC_NVM_OPC_WRITE_ZEROES:
+	case XNVME_SPEC_NVM_WRITE_ZEROES_OPCODE:
 		return "NVM_OPC_WRITE_ZEROES";
-	case XNVME_SPEC_NVM_OPC_DATASET_MANAGEMENT:
+	case XNVME_SPEC_NVM_DATASET_MANAGEMENT_OPCODE:
 		return "XNVME_SPEC_NVM_OPC_DATASET_MANAGEMENT";
-	case XNVME_SPEC_NVM_OPC_FLUSH:
+	case XNVME_SPEC_IO_FLUSH_OPCODE:
 		return "NVM_OPC_FLUSH";
-	case XNVME_SPEC_NVM_OPC_IO_MGMT_RECV:
+	case XNVME_SPEC_IO_IO_MANAGEMENT_RECEIVE_OPCODE:
 		return "XNVME_SPEC_NVM_OPC_IO_MGMT_RECV";
-	case XNVME_SPEC_NVM_OPC_IO_MGMT_SEND:
+	case XNVME_SPEC_IO_IO_MANAGEMENT_SEND_OPCODE:
 		return "XNVME_SPEC_NVM_OPC_IO_MGMT_SEND";
 	}
 
@@ -334,15 +336,17 @@ xnvme_spec_znd_cmd_mgmt_send_action_str(enum xnvme_spec_znd_cmd_mgmt_send_action
 }
 
 const char *
-xnvme_spec_znd_opc_str(enum xnvme_spec_znd_opc eval)
+xnvme_spec_znd_opc_str(enum xnvme_spec_zns_opcode eval)
 {
 	switch (eval) {
-	case XNVME_SPEC_ZND_OPC_APPEND:
+	case XNVME_SPEC_ZNS_ZONE_APPEND_OPCODE:
 		return "ZND_CMD_OPC_APPEND";
-	case XNVME_SPEC_ZND_OPC_MGMT_RECV:
+	case XNVME_SPEC_ZNS_ZONE_MANAGEMENT_RECEIVE_OPCODE:
 		return "ZND_OPC_MGMT_RECV";
-	case XNVME_SPEC_ZND_OPC_MGMT_SEND:
+	case XNVME_SPEC_ZNS_ZONE_MANAGEMENT_SEND_OPCODE:
 		return "ZND_OPC_MGMT_SEND";
+	default:
+		break;
 	}
 
 	return "ENOSYS";

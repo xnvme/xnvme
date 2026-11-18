@@ -821,7 +821,7 @@ xnvme_spec_idfy_cs_pr(const struct xnvme_spec_idfy_cs *idfy, int opts)
 }
 
 int
-xnvme_spec_sqe_fpr(FILE *stream, union xnvme_spec_sqe *cmd, int opts)
+xnvme_spec_sqe_fpr(FILE *stream, union xnvme_cmd_sqe *cmd, int opts)
 {
 	int wrtn = 0;
 	uint32_t *cdw = cmd->cdw;
@@ -865,20 +865,28 @@ xnvme_spec_sqe_fpr(FILE *stream, union xnvme_spec_sqe *cmd, int opts)
 		break;
 
 	case 0x3:
-		wrtn += fprintf(stream, "  opcode: %#02" PRIx16 "\n", cmd->common.opcode);
 		wrtn += fprintf(
-			stream, "  fuse: %#" PRIx64 "\n",
-			xnvme_bits_get(cmd->common.flags, XNVME_SPEC_CMD_COMMON_FLAGS_FUSE));
+			stream, "  opc: %#02" PRIx16 "\n",
+			(uint16_t)xnvme_bits_get(cmd->common.cdw0,
+						 XNVME_SPEC_BASE_COMMON_COMMAND_FORMAT_CDW0_OPC));
+		wrtn += fprintf(stream, "  fuse: %#" PRIx64 "\n",
+				xnvme_bits_get(cmd->common.cdw0,
+					       XNVME_SPEC_BASE_COMMON_COMMAND_FORMAT_CDW0_FUSE));
+		wrtn += fprintf(stream, "  psdt: %#" PRIx64 "\n",
+				xnvme_bits_get(cmd->common.cdw0,
+					       XNVME_SPEC_BASE_COMMON_COMMAND_FORMAT_CDW0_PSDT));
 		wrtn += fprintf(
-			stream, "  psdt: %#" PRIx64 "\n",
-			xnvme_bits_get(cmd->common.flags, XNVME_SPEC_CMD_COMMON_FLAGS_PSDT));
-		wrtn += fprintf(stream, "  cid: %#04" PRIx16 "\n", cmd->common.cid);
+			stream, "  cid: %#04" PRIx16 "\n",
+			(uint16_t)xnvme_bits_get(cmd->common.cdw0,
+						 XNVME_SPEC_BASE_COMMON_COMMAND_FORMAT_CDW0_CID));
 		wrtn += fprintf(stream, "  nsid: %#04" PRIx32 "\n", cmd->common.nsid);
-		wrtn += fprintf(stream, "  cdw02: %#04" PRIx32 "\n", cdw[2]);
-		wrtn += fprintf(stream, "  cdw03: %#04" PRIx32 "\n", cdw[3]);
-		wrtn += fprintf(stream, "  mptr: %#08" PRIx64 "\n", cmd->common.mptr);
-		wrtn += fprintf(stream, "  prp1: %#08" PRIx64 "\n", cmd->common.dptr.prp.prp1);
-		wrtn += fprintf(stream, "  prp2: %#08" PRIx64 "\n", cmd->common.dptr.prp.prp2);
+		wrtn += fprintf(stream, "  cdw2: %#04" PRIx32 "\n", cdw[2]);
+		wrtn += fprintf(stream, "  cdw3: %#04" PRIx32 "\n", cdw[3]);
+		wrtn += fprintf(stream, "  mptr: %#08" PRIx64 "\n", (uint64_t)cmd->common.mptr);
+		wrtn += fprintf(stream, "  prp1: %#08" PRIx64 "\n",
+				(uint64_t)cdw[7] << 32 | cdw[6]);
+		wrtn += fprintf(stream, "  prp2: %#08" PRIx64 "\n",
+				(uint64_t)cdw[9] << 32 | cdw[8]);
 		wrtn += fprintf(stream, "  cdw10: %#04" PRIx32 "\n", cdw[10]);
 		wrtn += fprintf(stream, "  cdw11: %#04" PRIx32 "\n", cdw[11]);
 		wrtn += fprintf(stream, "  cdw12: %#04" PRIx32 "\n", cdw[12]);
@@ -892,7 +900,7 @@ xnvme_spec_sqe_fpr(FILE *stream, union xnvme_spec_sqe *cmd, int opts)
 }
 
 int
-xnvme_spec_sqe_pr(union xnvme_spec_sqe *cmd, int opts)
+xnvme_spec_sqe_pr(union xnvme_cmd_sqe *cmd, int opts)
 {
 	return xnvme_spec_sqe_fpr(stdout, cmd, opts);
 }

@@ -6,6 +6,7 @@
 #define _GNU_SOURCE
 #endif
 #include <libxnvme.h>
+#include <xnvme_cmd.h>
 #include <xnvme_be_linux.h>
 #include <xnvme_be_nosys.h>
 #ifdef XNVME_BE_LINUX_BLOCK_ENABLED
@@ -129,9 +130,12 @@ _idfy(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes)
 	// TODO: convert sysfs queue/max_sectors_kb to idfy.ctrlr.mdts
 	// TODO: convert sysfs queue/minimum_io_size to idfy.ns.lbad.ds
 
-	switch (ctx->cmd.idfy.cns) {
+	switch (xnvme_bits_get(ctx->cmd.common.cdw10, XNVME_SPEC_ADMIN_IDENTIFY_CDW10_CNS)) {
 	case XNVME_SPEC_IDFY_NS_IOCS:
-		if (!((ctx->cmd.idfy.csi == XNVME_SPEC_CSI_ZONED) && (is_zoned))) {
+		if (!((xnvme_bits_get(ctx->cmd.common.cdw11,
+				      XNVME_SPEC_ADMIN_IDENTIFY_CDW11_CSI) ==
+		       XNVME_SPEC_CSI_ZONED) &&
+		      (is_zoned))) {
 			XNVME_DEBUG("FAILED: device is not zoned");
 			goto failed;
 		}
@@ -150,7 +154,10 @@ _idfy(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes)
 	///< TODO: check that device supports the given csi
 	case XNVME_SPEC_IDFY_CTRLR_IOCS:
 		// TODO: setup command-set specific stuff for zoned
-		if (!((ctx->cmd.idfy.csi == XNVME_SPEC_CSI_ZONED) && (is_zoned))) {
+		if (!((xnvme_bits_get(ctx->cmd.common.cdw11,
+				      XNVME_SPEC_ADMIN_IDENTIFY_CDW11_CSI) ==
+		       XNVME_SPEC_CSI_ZONED) &&
+		      (is_zoned))) {
 			XNVME_DEBUG("FAILED: device is not zoned");
 			goto failed;
 		}
@@ -170,8 +177,10 @@ _idfy(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes)
 
 failed:
 	///< TODO: set some appropriate status-code for other idfy-cmds
-	ctx->cpl.status = xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC, 0x3);
-	ctx->cpl.status = xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT, 0x3);
+	ctx->cpl.status = xnvme_bits_set(ctx->cpl.status,
+					 XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SC, 0x3);
+	ctx->cpl.status = xnvme_bits_set(ctx->cpl.status,
+					 XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SCT, 0x3);
 	return 1;
 }
 
@@ -180,15 +189,17 @@ _gfeat(struct xnvme_cmd_ctx *ctx, void *XNVME_UNUSED(dbuf))
 {
 	struct xnvme_spec_feat feat = {0};
 
-	switch (ctx->cmd.gfeat.cdw10.fid) {
+	switch (xnvme_bits_get(ctx->cmd.common.cdw10, XNVME_SPEC_ADMIN_GET_FEATURES_CDW10_FID)) {
 	case XNVME_SPEC_FEAT_NQUEUES:
 		feat.nqueues.nsqa = 63;
 		feat.nqueues.ncqa = 63;
-		ctx->cpl.cdw0 = feat.val;
+		ctx->cpl.dw0 = feat.val;
 		break;
 
 	default:
-		XNVME_DEBUG("FAILED: unsupported fid: %d", ctx->cmd.gfeat.cdw10.fid);
+		XNVME_DEBUG("FAILED: unsupported fid: %d",
+			    (int)xnvme_bits_get(ctx->cmd.common.cdw10,
+						XNVME_SPEC_ADMIN_GET_FEATURES_CDW10_FID));
 		return -ENOSYS;
 	}
 
@@ -200,19 +211,19 @@ xnvme_be_linux_block_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbu
 			       void *XNVME_UNUSED(mbuf), size_t XNVME_UNUSED(mbuf_nbytes))
 {
 	// NOTE: opcode-dispatch (admin)
-	switch (ctx->cmd.common.opcode) {
-	case XNVME_SPEC_ADM_OPC_IDFY:
+	switch (xnvme_cmd_sqe_get_opc(&ctx->cmd)) {
+	case XNVME_SPEC_ADMIN_IDENTIFY_OPCODE:
 		return _idfy(ctx, dbuf, dbuf_nbytes);
 
-	case XNVME_SPEC_ADM_OPC_GFEAT:
+	case XNVME_SPEC_ADMIN_GET_FEATURES_OPCODE:
 		return _gfeat(ctx, dbuf);
 
-	case XNVME_SPEC_ADM_OPC_LOG:
+	case XNVME_SPEC_ADMIN_GET_LOG_PAGE_OPCODE:
 		XNVME_DEBUG("FAILED: not implemented yet.");
 		return -ENOSYS;
 
 	default:
-		XNVME_DEBUG("FAILED: ENOSYS opcode: %d", ctx->cmd.common.opcode);
+		XNVME_DEBUG("FAILED: ENOSYS opcode: %d", xnvme_cmd_sqe_get_opc(&ctx->cmd));
 		return -ENOSYS;
 	}
 }

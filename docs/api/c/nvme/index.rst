@@ -10,7 +10,7 @@ Regardless, here is a brief over of the **NVMe** portion of the **xNVMe** API.
 Command Construction
 ====================
 
-An NVMe command is a submission queue entry, ``union xnvme_spec_sqe``, of 64
+An NVMe command is a submission queue entry, ``union xnvme_cmd_sqe``, of 64
 bytes. With **xNVMe**, a command is built from a record of its fields, then
 passed to the device with its payload.
 

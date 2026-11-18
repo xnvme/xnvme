@@ -71,7 +71,7 @@ struct xnvme_cmd_prep_nvm_write_args {
  * @errno
  */
 int
-xnvme_cmd_prep_nvm_write(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_nvm_write(union xnvme_cmd_sqe *sqe,
 			 const struct xnvme_cmd_prep_nvm_write_args *args);
 
 /**
@@ -129,8 +129,7 @@ struct xnvme_cmd_prep_nvm_read_args {
  * @errno
  */
 int
-xnvme_cmd_prep_nvm_read(union xnvme_spec_sqe *sqe,
-			const struct xnvme_cmd_prep_nvm_read_args *args);
+xnvme_cmd_prep_nvm_read(union xnvme_cmd_sqe *sqe, const struct xnvme_cmd_prep_nvm_read_args *args);
 
 /**
  * The arguments of xnvme_cmd_prep_nvm_write_uncorrectable(): the fields of Write Uncorrectable
@@ -173,7 +172,7 @@ struct xnvme_cmd_prep_nvm_write_uncorrectable_args {
  */
 int
 xnvme_cmd_prep_nvm_write_uncorrectable(
-	union xnvme_spec_sqe *sqe, const struct xnvme_cmd_prep_nvm_write_uncorrectable_args *args);
+	union xnvme_cmd_sqe *sqe, const struct xnvme_cmd_prep_nvm_write_uncorrectable_args *args);
 
 /**
  * The arguments of xnvme_cmd_prep_nvm_compare(): the fields of Compare
@@ -227,7 +226,7 @@ struct xnvme_cmd_prep_nvm_compare_args {
  * @errno
  */
 int
-xnvme_cmd_prep_nvm_compare(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_nvm_compare(union xnvme_cmd_sqe *sqe,
 			   const struct xnvme_cmd_prep_nvm_compare_args *args);
 
 /**
@@ -286,7 +285,7 @@ struct xnvme_cmd_prep_nvm_write_zeroes_args {
  * @errno
  */
 int
-xnvme_cmd_prep_nvm_write_zeroes(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_nvm_write_zeroes(union xnvme_cmd_sqe *sqe,
 				const struct xnvme_cmd_prep_nvm_write_zeroes_args *args);
 
 /**
@@ -328,7 +327,7 @@ struct xnvme_cmd_prep_nvm_dataset_management_args {
  */
 int
 xnvme_cmd_prep_nvm_dataset_management(
-	union xnvme_spec_sqe *sqe, const struct xnvme_cmd_prep_nvm_dataset_management_args *args);
+	union xnvme_cmd_sqe *sqe, const struct xnvme_cmd_prep_nvm_dataset_management_args *args);
 
 /**
  * The arguments of xnvme_cmd_prep_nvm_verify(): the fields of Verify
@@ -382,7 +381,7 @@ struct xnvme_cmd_prep_nvm_verify_args {
  * @errno
  */
 int
-xnvme_cmd_prep_nvm_verify(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_nvm_verify(union xnvme_cmd_sqe *sqe,
 			  const struct xnvme_cmd_prep_nvm_verify_args *args);
 
 /**
@@ -440,5 +439,4 @@ struct xnvme_cmd_prep_nvm_copy_args {
  * @errno
  */
 int
-xnvme_cmd_prep_nvm_copy(union xnvme_spec_sqe *sqe,
-			const struct xnvme_cmd_prep_nvm_copy_args *args);
+xnvme_cmd_prep_nvm_copy(union xnvme_cmd_sqe *sqe, const struct xnvme_cmd_prep_nvm_copy_args *args);
