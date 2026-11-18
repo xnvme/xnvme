@@ -124,11 +124,12 @@ blocks. Write zeroes uses the transfer cap **xNVMe** derives from ``MDTS``, or
 pages, since **xNVMe** does not expose ``CAP.MPSMIN``. ``--max-io-bytes`` does
 not affect either limit. The startup line prints both limits in sectors.
 
-A command refused with Invalid Command Opcode or Invalid Field in Command
-completes as ``EOPNOTSUPP``, as with the kernel driver; any other error is
-``EIO``. Write Zeroes sets the deallocate bit when ``DLFEAT`` reports that
-deallocated blocks read as zeroes and that Write Zeroes may deallocate, unless
-the request carries ``UBLK_IO_F_NOUNMAP``.
+A failed command completes with the errno the kernel NVMe driver gives the
+same status, for example ``EBADE`` for Reservation Conflict and ``ENOSPC`` for
+Capacity Exceeded. Any other status, including an errno **xNVMe** records
+before the device answers, is ``EIO``. Write Zeroes sets the deallocate bit
+when ``DLFEAT`` reports that deallocated blocks read as zeroes and that Write
+Zeroes may deallocate, unless the request carries ``UBLK_IO_F_NOUNMAP``.
 
 Zoned namespaces
 ================
