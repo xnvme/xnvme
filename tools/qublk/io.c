@@ -191,8 +191,9 @@ range_op_error(struct xnvme_cmd_ctx *ctx)
 	uint16_t sc =
 		xnvme_bits_get(ctx->cpl.status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SC);
 
-	if (sct == XNVME_STATUS_CODE_TYPE_GENERIC &&
-	    (sc == XNVME_STATUS_CODE_INVALID_OPCODE || sc == XNVME_STATUS_CODE_INVALID_FIELD)) {
+	if (sct == XNVME_SPEC_BASE_STATUS_CODE_TYPE_GENERIC_COMMAND_STATUS &&
+	    (sc == XNVME_SPEC_BASE_GENERIC_COMMAND_STATUS_INVALID_COMMAND_OPCODE ||
+	     sc == XNVME_SPEC_BASE_GENERIC_COMMAND_STATUS_INVALID_FIELD_IN_COMMAND)) {
 		return -EOPNOTSUPP;
 	}
 
@@ -352,7 +353,7 @@ dispatch(struct qublk_queue *q, struct qublk_io *io)
 	case UBLK_IO_OP_DISCARD: {
 		// One deallocate range, as nvme_setup_discard() builds it, in the
 		// tag's buffer, which is device-reachable and carries no data here
-		struct xnvme_spec_dsm_range *range = io->buf;
+		struct xnvme_spec_nvm_range *range = io->buf;
 
 		// Reached only if the kernel split past what was advertised
 		if (((uint64_t)bytes >> lba_shift) > UINT32_MAX) {

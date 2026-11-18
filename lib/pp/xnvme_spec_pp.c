@@ -1078,16 +1078,24 @@ xnvme_spec_feat_fdp_events_pr(void *buf, uint32_t dw0, int opts)
 }
 
 static int
-lblk_scopy_fmt_zero_yaml(FILE *stream, const struct xnvme_spec_nvm_scopy_fmt_zero *entry,
-			 int indent, const char *sep)
+lblk_scopy_fmt_zero_yaml(
+	FILE *stream,
+	const struct xnvme_spec_nvm_source_range_entries_copy_descriptor_format_0h_and_format_2h
+		*entry,
+	int indent, const char *sep)
 {
 	int wrtn = 0;
 
 	wrtn += fprintf(stream, "%*sslba: 0x%016" PRIx64 "%s", indent, "", entry->slba, sep);
 
-	wrtn += fprintf(stream, "%*snlb: %" PRIu32 "%s", indent, "", entry->nlb, sep);
+	wrtn += fprintf(
+		stream, "%*snlb: %" PRIu64 "%s", indent, "",
+		xnvme_bits_get(
+			entry->rpars,
+			XNVME_SPEC_NVM_SOURCE_RANGE_ENTRIES_COPY_DESCRIPTOR_FORMAT_0H_AND_FORMAT_2H_RPARS_NLB),
+		sep);
 
-	wrtn += fprintf(stream, "%*seilbrt: 0x%08" PRIx32 "%s", indent, "", entry->eilbrt, sep);
+	wrtn += fprintf(stream, "%*seilbrt: 0x%08" PRIx32 "%s", indent, "", entry->elbt, sep);
 
 	wrtn += fprintf(stream, "%*selbatm: 0x%08" PRIx32 "%s", indent, "", entry->elbatm, sep);
 
@@ -1097,8 +1105,11 @@ lblk_scopy_fmt_zero_yaml(FILE *stream, const struct xnvme_spec_nvm_scopy_fmt_zer
 }
 
 int
-xnvme_spec_nvm_scopy_fmt_zero_fpr(FILE *stream, const struct xnvme_spec_nvm_scopy_fmt_zero *entry,
-				  int opts)
+xnvme_spec_nvm_scopy_fmt_zero_fpr(
+	FILE *stream,
+	const struct xnvme_spec_nvm_source_range_entries_copy_descriptor_format_0h_and_format_2h
+		*entry,
+	int opts)
 {
 	int wrtn = 0;
 
@@ -1126,15 +1137,20 @@ xnvme_spec_nvm_scopy_fmt_zero_fpr(FILE *stream, const struct xnvme_spec_nvm_scop
 }
 
 int
-xnvme_spec_nvm_scopy_fmt_zero_pr(const struct xnvme_spec_nvm_scopy_fmt_zero *entry, int opts)
+xnvme_spec_nvm_scopy_fmt_zero_pr(
+	const struct xnvme_spec_nvm_source_range_entries_copy_descriptor_format_0h_and_format_2h
+		*entry,
+	int opts)
 {
 	return xnvme_spec_nvm_scopy_fmt_zero_fpr(stdout, entry, opts);
 }
 
 int
-xnvme_spec_nvm_scopy_source_range_fpr(FILE *stream,
-				      const struct xnvme_spec_nvm_scopy_source_range *srange,
-				      uint8_t nr, int opts)
+xnvme_spec_nvm_scopy_source_range_fpr(
+	FILE *stream,
+	const struct xnvme_spec_nvm_source_range_entries_copy_descriptor_format_0h_and_format_2h
+		*srange,
+	uint8_t nr, int opts)
 {
 	int wrtn = 0;
 
@@ -1159,13 +1175,9 @@ xnvme_spec_nvm_scopy_source_range_fpr(FILE *stream,
 	wrtn += fprintf(stream, "  nr: %" PRIu8 "\n", nr);
 	wrtn += fprintf(stream, "  entries:\n");
 
-	for (int i = 0; i < XNVME_SPEC_NVM_SCOPY_NENTRY_MAX; ++i) {
-		if (i > nr) {
-			break;
-		}
-
+	for (int i = 0; i <= nr; ++i) {
 		wrtn += fprintf(stream, "  - { ");
-		wrtn += lblk_scopy_fmt_zero_yaml(stream, &srange->entry[i], 0, ", ");
+		wrtn += lblk_scopy_fmt_zero_yaml(stream, &srange[i], 0, ", ");
 		wrtn += fprintf(stream, " }\n");
 	}
 
@@ -1173,8 +1185,10 @@ xnvme_spec_nvm_scopy_source_range_fpr(FILE *stream,
 }
 
 int
-xnvme_spec_nvm_scopy_source_range_pr(const struct xnvme_spec_nvm_scopy_source_range *srange,
-				     uint8_t nr, int opts)
+xnvme_spec_nvm_scopy_source_range_pr(
+	const struct xnvme_spec_nvm_source_range_entries_copy_descriptor_format_0h_and_format_2h
+		*srange,
+	uint8_t nr, int opts)
 {
 	return xnvme_spec_nvm_scopy_source_range_fpr(stdout, srange, nr, opts);
 }

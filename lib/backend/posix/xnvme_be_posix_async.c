@@ -113,7 +113,7 @@ posix_poke(struct xnvme_queue *q, uint32_t max)
 				err ? err : errno);
 			ctx->cpl.status = xnvme_bits_set(
 				ctx->cpl.status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SCT,
-				XNVME_STATUS_CODE_TYPE_VENDOR);
+				XNVME_SPEC_BASE_STATUS_CODE_TYPE_VENDOR_SPECIFIC);
 		}
 
 		ctx->async.cb(ctx, ctx->async.cb_arg);
@@ -182,7 +182,7 @@ posix_reap(struct xnvme_queue *q, struct xnvme_cmd_ctx **completions, uint32_t m
 				err ? err : errno);
 			ctx->cpl.status = xnvme_bits_set(
 				ctx->cpl.status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SCT,
-				XNVME_STATUS_CODE_TYPE_VENDOR);
+				XNVME_SPEC_BASE_STATUS_CODE_TYPE_VENDOR_SPECIFIC);
 		}
 
 		*completions++ = ctx;

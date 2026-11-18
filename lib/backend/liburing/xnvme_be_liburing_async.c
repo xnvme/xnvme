@@ -264,7 +264,7 @@ xnvme_be_liburing_poke(struct xnvme_queue *q, uint32_t max)
 				-cqe->res);
 			ctx->cpl.status = xnvme_bits_set(
 				ctx->cpl.status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SCT,
-				XNVME_STATUS_CODE_TYPE_VENDOR);
+				XNVME_SPEC_BASE_STATUS_CODE_TYPE_VENDOR_SPECIFIC);
 		}
 
 		queue->base.outstanding--;
@@ -333,7 +333,7 @@ xnvme_be_liburing_reap(struct xnvme_queue *q, struct xnvme_cmd_ctx **completions
 				-cqe->res);
 			ctx->cpl.status = xnvme_bits_set(
 				ctx->cpl.status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SCT,
-				XNVME_STATUS_CODE_TYPE_VENDOR);
+				XNVME_SPEC_BASE_STATUS_CODE_TYPE_VENDOR_SPECIFIC);
 		}
 
 		queue->base.outstanding--;

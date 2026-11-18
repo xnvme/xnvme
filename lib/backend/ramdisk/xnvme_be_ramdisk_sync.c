@@ -21,7 +21,8 @@ xnvme_be_ramdisk_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_
 			     size_t mbuf_nbytes)
 {
 	struct xnvme_be_ramdisk_state *state = &xnvme_be_state(ctx->dev)->ramdisk_state;
-	struct xnvme_spec_nvm_scopy_fmt_zero *ranges = dbuf;
+	struct xnvme_spec_nvm_source_range_entries_copy_descriptor_format_0h_and_format_2h
+		*ranges = dbuf;
 	size_t sdlba_offset = 0;
 	const uint64_t ssw = ctx->dev->geo.ssw;
 	char *offset = state->ramdisk;
@@ -64,7 +65,12 @@ xnvme_be_ramdisk_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_
 			char *dest = offset + sdlba_offset +
 				     (xnvme_cmd_sqe_get_cdw10_11(&ctx->cmd) << ssw);
 			char *src = offset + (ranges[i].slba << ssw);
-			size_t nbytes = (ranges[i].nlb + 1) * ctx->dev->geo.lba_nbytes;
+			size_t nbytes =
+				(xnvme_bits_get(
+					 ranges[i].rpars,
+					 XNVME_SPEC_NVM_SOURCE_RANGE_ENTRIES_COPY_DESCRIPTOR_FORMAT_0H_AND_FORMAT_2H_RPARS_NLB) +
+				 1) *
+				ctx->dev->geo.lba_nbytes;
 			memcpy(dest, src, nbytes);
 			sdlba_offset += nbytes;
 		}
