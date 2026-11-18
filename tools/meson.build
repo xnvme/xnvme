@@ -152,6 +152,15 @@ foreach test : frontend_tests
   )
 endforeach
 
+if not is_windows
+  test(
+    'tools - xnvme front-end, a plugin',
+    python3,
+    args: [files('frontend_plugin.py'), xnvme_bin],
+    suite: 'frontend',
+  )
+endif
+
 # An empty XNVME_EXEC_PATH means the install directory, hence one that does not exist
 frontend_builtins_env = environment()
 frontend_builtins_env.set('XNVME_EXEC_PATH', meson.current_build_dir() / 'no-programs')

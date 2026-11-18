@@ -19,6 +19,12 @@ the install directory unless ``XNVME_EXEC_PATH`` names others;
 ``xnvme env library`` shows it as ``exec_path``, and ``xnvme --exec-path``
 prints it alone, for scripts.
 
+A project outside xNVMe adds a command the same way: it installs its program
+``xnvme-<name>`` into the directory that ``pkg-config --variable=libexecdir
+xnvme`` prints, and ``xnvme <name>`` runs it. ``xnvme`` lists such programs
+under "Plugins" in its overview, and ``xnvme --list-cmds`` prints their names.
+A plugin whose name is a command of ``xnvme`` itself is never run.
+
 ``xnvme env`` says, as YAML, whether the host is ready for the userspace
 drivers: the IOMMU groups, whether each kernel module is available, built in
 and loaded, the hugepages of each size and NUMA node, where hugetlbfs is

@@ -498,6 +498,54 @@ cli_listed_pr(const char *heading, const struct cli_listed *listed, size_t nlist
 	return nrows;
 }
 
+static bool
+cli_is_fe_builtin(const char *name);
+
+static bool
+cli_is_listed(const char *name, const struct cli_listed *listed, size_t nlisted)
+{
+	for (size_t i = 0; i < nlisted; ++i) {
+		if (!strcmp(listed[i].name, name)) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/**
+ * Lists the programs on the exec path that xNVMe does not install, such as 'xnvme-foo' as
+ * 'xnvme foo'; a name xnvme handles itself is left out, since it never runs
+ */
+static int
+cli_plugins_pr(struct xnvme_cli *cli)
+{
+	char *names[CLI_NAMES_MAX];
+	int count = cli_names(CLI_PROG_PREFIX, names, CLI_NAMES_MAX);
+	int nrows = 0;
+
+	for (int i = 0; i < count; ++i) {
+		char cmd[64];
+
+		if (!strncmp(names[i], "test-", 5) || !strncmp(names[i], "example-", 8) ||
+		    cli_is_fe_builtin(names[i]) || cli_builtin(cli, names[i]) ||
+		    cli_is_listed(names[i], g_cli_listed,
+				  sizeof g_cli_listed / sizeof(*g_cli_listed)) ||
+		    cli_is_listed(names[i], g_cli_served,
+				  sizeof g_cli_served / sizeof(*g_cli_served))) {
+			continue;
+		}
+		if (!nrows++) {
+			printf("Plugins, run one with --help for its commands:\n");
+		}
+		snprintf(cmd, sizeof(cmd), "xnvme %s", names[i]);
+		cli_row(cmd, "");
+	}
+	cli_names_free(names, count);
+
+	return nrows;
+}
+
 static int
 cli_overview(struct xnvme_cli *cli)
 {
@@ -521,6 +569,9 @@ cli_overview(struct xnvme_cli *cli)
 	printf("\n");
 	if (cli_listed_pr("Serve devices:", g_cli_served,
 			  sizeof g_cli_served / sizeof(*g_cli_served))) {
+		printf("\n");
+	}
+	if (cli_plugins_pr(cli)) {
 		printf("\n");
 	}
 	printf("Command passthru:\n");
