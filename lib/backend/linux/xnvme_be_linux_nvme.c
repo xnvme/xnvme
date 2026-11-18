@@ -6,6 +6,7 @@
 #define _GNU_SOURCE
 #endif
 #include <libxnvme.h>
+#include <xnvme_cmd.h>
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
 #ifdef XNVME_PLATFORM_LINUX_ENABLED
@@ -80,7 +81,9 @@ struct _kernel_cpl {
 		} res64;
 	};
 };
-XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cqe) == sizeof(struct _kernel_cpl), "Incorrect size")
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_base_completion_queue_entry) ==
+			    sizeof(struct _kernel_cpl),
+		    "Incorrect size")
 
 int
 xnvme_be_linux_nvme_map_cpl(struct xnvme_cmd_ctx *ctx, unsigned long ioctl_req, int res)
@@ -90,21 +93,21 @@ xnvme_be_linux_nvme_map_cpl(struct xnvme_cmd_ctx *ctx, unsigned long ioctl_req, 
 	switch (ioctl_req) {
 	case NVME_IOCTL_ADMIN_CMD:
 	case NVME_IOCTL_IO_CMD:
-		ctx->cpl.result = kcpl->res32.result;
+		xnvme_cmd_cpl_set_dw0_1(&ctx->cpl, kcpl->res32.result);
 		break;
 #ifdef NVME_IOCTL_IO64_CMD
 	case NVME_IOCTL_IO64_CMD:
-		ctx->cpl.result = kcpl->res64.result;
+		xnvme_cmd_cpl_set_dw0_1(&ctx->cpl, kcpl->res64.result);
 		break;
 #endif
 #ifdef NVME_IOCTL_IO64_CMD_VEC
 	case NVME_IOCTL_IO64_CMD_VEC:
-		ctx->cpl.result = kcpl->res64.result;
+		xnvme_cmd_cpl_set_dw0_1(&ctx->cpl, kcpl->res64.result);
 		break;
 #endif
 #ifdef NVME_IOCTL_ADMIN64_CMD
 	case NVME_IOCTL_ADMIN64_CMD:
-		ctx->cpl.result = kcpl->res64.result;
+		xnvme_cmd_cpl_set_dw0_1(&ctx->cpl, kcpl->res64.result);
 		break;
 #endif
 #ifdef NVME_URING_CMD_IO
@@ -125,9 +128,11 @@ xnvme_be_linux_nvme_map_cpl(struct xnvme_cmd_ctx *ctx, unsigned long ioctl_req, 
 	ctx->cpl.cid = 0;
 	ctx->cpl.status = 0;
 	if (res) {
-		ctx->cpl.status =
-			xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC, res & 0xFF);
-		ctx->cpl.status = xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT,
+		ctx->cpl.status = xnvme_bits_set(ctx->cpl.status,
+						 XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SC,
+						 res & 0xFF);
+		ctx->cpl.status = xnvme_bits_set(ctx->cpl.status,
+						 XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SCT,
 						 (res >> 8) & 0x7);
 	}
 
@@ -137,14 +142,16 @@ xnvme_be_linux_nvme_map_cpl(struct xnvme_cmd_ctx *ctx, unsigned long ioctl_req, 
 void
 xnvme_be_linux_nvme_map_errno(struct xnvme_cmd_ctx *ctx, int err)
 {
-	ctx->cpl.result = 0;
+	xnvme_cmd_cpl_set_dw0_1(&ctx->cpl, 0);
 	ctx->cpl.sqhd = 0;
 	ctx->cpl.sqid = 0;
 	ctx->cpl.cid = 0;
 	ctx->cpl.status = 0;
-	ctx->cpl.status = xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC, err & 0xFF);
-	ctx->cpl.status = xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT,
-					 XNVME_STATUS_CODE_TYPE_VENDOR);
+	ctx->cpl.status = xnvme_bits_set(
+		ctx->cpl.status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SC, err & 0xFF);
+	ctx->cpl.status =
+		xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SCT,
+			       XNVME_STATUS_CODE_TYPE_VENDOR);
 }
 
 int

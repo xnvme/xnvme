@@ -6,6 +6,7 @@
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
 #ifdef XNVME_BE_UPCIE_ENABLED
+#include <xnvme_cmd.h>
 #include <xnvme_dev.h>
 #include <xnvme_queue.h>
 #include <xnvme_spec.h>
@@ -67,9 +68,12 @@ xnvme_be_upcie_sync_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf
 	}
 
 	if (xnvme_cmd_ctx_cpl_status(ctx)) {
-		XNVME_DEBUG("FAILED: command; sc(%d); sct(%d)",
-			    (int)xnvme_bits_get(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC),
-			    (int)xnvme_bits_get(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT));
+		XNVME_DEBUG(
+			"FAILED: command; sc(%d); sct(%d)",
+			(int)xnvme_bits_get(ctx->cpl.status,
+					    XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SC),
+			(int)xnvme_bits_get(ctx->cpl.status,
+					    XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SCT));
 		err = -EIO;
 	}
 
@@ -87,7 +91,7 @@ xnvme_be_upcie_sync_cmd_pseudo(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbu
 	struct nvme_controller *ctrl = state->ctrlr->ctrl;
 	void *bar0 = ctrl->func.bars[0].region;
 
-	switch (ctx->cmd.common.opcode) {
+	switch (xnvme_cmd_sqe_get_opc(&ctx->cmd)) {
 	case XNVME_SPEC_PSEUDO_OPC_SHOW_REGS:
 		if (dbuf_nbytes != sizeof(struct xnvme_spec_ctrlr_bar)) {
 			XNVME_DEBUG(
@@ -112,7 +116,7 @@ xnvme_be_upcie_sync_cmd_pseudo(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbu
 		return -ENOSYS;
 
 	default:
-		XNVME_DEBUG("FAILED: unsupported opcode: %d", ctx->cmd.common.opcode);
+		XNVME_DEBUG("FAILED: unsupported opcode: %d", xnvme_cmd_sqe_get_opc(&ctx->cmd));
 		return -ENOSYS;
 	}
 }

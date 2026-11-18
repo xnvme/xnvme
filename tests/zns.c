@@ -557,7 +557,8 @@ cmd_append(struct xnvme_cli *cli)
 		goto exit;
 	}
 
-	xnvme_cli_pinf("Appended to slba: 0x%016x", ctx.cpl.cdw0);
+	xnvme_cli_pinf("Appended to slba: 0x%016" PRIx64,
+		       (uint64_t)ctx.cpl.dw1 << 32 | ctx.cpl.dw0);
 
 exit:
 	xnvme_buf_free(dev, dbuf);

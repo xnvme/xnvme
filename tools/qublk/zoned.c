@@ -400,7 +400,7 @@ qublk_zoned_complete(struct qublk_queue *q, struct qublk_io *io, struct xnvme_cm
 	if (op == UBLK_IO_OP_ZONE_APPEND) {
 		// The device chose the LBA; the driver wants it in 512 B sectors, as
 		// the request's sector (see io_addr() in io.c)
-		io->zone_append_lba = ctx->cpl.result
+		io->zone_append_lba = ((uint64_t)ctx->cpl.dw1 << 32 | ctx->cpl.dw0)
 				      << (q->dev->lba_shift - XNVME_UNIVERSAL_SECT_SH);
 		return (int)((size_t)io->iod->nr_sectors << XNVME_UNIVERSAL_SECT_SH);
 	}

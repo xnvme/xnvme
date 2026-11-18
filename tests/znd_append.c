@@ -18,6 +18,7 @@ cb_lbacheck(struct xnvme_cmd_ctx *ctx, void *cb_arg)
 {
 	struct cb_args *cb_args = cb_arg;
 	uint64_t expected = cb_args->zslba + cb_args->completed;
+	uint64_t result;
 
 	cb_args->completed += 1;
 
@@ -26,8 +27,9 @@ cb_lbacheck(struct xnvme_cmd_ctx *ctx, void *cb_arg)
 		cb_args->ecount += 1;
 	}
 
-	if (ctx->cpl.result != expected) {
-		xnvme_cli_pinf("ERR: cpl.result: 0x%016lx != 0x%016lx", ctx->cpl.result, expected);
+	result = (uint64_t)ctx->cpl.dw1 << 32 | ctx->cpl.dw0;
+	if (result != expected) {
+		xnvme_cli_pinf("ERR: cpl.dw0_1: 0x%016lx != 0x%016lx", result, expected);
 		cb_args->ecount_offset += 1;
 	}
 

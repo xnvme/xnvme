@@ -432,7 +432,7 @@ CHECK = r"""
 int
 main(void)
 {
-    union xnvme_spec_sqe sqe;
+    union xnvme_cmd_sqe sqe;
     struct xnvme_cmd_prep_nvm_ding_args args = {
         .nsid = 7,
         .sding = 0x1122334455667788ULL,
@@ -511,7 +511,7 @@ main(void)
 STUB = """#include <stddef.h>
 #include <stdint.h>
 #define XNVME_STATIC_ASSERT(cond, msg) _Static_assert(cond, msg);
-union xnvme_spec_sqe {
+union xnvme_cmd_sqe {
     uint32_t cdw[16];
 };
 #include "libxnvme_cmd_prep_adm.h"
@@ -649,11 +649,11 @@ def test_a_prep_is_a_function_of_the_size_and_an_inline_function_of_the_record(
         " ::xnvme_cmd_prep_nvm_ding_args\n * @param args_nbytes" in text
     )
     assert (
-        " * @errno\n */\nint\nxnvme_cmd_prep_nvm_ding_sized(union xnvme_spec_sqe *sqe,"
+        " * @errno\n */\nint\nxnvme_cmd_prep_nvm_ding_sized(union xnvme_cmd_sqe *sqe,"
         " const struct xnvme_cmd_prep_nvm_ding_args *args, size_t args_nbytes);" in text
     )
     assert (
-        "static inline int\nxnvme_cmd_prep_nvm_ding(union xnvme_spec_sqe *sqe, const"
+        "static inline int\nxnvme_cmd_prep_nvm_ding(union xnvme_cmd_sqe *sqe, const"
         " struct xnvme_cmd_prep_nvm_ding_args *args)\n{\n\treturn"
         " xnvme_cmd_prep_nvm_ding_sized(sqe, args, sizeof(*args));\n}" in text
     )

@@ -6,6 +6,7 @@
 #define _XOPEN_SOURCE 700
 #endif
 #include <libxnvme.h>
+#include <xnvme_cmd.h>
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
 #ifdef XNVME_BE_RAMDISK_ENABLED
@@ -31,32 +32,37 @@ xnvme_be_ramdisk_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_
 		return -ENOTSUP;
 	}
 
-	switch (ctx->cmd.common.opcode) {
-	case XNVME_SPEC_NVM_OPC_WRITE:
-		memcpy(offset + (ctx->cmd.nvm.slba << ssw), dbuf, dbuf_nbytes);
+	switch (xnvme_cmd_sqe_get_opc(&ctx->cmd)) {
+	case XNVME_SPEC_NVM_WRITE_OPCODE:
+		memcpy(offset + (xnvme_cmd_sqe_get_cdw10_11(&ctx->cmd) << ssw), dbuf, dbuf_nbytes);
 		break;
 
-	case XNVME_SPEC_NVM_OPC_READ:
-		memcpy(dbuf, offset + (ctx->cmd.nvm.slba << ssw), dbuf_nbytes);
+	case XNVME_SPEC_NVM_READ_OPCODE:
+		memcpy(dbuf, offset + (xnvme_cmd_sqe_get_cdw10_11(&ctx->cmd) << ssw), dbuf_nbytes);
 		break;
 
-	case XNVME_SPEC_NVM_OPC_WRITE_ZEROES:
-		memset(offset + (ctx->cmd.nvm.slba << ssw), 0,
-		       (ctx->cmd.nvm.nlb + 1) * ctx->dev->geo.lba_nbytes);
+	case XNVME_SPEC_NVM_WRITE_ZEROES_OPCODE:
+		memset(offset + (xnvme_cmd_sqe_get_cdw10_11(&ctx->cmd) << ssw), 0,
+		       (xnvme_bits_get(ctx->cmd.common.cdw12,
+				       XNVME_SPEC_NVM_WRITE_ZEROES_CDW12_NLB) +
+			1) * ctx->dev->geo.lba_nbytes);
 		break;
 
 	case XNVME_SPEC_FS_OPC_WRITE:
-		memcpy(offset + ctx->cmd.nvm.slba, dbuf, dbuf_nbytes);
+		memcpy(offset + xnvme_cmd_sqe_get_cdw10_11(&ctx->cmd), dbuf, dbuf_nbytes);
 		break;
 
 	case XNVME_SPEC_FS_OPC_READ:
-		memcpy(dbuf, offset + ctx->cmd.nvm.slba, dbuf_nbytes);
+		memcpy(dbuf, offset + xnvme_cmd_sqe_get_cdw10_11(&ctx->cmd), dbuf_nbytes);
 		break;
 
-	case XNVME_SPEC_NVM_OPC_SCOPY:
+	case XNVME_SPEC_NVM_COPY_OPCODE:
 
-		for (int i = 0; i <= ctx->cmd.scopy.nr; i++) {
-			char *dest = offset + sdlba_offset + (ctx->cmd.scopy.sdlba << ssw);
+		for (uint64_t i = 0;
+		     i <= xnvme_bits_get(ctx->cmd.common.cdw12, XNVME_SPEC_NVM_COPY_CDW12_NR);
+		     i++) {
+			char *dest = offset + sdlba_offset +
+				     (xnvme_cmd_sqe_get_cdw10_11(&ctx->cmd) << ssw);
 			char *src = offset + (ranges[i].slba << ssw);
 			size_t nbytes = (ranges[i].nlb + 1) * ctx->dev->geo.lba_nbytes;
 			memcpy(dest, src, nbytes);
@@ -64,23 +70,24 @@ xnvme_be_ramdisk_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_
 		}
 		break;
 
-	case XNVME_SPEC_NVM_OPC_FLUSH:
+	case XNVME_SPEC_IO_FLUSH_OPCODE:
 	case XNVME_SPEC_FS_OPC_FLUSH:
 		break;
 
-	case XNVME_SPEC_NVM_OPC_DATASET_MANAGEMENT:
+	case XNVME_SPEC_NVM_DATASET_MANAGEMENT_OPCODE:
 		// Just pass on the command, as it is just a hint to the controller.
 		break;
 
-	case XNVME_SPEC_NVM_OPC_COMPARE:
-		err = memcmp(offset + (ctx->cmd.nvm.slba << ssw), dbuf, dbuf_nbytes);
+	case XNVME_SPEC_NVM_COMPARE_OPCODE:
+		err = memcmp(offset + (xnvme_cmd_sqe_get_cdw10_11(&ctx->cmd) << ssw), dbuf,
+			     dbuf_nbytes);
 		if (err) {
 			return -EIO;
 		}
 		break;
 
 	default:
-		XNVME_DEBUG("FAILED: nosys opcode: %d", ctx->cmd.common.opcode);
+		XNVME_DEBUG("FAILED: nosys opcode: %d", xnvme_cmd_sqe_get_opc(&ctx->cmd));
 		return -ENOSYS;
 	}
 
@@ -100,18 +107,19 @@ xnvme_be_ramdisk_sync_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, siz
 		return -ENOTSUP;
 	}
 
-	switch (ctx->cmd.common.opcode) {
-	case XNVME_SPEC_NVM_OPC_WRITE:
+	switch (xnvme_cmd_sqe_get_opc(&ctx->cmd)) {
+	case XNVME_SPEC_NVM_WRITE_OPCODE:
 		for (size_t i = 0; i < dvec_cnt; ++i) {
-			memcpy(offset + (ctx->cmd.nvm.slba << ssw), dvec[i].iov_base,
-			       dvec[i].iov_len);
+			memcpy(offset + (xnvme_cmd_sqe_get_cdw10_11(&ctx->cmd) << ssw),
+			       dvec[i].iov_base, dvec[i].iov_len);
 			offset += dvec[i].iov_len;
 		}
 		break;
 
-	case XNVME_SPEC_NVM_OPC_READ:
+	case XNVME_SPEC_NVM_READ_OPCODE:
 		for (size_t i = 0; i < dvec_cnt; ++i) {
-			memcpy(dvec[i].iov_base, offset + (ctx->cmd.nvm.slba << ssw),
+			memcpy(dvec[i].iov_base,
+			       offset + (xnvme_cmd_sqe_get_cdw10_11(&ctx->cmd) << ssw),
 			       dvec[i].iov_len);
 			offset += dvec[i].iov_len;
 		}
@@ -119,24 +127,26 @@ xnvme_be_ramdisk_sync_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, siz
 
 	case XNVME_SPEC_FS_OPC_WRITE:
 		for (size_t i = 0; i < dvec_cnt; ++i) {
-			memcpy(offset + ctx->cmd.nvm.slba, dvec[i].iov_base, dvec[i].iov_len);
+			memcpy(offset + xnvme_cmd_sqe_get_cdw10_11(&ctx->cmd), dvec[i].iov_base,
+			       dvec[i].iov_len);
 			offset += dvec[i].iov_len;
 		}
 		break;
 
 	case XNVME_SPEC_FS_OPC_READ:
 		for (size_t i = 0; i < dvec_cnt; ++i) {
-			memcpy(dvec[i].iov_base, offset + ctx->cmd.nvm.slba, dvec[i].iov_len);
+			memcpy(dvec[i].iov_base, offset + xnvme_cmd_sqe_get_cdw10_11(&ctx->cmd),
+			       dvec[i].iov_len);
 			offset += dvec[i].iov_len;
 		}
 		break;
 
-	case XNVME_SPEC_NVM_OPC_FLUSH:
+	case XNVME_SPEC_IO_FLUSH_OPCODE:
 	case XNVME_SPEC_FS_OPC_FLUSH:
 		break;
 
 	default:
-		XNVME_DEBUG("FAILED: nosys opcode: %d", ctx->cmd.common.opcode);
+		XNVME_DEBUG("FAILED: nosys opcode: %d", xnvme_cmd_sqe_get_opc(&ctx->cmd));
 		return -ENOSYS;
 	}
 

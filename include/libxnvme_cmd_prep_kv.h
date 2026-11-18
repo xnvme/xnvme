@@ -72,7 +72,7 @@ struct xnvme_cmd_prep_kv_store_args {
  * @errno
  */
 int
-xnvme_cmd_prep_kv_store_sized(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_kv_store_sized(union xnvme_cmd_sqe *sqe,
 			      const struct xnvme_cmd_prep_kv_store_args *args, size_t args_nbytes);
 
 /**
@@ -84,7 +84,7 @@ xnvme_cmd_prep_kv_store_sized(union xnvme_spec_sqe *sqe,
  * @return The return value of xnvme_cmd_prep_kv_store_sized()
  */
 static inline int
-xnvme_cmd_prep_kv_store(union xnvme_spec_sqe *sqe, const struct xnvme_cmd_prep_kv_store_args *args)
+xnvme_cmd_prep_kv_store(union xnvme_cmd_sqe *sqe, const struct xnvme_cmd_prep_kv_store_args *args)
 {
 	return xnvme_cmd_prep_kv_store_sized(sqe, args, sizeof(*args));
 }
@@ -138,7 +138,7 @@ struct xnvme_cmd_prep_kv_retrieve_args {
  * @errno
  */
 int
-xnvme_cmd_prep_kv_retrieve_sized(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_kv_retrieve_sized(union xnvme_cmd_sqe *sqe,
 				 const struct xnvme_cmd_prep_kv_retrieve_args *args,
 				 size_t args_nbytes);
 
@@ -151,7 +151,7 @@ xnvme_cmd_prep_kv_retrieve_sized(union xnvme_spec_sqe *sqe,
  * @return The return value of xnvme_cmd_prep_kv_retrieve_sized()
  */
 static inline int
-xnvme_cmd_prep_kv_retrieve(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_kv_retrieve(union xnvme_cmd_sqe *sqe,
 			   const struct xnvme_cmd_prep_kv_retrieve_args *args)
 {
 	return xnvme_cmd_prep_kv_retrieve_sized(sqe, args, sizeof(*args));
@@ -201,7 +201,7 @@ struct xnvme_cmd_prep_kv_list_args {
  * @errno
  */
 int
-xnvme_cmd_prep_kv_list_sized(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_kv_list_sized(union xnvme_cmd_sqe *sqe,
 			     const struct xnvme_cmd_prep_kv_list_args *args, size_t args_nbytes);
 
 /**
@@ -213,7 +213,7 @@ xnvme_cmd_prep_kv_list_sized(union xnvme_spec_sqe *sqe,
  * @return The return value of xnvme_cmd_prep_kv_list_sized()
  */
 static inline int
-xnvme_cmd_prep_kv_list(union xnvme_spec_sqe *sqe, const struct xnvme_cmd_prep_kv_list_args *args)
+xnvme_cmd_prep_kv_list(union xnvme_cmd_sqe *sqe, const struct xnvme_cmd_prep_kv_list_args *args)
 {
 	return xnvme_cmd_prep_kv_list_sized(sqe, args, sizeof(*args));
 }
@@ -260,7 +260,7 @@ struct xnvme_cmd_prep_kv_delete_args {
  * @errno
  */
 int
-xnvme_cmd_prep_kv_delete_sized(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_kv_delete_sized(union xnvme_cmd_sqe *sqe,
 			       const struct xnvme_cmd_prep_kv_delete_args *args,
 			       size_t args_nbytes);
 
@@ -273,7 +273,7 @@ xnvme_cmd_prep_kv_delete_sized(union xnvme_spec_sqe *sqe,
  * @return The return value of xnvme_cmd_prep_kv_delete_sized()
  */
 static inline int
-xnvme_cmd_prep_kv_delete(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_kv_delete(union xnvme_cmd_sqe *sqe,
 			 const struct xnvme_cmd_prep_kv_delete_args *args)
 {
 	return xnvme_cmd_prep_kv_delete_sized(sqe, args, sizeof(*args));
@@ -321,7 +321,7 @@ struct xnvme_cmd_prep_kv_exist_args {
  * @errno
  */
 int
-xnvme_cmd_prep_kv_exist_sized(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_kv_exist_sized(union xnvme_cmd_sqe *sqe,
 			      const struct xnvme_cmd_prep_kv_exist_args *args, size_t args_nbytes);
 
 /**
@@ -333,7 +333,7 @@ xnvme_cmd_prep_kv_exist_sized(union xnvme_spec_sqe *sqe,
  * @return The return value of xnvme_cmd_prep_kv_exist_sized()
  */
 static inline int
-xnvme_cmd_prep_kv_exist(union xnvme_spec_sqe *sqe, const struct xnvme_cmd_prep_kv_exist_args *args)
+xnvme_cmd_prep_kv_exist(union xnvme_cmd_sqe *sqe, const struct xnvme_cmd_prep_kv_exist_args *args)
 {
 	return xnvme_cmd_prep_kv_exist_sized(sqe, args, sizeof(*args));
 }

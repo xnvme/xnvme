@@ -56,7 +56,7 @@ test_init_term(struct xnvme_cli *cli)
 			return err;
 		}
 
-		feat.val = ctx.cpl.cdw0;
+		feat.val = ctx.cpl.dw0;
 
 		xnvme_spec_feat_pr(XNVME_SPEC_FEAT_NQUEUES, &feat, XNVME_PR_DEF);
 
@@ -246,7 +246,7 @@ test_init_exhaust(struct xnvme_cli *cli)
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		return err ? err : -EIO;
 	}
-	feat.val = ctx.cpl.cdw0;
+	feat.val = ctx.cpl.dw0;
 	xnvme_spec_feat_pr(XNVME_SPEC_FEAT_NQUEUES, &feat, XNVME_PR_DEF);
 
 	nqueues = feat.nqueues.nsqa < feat.nqueues.ncqa ? feat.nqueues.nsqa : feat.nqueues.ncqa;
@@ -400,10 +400,13 @@ reap_round(struct xnvme_queue *queue, uint32_t nsid, const struct xnvme_geo *geo
 					       (void *)record);
 				return -EIO;
 			}
-			if (record->slba != ctx->cmd.nvm.slba) {
+			if (record->slba !=
+			    ((uint64_t)ctx->cmd.common.cdw11 << 32 | ctx->cmd.common.cdw10)) {
 				xnvme_cli_pinf("FAILED: data: slba: 0x%" PRIx64
-					       " != cmd.nvm.slba: 0x%" PRIx64,
-					       record->slba, (uint64_t)ctx->cmd.nvm.slba);
+					       " != cdw10_11: 0x%" PRIx64,
+					       record->slba,
+					       ((uint64_t)ctx->cmd.common.cdw11 << 32 |
+						ctx->cmd.common.cdw10));
 				return -EIO;
 			}
 			if (record->reaped) {
@@ -883,8 +886,9 @@ exit:
 static int
 check_errno_status(struct xnvme_cmd_ctx *ctx)
 {
-	int sct = xnvme_bits_get(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT);
-	int sc = xnvme_bits_get(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC);
+	int sct =
+		xnvme_bits_get(ctx->cpl.status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SCT);
+	int sc = xnvme_bits_get(ctx->cpl.status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SC);
 
 	if (sct == XNVME_STATUS_CODE_TYPE_VENDOR && sc == ENOSYS) {
 		return 0;
@@ -919,8 +923,9 @@ submit_nosys(struct xnvme_cmd_ctx *ctx, uint32_t nsid, int round)
 	int err;
 
 	if (round == 2) {
-		ctx->cpl.status = xnvme_bits_set(0, XNVME_SPEC_CQE_STATUS_SC,
-						 XNVME_STATUS_CODE_INVALID_FIELD);
+		ctx->cpl.status =
+			xnvme_bits_set(0, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SC,
+				       XNVME_STATUS_CODE_INVALID_FIELD);
 	}
 
 	err = xnvme_cmd_prep_nvm_write_uncorrectable(&ctx->cmd, &wu);

@@ -40,7 +40,7 @@ xnvme_be_driverkit_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbyt
 		.dbuf_offset = _buf_base_offset,
 		.dbuf_token = (uint64_t)dbuf - _buf_base_offset,
 	};
-	memcpy(cmd.cmd, &ctx->cmd, sizeof(union xnvme_spec_sqe));
+	memcpy(cmd.cmd, &ctx->cmd, sizeof(union xnvme_cmd_sqe));
 	cmd.backend_opaque = (uint64_t)ctx;
 
 	output_cnt = sizeof(NvmeSubmitCmd);
@@ -53,7 +53,7 @@ xnvme_be_driverkit_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbyt
 		return -EIO;
 	}
 
-	memcpy(&ctx->cpl, cmd_return.cpl, sizeof(struct xnvme_spec_cqe));
+	memcpy(&ctx->cpl, cmd_return.cpl, sizeof(struct xnvme_spec_base_completion_queue_entry));
 	return 0;
 }
 

@@ -183,8 +183,10 @@ submit_commit_and_fetch(struct qublk_queue *q, struct qublk_io *io, int result)
 static int
 nvme_status_errno(struct xnvme_cmd_ctx *ctx)
 {
-	uint16_t sct = xnvme_bits_get(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT);
-	uint16_t sc = xnvme_bits_get(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC);
+	uint16_t sct =
+		xnvme_bits_get(ctx->cpl.status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SCT);
+	uint16_t sc =
+		xnvme_bits_get(ctx->cpl.status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SC);
 
 	switch (sct) {
 	case XNVME_STATUS_CODE_TYPE_GENERIC:

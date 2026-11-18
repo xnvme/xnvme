@@ -69,7 +69,7 @@ struct xnvme_cmd_prep_zns_zone_management_send_args {
  */
 int
 xnvme_cmd_prep_zns_zone_management_send_sized(
-	union xnvme_spec_sqe *sqe, const struct xnvme_cmd_prep_zns_zone_management_send_args *args,
+	union xnvme_cmd_sqe *sqe, const struct xnvme_cmd_prep_zns_zone_management_send_args *args,
 	size_t args_nbytes);
 
 /**
@@ -83,7 +83,7 @@ xnvme_cmd_prep_zns_zone_management_send_sized(
  */
 static inline int
 xnvme_cmd_prep_zns_zone_management_send(
-	union xnvme_spec_sqe *sqe, const struct xnvme_cmd_prep_zns_zone_management_send_args *args)
+	union xnvme_cmd_sqe *sqe, const struct xnvme_cmd_prep_zns_zone_management_send_args *args)
 {
 	return xnvme_cmd_prep_zns_zone_management_send_sized(sqe, args, sizeof(*args));
 }
@@ -136,7 +136,7 @@ struct xnvme_cmd_prep_zns_zone_management_receive_args {
  */
 int
 xnvme_cmd_prep_zns_zone_management_receive_sized(
-	union xnvme_spec_sqe *sqe,
+	union xnvme_cmd_sqe *sqe,
 	const struct xnvme_cmd_prep_zns_zone_management_receive_args *args, size_t args_nbytes);
 
 /**
@@ -150,7 +150,7 @@ xnvme_cmd_prep_zns_zone_management_receive_sized(
  */
 static inline int
 xnvme_cmd_prep_zns_zone_management_receive(
-	union xnvme_spec_sqe *sqe,
+	union xnvme_cmd_sqe *sqe,
 	const struct xnvme_cmd_prep_zns_zone_management_receive_args *args)
 {
 	return xnvme_cmd_prep_zns_zone_management_receive_sized(sqe, args, sizeof(*args));
@@ -218,7 +218,7 @@ struct xnvme_cmd_prep_zns_zone_append_args {
  * @errno
  */
 int
-xnvme_cmd_prep_zns_zone_append_sized(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_zns_zone_append_sized(union xnvme_cmd_sqe *sqe,
 				     const struct xnvme_cmd_prep_zns_zone_append_args *args,
 				     size_t args_nbytes);
 
@@ -231,7 +231,7 @@ xnvme_cmd_prep_zns_zone_append_sized(union xnvme_spec_sqe *sqe,
  * @return The return value of xnvme_cmd_prep_zns_zone_append_sized()
  */
 static inline int
-xnvme_cmd_prep_zns_zone_append(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_zns_zone_append(union xnvme_cmd_sqe *sqe,
 			       const struct xnvme_cmd_prep_zns_zone_append_args *args)
 {
 	return xnvme_cmd_prep_zns_zone_append_sized(sqe, args, sizeof(*args));

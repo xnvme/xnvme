@@ -62,7 +62,7 @@ prep_args(void *a, size_t a_nbytes, const void *args, size_t args_nbytes, const 
  * @param value The value of the field
  */
 static void
-prep_bits(union xnvme_spec_sqe *sqe, unsigned int cdw, unsigned int bit, unsigned int width,
+prep_bits(union xnvme_cmd_sqe *sqe, unsigned int cdw, unsigned int bit, unsigned int width,
 	  uint64_t value)
 {
 	bit += 32 * cdw;
@@ -105,7 +105,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_adm_delete_io_submission_queue_
 
 int
 xnvme_cmd_prep_adm_delete_io_submission_queue_sized(
-	union xnvme_spec_sqe *sqe,
+	union xnvme_cmd_sqe *sqe,
 	const struct xnvme_cmd_prep_adm_delete_io_submission_queue_args *args, size_t args_nbytes)
 {
 	static const uint16_t rsvd[] = {2, 6};
@@ -130,7 +130,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_adm_create_io_submission_queue_
 
 int
 xnvme_cmd_prep_adm_create_io_submission_queue_sized(
-	union xnvme_spec_sqe *sqe,
+	union xnvme_cmd_sqe *sqe,
 	const struct xnvme_cmd_prep_adm_create_io_submission_queue_args *args, size_t args_nbytes)
 {
 	static const uint16_t rsvd[] = {10, 6};
@@ -166,7 +166,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_adm_get_log_page_args) == 32,
 		    "The record has padding")
 
 int
-xnvme_cmd_prep_adm_get_log_page_sized(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_adm_get_log_page_sized(union xnvme_cmd_sqe *sqe,
 				      const struct xnvme_cmd_prep_adm_get_log_page_args *args,
 				      size_t args_nbytes)
 {
@@ -216,7 +216,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_adm_delete_io_completion_queue_
 
 int
 xnvme_cmd_prep_adm_delete_io_completion_queue_sized(
-	union xnvme_spec_sqe *sqe,
+	union xnvme_cmd_sqe *sqe,
 	const struct xnvme_cmd_prep_adm_delete_io_completion_queue_args *args, size_t args_nbytes)
 {
 	static const uint16_t rsvd[] = {2, 6};
@@ -241,7 +241,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_adm_create_io_completion_queue_
 
 int
 xnvme_cmd_prep_adm_create_io_completion_queue_sized(
-	union xnvme_spec_sqe *sqe,
+	union xnvme_cmd_sqe *sqe,
 	const struct xnvme_cmd_prep_adm_create_io_completion_queue_args *args, size_t args_nbytes)
 {
 	struct xnvme_cmd_prep_adm_create_io_completion_queue_args a = {0};
@@ -275,7 +275,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_adm_identify_args) == 16,
 		    "The record has padding")
 
 int
-xnvme_cmd_prep_adm_identify_sized(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_adm_identify_sized(union xnvme_cmd_sqe *sqe,
 				  const struct xnvme_cmd_prep_adm_identify_args *args,
 				  size_t args_nbytes)
 {
@@ -308,7 +308,7 @@ xnvme_cmd_prep_adm_identify_sized(union xnvme_spec_sqe *sqe,
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_adm_abort_args) == 8, "The record has padding")
 
 int
-xnvme_cmd_prep_adm_abort_sized(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_adm_abort_sized(union xnvme_cmd_sqe *sqe,
 			       const struct xnvme_cmd_prep_adm_abort_args *args,
 			       size_t args_nbytes)
 {
@@ -334,7 +334,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_adm_set_features_args) == 24,
 		    "The record has padding")
 
 int
-xnvme_cmd_prep_adm_set_features_sized(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_adm_set_features_sized(union xnvme_cmd_sqe *sqe,
 				      const struct xnvme_cmd_prep_adm_set_features_args *args,
 				      size_t args_nbytes)
 {
@@ -373,7 +373,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_adm_get_features_args) == 16,
 		    "The record has padding")
 
 int
-xnvme_cmd_prep_adm_get_features_sized(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_adm_get_features_sized(union xnvme_cmd_sqe *sqe,
 				      const struct xnvme_cmd_prep_adm_get_features_args *args,
 				      size_t args_nbytes)
 {
@@ -410,7 +410,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_adm_asynchronous_event_request_
 
 int
 xnvme_cmd_prep_adm_asynchronous_event_request_sized(
-	union xnvme_spec_sqe *sqe,
+	union xnvme_cmd_sqe *sqe,
 	const struct xnvme_cmd_prep_adm_asynchronous_event_request_args *args, size_t args_nbytes)
 {
 	static const uint16_t rsvd[] = {0, 8};
@@ -433,7 +433,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_adm_namespace_management_args) 
 
 int
 xnvme_cmd_prep_adm_namespace_management_sized(
-	union xnvme_spec_sqe *sqe, const struct xnvme_cmd_prep_adm_namespace_management_args *args,
+	union xnvme_cmd_sqe *sqe, const struct xnvme_cmd_prep_adm_namespace_management_args *args,
 	size_t args_nbytes)
 {
 	static const uint16_t rsvd[] = {6, 2};
@@ -464,7 +464,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_adm_firmware_commit_args) == 8,
 
 int
 xnvme_cmd_prep_adm_firmware_commit_sized(
-	union xnvme_spec_sqe *sqe, const struct xnvme_cmd_prep_adm_firmware_commit_args *args,
+	union xnvme_cmd_sqe *sqe, const struct xnvme_cmd_prep_adm_firmware_commit_args *args,
 	size_t args_nbytes)
 {
 	static const uint16_t rsvd[] = {3, 5};
@@ -501,7 +501,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_adm_firmware_image_download_arg
 
 int
 xnvme_cmd_prep_adm_firmware_image_download_sized(
-	union xnvme_spec_sqe *sqe,
+	union xnvme_cmd_sqe *sqe,
 	const struct xnvme_cmd_prep_adm_firmware_image_download_args *args, size_t args_nbytes)
 {
 	struct xnvme_cmd_prep_adm_firmware_image_download_args a = {0};
@@ -526,7 +526,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_adm_device_self_test_args) == 1
 
 int
 xnvme_cmd_prep_adm_device_self_test_sized(
-	union xnvme_spec_sqe *sqe, const struct xnvme_cmd_prep_adm_device_self_test_args *args,
+	union xnvme_cmd_sqe *sqe, const struct xnvme_cmd_prep_adm_device_self_test_args *args,
 	size_t args_nbytes)
 {
 	static const uint16_t rsvd[] = {5, 3, 12, 4};
@@ -557,7 +557,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_adm_namespace_attachment_args) 
 
 int
 xnvme_cmd_prep_adm_namespace_attachment_sized(
-	union xnvme_spec_sqe *sqe, const struct xnvme_cmd_prep_adm_namespace_attachment_args *args,
+	union xnvme_cmd_sqe *sqe, const struct xnvme_cmd_prep_adm_namespace_attachment_args *args,
 	size_t args_nbytes)
 {
 	static const uint16_t rsvd[] = {5, 3};
@@ -586,7 +586,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_adm_keep_alive_args) == 8,
 		    "The record has padding")
 
 int
-xnvme_cmd_prep_adm_keep_alive_sized(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_adm_keep_alive_sized(union xnvme_cmd_sqe *sqe,
 				    const struct xnvme_cmd_prep_adm_keep_alive_args *args,
 				    size_t args_nbytes)
 {
@@ -609,7 +609,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_adm_directive_send_args) == 24,
 		    "The record has padding")
 
 int
-xnvme_cmd_prep_adm_directive_send_sized(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_adm_directive_send_sized(union xnvme_cmd_sqe *sqe,
 					const struct xnvme_cmd_prep_adm_directive_send_args *args,
 					size_t args_nbytes)
 {
@@ -641,7 +641,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_adm_directive_receive_args) == 
 
 int
 xnvme_cmd_prep_adm_directive_receive_sized(
-	union xnvme_spec_sqe *sqe, const struct xnvme_cmd_prep_adm_directive_receive_args *args,
+	union xnvme_cmd_sqe *sqe, const struct xnvme_cmd_prep_adm_directive_receive_args *args,
 	size_t args_nbytes)
 {
 	static const uint16_t rsvd[] = {20, 4};
@@ -672,7 +672,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_adm_virtualization_management_a
 
 int
 xnvme_cmd_prep_adm_virtualization_management_sized(
-	union xnvme_spec_sqe *sqe,
+	union xnvme_cmd_sqe *sqe,
 	const struct xnvme_cmd_prep_adm_virtualization_management_args *args, size_t args_nbytes)
 {
 	static const uint16_t rsvd[] = {6, 2};
@@ -706,7 +706,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_adm_nvme_mi_send_args) == 8,
 		    "The record has padding")
 
 int
-xnvme_cmd_prep_adm_nvme_mi_send_sized(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_adm_nvme_mi_send_sized(union xnvme_cmd_sqe *sqe,
 				      const struct xnvme_cmd_prep_adm_nvme_mi_send_args *args,
 				      size_t args_nbytes)
 {
@@ -730,7 +730,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_adm_nvme_mi_receive_args) == 8,
 
 int
 xnvme_cmd_prep_adm_nvme_mi_receive_sized(
-	union xnvme_spec_sqe *sqe, const struct xnvme_cmd_prep_adm_nvme_mi_receive_args *args,
+	union xnvme_cmd_sqe *sqe, const struct xnvme_cmd_prep_adm_nvme_mi_receive_args *args,
 	size_t args_nbytes)
 {
 	static const uint16_t rsvd[] = {0, 8};
@@ -753,7 +753,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_adm_capacity_management_args) =
 
 int
 xnvme_cmd_prep_adm_capacity_management_sized(
-	union xnvme_spec_sqe *sqe, const struct xnvme_cmd_prep_adm_capacity_management_args *args,
+	union xnvme_cmd_sqe *sqe, const struct xnvme_cmd_prep_adm_capacity_management_args *args,
 	size_t args_nbytes)
 {
 	static const uint16_t rsvd[] = {3, 5};
@@ -785,7 +785,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_adm_discovery_information_manag
 
 int
 xnvme_cmd_prep_adm_discovery_information_management_sized(
-	union xnvme_spec_sqe *sqe,
+	union xnvme_cmd_sqe *sqe,
 	const struct xnvme_cmd_prep_adm_discovery_information_management_args *args,
 	size_t args_nbytes)
 {
@@ -815,8 +815,8 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_adm_fabric_zoning_receive_args)
 
 int
 xnvme_cmd_prep_adm_fabric_zoning_receive_sized(
-	union xnvme_spec_sqe *sqe,
-	const struct xnvme_cmd_prep_adm_fabric_zoning_receive_args *args, size_t args_nbytes)
+	union xnvme_cmd_sqe *sqe, const struct xnvme_cmd_prep_adm_fabric_zoning_receive_args *args,
+	size_t args_nbytes)
 {
 	static const uint16_t rsvd[] = {9, 3};
 	struct xnvme_cmd_prep_adm_fabric_zoning_receive_args a = {0};
@@ -849,7 +849,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_adm_lockdown_args) == 16,
 		    "The record has padding")
 
 int
-xnvme_cmd_prep_adm_lockdown_sized(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_adm_lockdown_sized(union xnvme_cmd_sqe *sqe,
 				  const struct xnvme_cmd_prep_adm_lockdown_args *args,
 				  size_t args_nbytes)
 {
@@ -897,7 +897,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_adm_fabric_zoning_lookup_args) 
 
 int
 xnvme_cmd_prep_adm_fabric_zoning_lookup_sized(
-	union xnvme_spec_sqe *sqe, const struct xnvme_cmd_prep_adm_fabric_zoning_lookup_args *args,
+	union xnvme_cmd_sqe *sqe, const struct xnvme_cmd_prep_adm_fabric_zoning_lookup_args *args,
 	size_t args_nbytes)
 {
 	static const uint16_t rsvd[] = {0, 8};
@@ -921,7 +921,7 @@ XNVME_STATIC_ASSERT(
 
 int
 xnvme_cmd_prep_adm_clear_exported_nvm_resource_configuration_sized(
-	union xnvme_spec_sqe *sqe,
+	union xnvme_cmd_sqe *sqe,
 	const struct xnvme_cmd_prep_adm_clear_exported_nvm_resource_configuration_args *args,
 	size_t args_nbytes)
 {
@@ -945,7 +945,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_adm_fabric_zoning_send_args) ==
 
 int
 xnvme_cmd_prep_adm_fabric_zoning_send_sized(
-	union xnvme_spec_sqe *sqe, const struct xnvme_cmd_prep_adm_fabric_zoning_send_args *args,
+	union xnvme_cmd_sqe *sqe, const struct xnvme_cmd_prep_adm_fabric_zoning_send_args *args,
 	size_t args_nbytes)
 {
 	static const uint16_t rsvd[] = {10, 2};
@@ -985,7 +985,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_adm_manage_exported_nvm_subsyst
 
 int
 xnvme_cmd_prep_adm_manage_exported_nvm_subsystem_receive_sized(
-	union xnvme_spec_sqe *sqe,
+	union xnvme_cmd_sqe *sqe,
 	const struct xnvme_cmd_prep_adm_manage_exported_nvm_subsystem_receive_args *args,
 	size_t args_nbytes)
 {
@@ -1019,7 +1019,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_adm_manage_exported_nvm_subsyst
 
 int
 xnvme_cmd_prep_adm_manage_exported_nvm_subsystem_send_sized(
-	union xnvme_spec_sqe *sqe,
+	union xnvme_cmd_sqe *sqe,
 	const struct xnvme_cmd_prep_adm_manage_exported_nvm_subsystem_send_args *args,
 	size_t args_nbytes)
 {
@@ -1054,7 +1054,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_adm_manage_exported_namespace_a
 
 int
 xnvme_cmd_prep_adm_manage_exported_namespace_sized(
-	union xnvme_spec_sqe *sqe,
+	union xnvme_cmd_sqe *sqe,
 	const struct xnvme_cmd_prep_adm_manage_exported_namespace_args *args, size_t args_nbytes)
 {
 	static const uint16_t rsvd[] = {9, 7};
@@ -1087,7 +1087,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_adm_manage_exported_port_args) 
 
 int
 xnvme_cmd_prep_adm_manage_exported_port_sized(
-	union xnvme_spec_sqe *sqe, const struct xnvme_cmd_prep_adm_manage_exported_port_args *args,
+	union xnvme_cmd_sqe *sqe, const struct xnvme_cmd_prep_adm_manage_exported_port_args *args,
 	size_t args_nbytes)
 {
 	static const uint16_t rsvd[] = {2, 6};
@@ -1113,7 +1113,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_adm_cross_controller_reset_args
 
 int
 xnvme_cmd_prep_adm_cross_controller_reset_sized(
-	union xnvme_spec_sqe *sqe,
+	union xnvme_cmd_sqe *sqe,
 	const struct xnvme_cmd_prep_adm_cross_controller_reset_args *args, size_t args_nbytes)
 {
 	static const uint16_t rsvd[] = {1, 1, 4, 4};
@@ -1141,7 +1141,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_adm_send_discovery_log_page_arg
 
 int
 xnvme_cmd_prep_adm_send_discovery_log_page_sized(
-	union xnvme_spec_sqe *sqe,
+	union xnvme_cmd_sqe *sqe,
 	const struct xnvme_cmd_prep_adm_send_discovery_log_page_args *args, size_t args_nbytes)
 {
 	static const uint16_t rsvd[] = {5, 3, 12, 4};
@@ -1182,7 +1182,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_adm_track_send_args) == 8,
 		    "The record has padding")
 
 int
-xnvme_cmd_prep_adm_track_send_sized(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_adm_track_send_sized(union xnvme_cmd_sqe *sqe,
 				    const struct xnvme_cmd_prep_adm_track_send_args *args,
 				    size_t args_nbytes)
 {
@@ -1209,7 +1209,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_adm_track_receive_args) == 16,
 		    "The record has padding")
 
 int
-xnvme_cmd_prep_adm_track_receive_sized(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_adm_track_receive_sized(union xnvme_cmd_sqe *sqe,
 				       const struct xnvme_cmd_prep_adm_track_receive_args *args,
 				       size_t args_nbytes)
 {
@@ -1236,7 +1236,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_adm_migration_send_args) == 24,
 		    "The record has padding")
 
 int
-xnvme_cmd_prep_adm_migration_send_sized(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_adm_migration_send_sized(union xnvme_cmd_sqe *sqe,
 					const struct xnvme_cmd_prep_adm_migration_send_args *args,
 					size_t args_nbytes)
 {
@@ -1272,7 +1272,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_adm_migration_receive_args) == 
 
 int
 xnvme_cmd_prep_adm_migration_receive_sized(
-	union xnvme_spec_sqe *sqe, const struct xnvme_cmd_prep_adm_migration_receive_args *args,
+	union xnvme_cmd_sqe *sqe, const struct xnvme_cmd_prep_adm_migration_receive_args *args,
 	size_t args_nbytes)
 {
 	static const uint16_t rsvd[] = {12, 4};
@@ -1307,8 +1307,8 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_adm_controller_data_queue_args)
 
 int
 xnvme_cmd_prep_adm_controller_data_queue_sized(
-	union xnvme_spec_sqe *sqe,
-	const struct xnvme_cmd_prep_adm_controller_data_queue_args *args, size_t args_nbytes)
+	union xnvme_cmd_sqe *sqe, const struct xnvme_cmd_prep_adm_controller_data_queue_args *args,
+	size_t args_nbytes)
 {
 	static const uint16_t rsvd[] = {3, 1, 12, 4};
 	struct xnvme_cmd_prep_adm_controller_data_queue_args a = {0};
@@ -1335,7 +1335,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_adm_doorbell_buffer_config_args
 
 int
 xnvme_cmd_prep_adm_doorbell_buffer_config_sized(
-	union xnvme_spec_sqe *sqe,
+	union xnvme_cmd_sqe *sqe,
 	const struct xnvme_cmd_prep_adm_doorbell_buffer_config_args *args, size_t args_nbytes)
 {
 	static const uint16_t rsvd[] = {0, 8};
@@ -1357,7 +1357,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_adm_format_nvm_args) == 16,
 		    "The record has padding")
 
 int
-xnvme_cmd_prep_adm_format_nvm_sized(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_adm_format_nvm_sized(union xnvme_cmd_sqe *sqe,
 				    const struct xnvme_cmd_prep_adm_format_nvm_args *args,
 				    size_t args_nbytes)
 {
@@ -1404,7 +1404,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_adm_security_send_args) == 16,
 		    "The record has padding")
 
 int
-xnvme_cmd_prep_adm_security_send_sized(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_adm_security_send_sized(union xnvme_cmd_sqe *sqe,
 				       const struct xnvme_cmd_prep_adm_security_send_args *args,
 				       size_t args_nbytes)
 {
@@ -1435,7 +1435,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_adm_security_receive_args) == 1
 
 int
 xnvme_cmd_prep_adm_security_receive_sized(
-	union xnvme_spec_sqe *sqe, const struct xnvme_cmd_prep_adm_security_receive_args *args,
+	union xnvme_cmd_sqe *sqe, const struct xnvme_cmd_prep_adm_security_receive_args *args,
 	size_t args_nbytes)
 {
 	static const uint16_t rsvd[] = {12, 4};
@@ -1464,7 +1464,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_adm_sanitize_args) == 16,
 		    "The record has padding")
 
 int
-xnvme_cmd_prep_adm_sanitize_sized(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_adm_sanitize_sized(union xnvme_cmd_sqe *sqe,
 				  const struct xnvme_cmd_prep_adm_sanitize_args *args,
 				  size_t args_nbytes)
 {
@@ -1518,7 +1518,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_adm_load_program_args) == 24,
 		    "The record has padding")
 
 int
-xnvme_cmd_prep_adm_load_program_sized(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_adm_load_program_sized(union xnvme_cmd_sqe *sqe,
 				      const struct xnvme_cmd_prep_adm_load_program_args *args,
 				      size_t args_nbytes)
 {
@@ -1557,7 +1557,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_adm_get_lba_status_args) == 24,
 		    "The record has padding")
 
 int
-xnvme_cmd_prep_adm_get_lba_status_sized(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_adm_get_lba_status_sized(union xnvme_cmd_sqe *sqe,
 					const struct xnvme_cmd_prep_adm_get_lba_status_args *args,
 					size_t args_nbytes)
 {
@@ -1587,7 +1587,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_adm_program_activation_manageme
 
 int
 xnvme_cmd_prep_adm_program_activation_management_sized(
-	union xnvme_spec_sqe *sqe,
+	union xnvme_cmd_sqe *sqe,
 	const struct xnvme_cmd_prep_adm_program_activation_management_args *args,
 	size_t args_nbytes)
 {
@@ -1619,7 +1619,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_adm_memory_range_set_management
 
 int
 xnvme_cmd_prep_adm_memory_range_set_management_sized(
-	union xnvme_spec_sqe *sqe,
+	union xnvme_cmd_sqe *sqe,
 	const struct xnvme_cmd_prep_adm_memory_range_set_management_args *args, size_t args_nbytes)
 {
 	struct xnvme_cmd_prep_adm_memory_range_set_management_args a = {0};
@@ -1650,7 +1650,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_adm_sanitize_namespace_args) ==
 
 int
 xnvme_cmd_prep_adm_sanitize_namespace_sized(
-	union xnvme_spec_sqe *sqe, const struct xnvme_cmd_prep_adm_sanitize_namespace_args *args,
+	union xnvme_cmd_sqe *sqe, const struct xnvme_cmd_prep_adm_sanitize_namespace_args *args,
 	size_t args_nbytes)
 {
 	struct xnvme_cmd_prep_adm_sanitize_namespace_args a = {0};
@@ -1693,7 +1693,7 @@ xnvme_cmd_prep_adm_sanitize_namespace_sized(
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_io_flush_args) == 8, "The record has padding")
 
 int
-xnvme_cmd_prep_io_flush_sized(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_io_flush_sized(union xnvme_cmd_sqe *sqe,
 			      const struct xnvme_cmd_prep_io_flush_args *args, size_t args_nbytes)
 {
 	static const uint16_t rsvd[] = {4, 4};
@@ -1718,7 +1718,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_io_reservation_register_args) =
 
 int
 xnvme_cmd_prep_io_reservation_register_sized(
-	union xnvme_spec_sqe *sqe, const struct xnvme_cmd_prep_io_reservation_register_args *args,
+	union xnvme_cmd_sqe *sqe, const struct xnvme_cmd_prep_io_reservation_register_args *args,
 	size_t args_nbytes)
 {
 	struct xnvme_cmd_prep_io_reservation_register_args a = {0};
@@ -1759,7 +1759,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_io_reservation_report_args) == 
 
 int
 xnvme_cmd_prep_io_reservation_report_sized(
-	union xnvme_spec_sqe *sqe, const struct xnvme_cmd_prep_io_reservation_report_args *args,
+	union xnvme_cmd_sqe *sqe, const struct xnvme_cmd_prep_io_reservation_report_args *args,
 	size_t args_nbytes)
 {
 	static const uint16_t rsvd[] = {10, 6};
@@ -1794,7 +1794,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_io_reservation_acquire_args) ==
 
 int
 xnvme_cmd_prep_io_reservation_acquire_sized(
-	union xnvme_spec_sqe *sqe, const struct xnvme_cmd_prep_io_reservation_acquire_args *args,
+	union xnvme_cmd_sqe *sqe, const struct xnvme_cmd_prep_io_reservation_acquire_args *args,
 	size_t args_nbytes)
 {
 	struct xnvme_cmd_prep_io_reservation_acquire_args a = {0};
@@ -1832,7 +1832,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_io_io_management_receive_args) 
 
 int
 xnvme_cmd_prep_io_io_management_receive_sized(
-	union xnvme_spec_sqe *sqe, const struct xnvme_cmd_prep_io_io_management_receive_args *args,
+	union xnvme_cmd_sqe *sqe, const struct xnvme_cmd_prep_io_io_management_receive_args *args,
 	size_t args_nbytes)
 {
 	static const uint16_t rsvd[] = {7, 1, 12, 4};
@@ -1860,7 +1860,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_io_reservation_release_args) ==
 
 int
 xnvme_cmd_prep_io_reservation_release_sized(
-	union xnvme_spec_sqe *sqe, const struct xnvme_cmd_prep_io_reservation_release_args *args,
+	union xnvme_cmd_sqe *sqe, const struct xnvme_cmd_prep_io_reservation_release_args *args,
 	size_t args_nbytes)
 {
 	struct xnvme_cmd_prep_io_reservation_release_args a = {0};
@@ -1896,7 +1896,7 @@ xnvme_cmd_prep_io_reservation_release_sized(
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_io_cancel_args) == 16, "The record has padding")
 
 int
-xnvme_cmd_prep_io_cancel_sized(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_io_cancel_sized(union xnvme_cmd_sqe *sqe,
 			       const struct xnvme_cmd_prep_io_cancel_args *args,
 			       size_t args_nbytes)
 {
@@ -1929,7 +1929,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_io_io_management_send_args) == 
 
 int
 xnvme_cmd_prep_io_io_management_send_sized(
-	union xnvme_spec_sqe *sqe, const struct xnvme_cmd_prep_io_io_management_send_args *args,
+	union xnvme_cmd_sqe *sqe, const struct xnvme_cmd_prep_io_io_management_send_args *args,
 	size_t args_nbytes)
 {
 	static const uint16_t rsvd[] = {7, 1};
@@ -1958,7 +1958,7 @@ xnvme_cmd_prep_io_io_management_send_sized(
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_nvm_write_args) == 48, "The record has padding")
 
 int
-xnvme_cmd_prep_nvm_write_sized(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_nvm_write_sized(union xnvme_cmd_sqe *sqe,
 			       const struct xnvme_cmd_prep_nvm_write_args *args,
 			       size_t args_nbytes)
 {
@@ -2029,7 +2029,7 @@ xnvme_cmd_prep_nvm_write_sized(union xnvme_spec_sqe *sqe,
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_nvm_read_args) == 48, "The record has padding")
 
 int
-xnvme_cmd_prep_nvm_read_sized(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_nvm_read_sized(union xnvme_cmd_sqe *sqe,
 			      const struct xnvme_cmd_prep_nvm_read_args *args, size_t args_nbytes)
 {
 	static const uint16_t rsvd[] = {4, 4, 21, 1, 25, 1, 36, 4};
@@ -2096,7 +2096,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_nvm_write_uncorrectable_args) =
 
 int
 xnvme_cmd_prep_nvm_write_uncorrectable_sized(
-	union xnvme_spec_sqe *sqe, const struct xnvme_cmd_prep_nvm_write_uncorrectable_args *args,
+	union xnvme_cmd_sqe *sqe, const struct xnvme_cmd_prep_nvm_write_uncorrectable_args *args,
 	size_t args_nbytes)
 {
 	static const uint16_t rsvd[] = {4, 4, 17, 1, 22, 2};
@@ -2127,7 +2127,7 @@ xnvme_cmd_prep_nvm_write_uncorrectable_sized(
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_nvm_compare_args) == 48, "The record has padding")
 
 int
-xnvme_cmd_prep_nvm_compare_sized(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_nvm_compare_sized(union xnvme_cmd_sqe *sqe,
 				 const struct xnvme_cmd_prep_nvm_compare_args *args,
 				 size_t args_nbytes)
 {
@@ -2188,7 +2188,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_nvm_write_zeroes_args) == 48,
 		    "The record has padding")
 
 int
-xnvme_cmd_prep_nvm_write_zeroes_sized(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_nvm_write_zeroes_sized(union xnvme_cmd_sqe *sqe,
 				      const struct xnvme_cmd_prep_nvm_write_zeroes_args *args,
 				      size_t args_nbytes)
 {
@@ -2263,7 +2263,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_nvm_dataset_management_args) ==
 
 int
 xnvme_cmd_prep_nvm_dataset_management_sized(
-	union xnvme_spec_sqe *sqe, const struct xnvme_cmd_prep_nvm_dataset_management_args *args,
+	union xnvme_cmd_sqe *sqe, const struct xnvme_cmd_prep_nvm_dataset_management_args *args,
 	size_t args_nbytes)
 {
 	struct xnvme_cmd_prep_nvm_dataset_management_args a = {0};
@@ -2299,7 +2299,7 @@ xnvme_cmd_prep_nvm_dataset_management_sized(
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_nvm_verify_args) == 48, "The record has padding")
 
 int
-xnvme_cmd_prep_nvm_verify_sized(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_nvm_verify_sized(union xnvme_cmd_sqe *sqe,
 				const struct xnvme_cmd_prep_nvm_verify_args *args,
 				size_t args_nbytes)
 {
@@ -2359,7 +2359,7 @@ xnvme_cmd_prep_nvm_verify_sized(union xnvme_spec_sqe *sqe,
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_nvm_copy_args) == 48, "The record has padding")
 
 int
-xnvme_cmd_prep_nvm_copy_sized(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_nvm_copy_sized(union xnvme_cmd_sqe *sqe,
 			      const struct xnvme_cmd_prep_nvm_copy_args *args, size_t args_nbytes)
 {
 	static const uint16_t rsvd[] = {4, 4, 34, 2};
@@ -2436,7 +2436,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_zns_zone_management_send_args) 
 
 int
 xnvme_cmd_prep_zns_zone_management_send_sized(
-	union xnvme_spec_sqe *sqe, const struct xnvme_cmd_prep_zns_zone_management_send_args *args,
+	union xnvme_cmd_sqe *sqe, const struct xnvme_cmd_prep_zns_zone_management_send_args *args,
 	size_t args_nbytes)
 {
 	static const uint16_t rsvd[] = {4, 4, 20, 4};
@@ -2473,7 +2473,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_zns_zone_management_receive_arg
 
 int
 xnvme_cmd_prep_zns_zone_management_receive_sized(
-	union xnvme_spec_sqe *sqe,
+	union xnvme_cmd_sqe *sqe,
 	const struct xnvme_cmd_prep_zns_zone_management_receive_args *args, size_t args_nbytes)
 {
 	static const uint16_t rsvd[] = {4, 4, 23, 1};
@@ -2506,7 +2506,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_zns_zone_append_args) == 48,
 		    "The record has padding")
 
 int
-xnvme_cmd_prep_zns_zone_append_sized(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_zns_zone_append_sized(union xnvme_cmd_sqe *sqe,
 				     const struct xnvme_cmd_prep_zns_zone_append_args *args,
 				     size_t args_nbytes)
 {
@@ -2579,7 +2579,7 @@ xnvme_cmd_prep_zns_zone_append_sized(union xnvme_spec_sqe *sqe,
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_kv_store_args) == 32, "The record has padding")
 
 int
-xnvme_cmd_prep_kv_store_sized(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_kv_store_sized(union xnvme_cmd_sqe *sqe,
 			      const struct xnvme_cmd_prep_kv_store_args *args, size_t args_nbytes)
 {
 	static const uint16_t rsvd[] = {11, 1, 30, 2};
@@ -2613,7 +2613,7 @@ xnvme_cmd_prep_kv_store_sized(union xnvme_spec_sqe *sqe,
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_kv_retrieve_args) == 32, "The record has padding")
 
 int
-xnvme_cmd_prep_kv_retrieve_sized(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_kv_retrieve_sized(union xnvme_cmd_sqe *sqe,
 				 const struct xnvme_cmd_prep_kv_retrieve_args *args,
 				 size_t args_nbytes)
 {
@@ -2648,7 +2648,7 @@ xnvme_cmd_prep_kv_retrieve_sized(union xnvme_spec_sqe *sqe,
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_kv_list_args) == 32, "The record has padding")
 
 int
-xnvme_cmd_prep_kv_list_sized(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_kv_list_sized(union xnvme_cmd_sqe *sqe,
 			     const struct xnvme_cmd_prep_kv_list_args *args, size_t args_nbytes)
 {
 	static const uint16_t rsvd[] = {25, 7};
@@ -2675,7 +2675,7 @@ xnvme_cmd_prep_kv_list_sized(union xnvme_spec_sqe *sqe,
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_kv_delete_args) == 24, "The record has padding")
 
 int
-xnvme_cmd_prep_kv_delete_sized(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_kv_delete_sized(union xnvme_cmd_sqe *sqe,
 			       const struct xnvme_cmd_prep_kv_delete_args *args,
 			       size_t args_nbytes)
 {
@@ -2702,7 +2702,7 @@ xnvme_cmd_prep_kv_delete_sized(union xnvme_spec_sqe *sqe,
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_kv_exist_args) == 24, "The record has padding")
 
 int
-xnvme_cmd_prep_kv_exist_sized(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_kv_exist_sized(union xnvme_cmd_sqe *sqe,
 			      const struct xnvme_cmd_prep_kv_exist_args *args, size_t args_nbytes)
 {
 	static const uint16_t rsvd[] = {21, 3};

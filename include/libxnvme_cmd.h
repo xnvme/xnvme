@@ -7,6 +7,22 @@
  */
 
 /**
+ * Submission Queue Entry, the 64 bytes of a command
+ *
+ * A command is its opcode and the fields of its dwords. The spec headers name the opcode, such
+ * as XNVME_SPEC_NVM_READ_OPCODE, and each field by a mask of the dword it is in, such as
+ * XNVME_SPEC_NVM_READ_CDW12_NLB. The command preps, xnvme_cmd_prep_*(), fill the dwords of a
+ * command from a record of its fields.
+ *
+ * @union xnvme_cmd_sqe
+ */
+union xnvme_cmd_sqe {
+	uint32_t cdw[16]; ///< The command as dwords 0 to 15, as the specification numbers them
+	struct xnvme_spec_base_common_command_format common; ///< The Common Command Format
+};
+XNVME_STATIC_ASSERT(sizeof(union xnvme_cmd_sqe) == 64, "Incorrect size")
+
+/**
  * Attributes for asynchronous command-contexts
  *
  * @struct xnvme_cmd_ctx_async
@@ -23,9 +39,9 @@ struct xnvme_cmd_ctx_async {
  * @struct xnvme_cmd_ctx
  */
 struct xnvme_cmd_ctx {
-	union xnvme_spec_sqe cmd;         ///< Command to be processed
-	struct xnvme_spec_cqe cpl;        ///< Completion result from processing
-	struct xnvme_dev *dev;            ///< Device associated with the command
+	union xnvme_cmd_sqe cmd;                           ///< Command to be processed
+	struct xnvme_spec_base_completion_queue_entry cpl; ///< Completion result from processing
+	struct xnvme_dev *dev;                             ///< Device associated with the command
 	struct xnvme_cmd_ctx_async async; ///< Fields for command option: XNVME_CMD_ASYNC
 	///< Field containing command-options, the field is initialized by helper-functions
 	uint32_t opts;

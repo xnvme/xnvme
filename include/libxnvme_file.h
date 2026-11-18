@@ -36,7 +36,7 @@ xnvme_file_close(struct xnvme_dev *fh);
  * ::xnvme_queue_get_cmd_ctx.
  *
  * @note Unlike, the pread() syscall, then this function does not return the number of bytes
- * written. To retrieve that information, then inspect the completion-result: 'ctx->cpl.result'.
+ * written. To retrieve that information, then inspect the completion-result: 'ctx->cpl.dw0'.
  *
  * @param ctx Pointer to command context (::xnvme_cmd_ctx)
  * @param buf Pointer to data-payload
@@ -57,7 +57,7 @@ xnvme_file_pread(struct xnvme_cmd_ctx *ctx, void *buf, size_t count, uint64_t of
  * ::xnvme_queue_get_cmd_ctx
  *
  * @note Unlike, the pwrite() syscall, then this function does not return the number of bytes read.
- * To retrieve that information, then inspect the completion-result: 'ctx->cpl.result'.
+ * To retrieve that information, then inspect the completion-result: 'ctx->cpl.dw0'.
  *
  * @param ctx Pointer to command context (::xnvme_cmd_ctx)
  * @param buf Pointer to data-payload

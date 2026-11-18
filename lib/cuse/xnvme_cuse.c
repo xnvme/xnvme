@@ -28,6 +28,7 @@
 
 #include <ufuse.h>
 
+#include <xnvme_cmd.h>
 #include <xnvme_dev.h>
 
 // CUSE never raises max_pages above FUSE_DEFAULT_MAX_PAGES_PER_REQ (32), so the kernel limits each
@@ -66,13 +67,12 @@ cuse_ctx_from_cmd(struct xnvme_dev *dev, const struct nvme_passthru_cmd64 *cmd)
 
 	xnvme_dev_get_cmd_ctx(dev, &ctx);
 
-	ctx.cmd.common.opcode = cmd->opcode;
+	xnvme_cmd_sqe_set_opc(&ctx.cmd, cmd->opcode);
 	ctx.cmd.common.nsid = cmd->nsid;
-	ctx.cmd.common.cdw02 = cmd->cdw2;
-	ctx.cmd.common.cdw03 = cmd->cdw3;
-	ctx.cmd.common.ndt =
-		cmd->cdw10; // cdw10 and cdw11 are 'ndt' and 'ndm' in the common layout
-	ctx.cmd.common.ndm = cmd->cdw11;
+	ctx.cmd.common.cdw2 = cmd->cdw2;
+	ctx.cmd.common.cdw3 = cmd->cdw3;
+	ctx.cmd.common.cdw10 = cmd->cdw10;
+	ctx.cmd.common.cdw11 = cmd->cdw11;
 	ctx.cmd.common.cdw12 = cmd->cdw12;
 	ctx.cmd.common.cdw13 = cmd->cdw13;
 	ctx.cmd.common.cdw14 = cmd->cdw14;
@@ -167,9 +167,9 @@ cuse_passthru(const struct ufuse_req *req, struct xnvme_dev *dev, const struct f
 	memcpy(reply, &cmd, cmd_nbytes);
 	// The 32-bit 'result' truncates to cdw0, as the kernel driver's does
 	if (cmd_nbytes == sizeof(struct nvme_passthru_cmd)) {
-		((struct nvme_passthru_cmd *)reply)->result = ctx.cpl.result;
+		((struct nvme_passthru_cmd *)reply)->result = xnvme_cmd_cpl_get_dw0_1(&ctx.cpl);
 	} else {
-		((struct nvme_passthru_cmd64 *)reply)->result = ctx.cpl.result;
+		((struct nvme_passthru_cmd64 *)reply)->result = xnvme_cmd_cpl_get_dw0_1(&ctx.cpl);
 	}
 	if (cmd.data_len) {
 		memcpy(reply + cmd_nbytes, dbuf, cmd.data_len);
@@ -305,7 +305,7 @@ cuse_passthru_vec(const struct ufuse_req *req, struct xnvme_dev *dev,
 		goto exit;
 	}
 	memcpy(reply, buf, meta_off);
-	((struct nvme_passthru_cmd64 *)reply)->result = ctx.cpl.result;
+	((struct nvme_passthru_cmd64 *)reply)->result = xnvme_cmd_cpl_get_dw0_1(&ctx.cpl);
 	if (cmd->metadata_len) {
 		memcpy(reply + meta_off, mbuf, cmd->metadata_len);
 	}

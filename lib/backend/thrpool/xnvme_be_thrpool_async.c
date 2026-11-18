@@ -157,9 +157,11 @@ _thrpool_thread_loop(void *arg)
 		if (err) {
 			if (!xnvme_cmd_ctx_cpl_status(entry->ctx)) {
 				entry->ctx->cpl.status = xnvme_bits_set(
-					entry->ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC, -err);
+					entry->ctx->cpl.status,
+					XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SC, -err);
 				entry->ctx->cpl.status = xnvme_bits_set(
-					entry->ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT,
+					entry->ctx->cpl.status,
+					XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SCT,
 					XNVME_STATUS_CODE_TYPE_VENDOR);
 			}
 			XNVME_DEBUG("FAILED: sync.cmd_io{v}(), err: %d", err);

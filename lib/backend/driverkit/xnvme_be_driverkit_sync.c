@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <libxnvme.h>
+#include <xnvme_cmd.h>
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
 #ifdef XNVME_BE_DRIVERKIT_ENABLED
@@ -26,21 +27,23 @@ cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf, si
 
 	cmd.queue_id = state->qid_sync;
 
-	switch (ctx->cmd.common.opcode) {
-	case XNVME_SPEC_NVM_OPC_READ:
+	switch (xnvme_cmd_sqe_get_opc(&ctx->cmd)) {
+	case XNVME_SPEC_NVM_READ_OPCODE:
 		break;
 
 	case XNVME_SPEC_FS_OPC_READ:
-		ctx->cmd.nvm.slba = ctx->cmd.nvm.slba >> ctx->dev->geo.ssw;
-		ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_READ;
+		xnvme_cmd_sqe_set_cdw10_11(&ctx->cmd, xnvme_cmd_sqe_get_cdw10_11(&ctx->cmd) >>
+							      ctx->dev->geo.ssw);
+		xnvme_cmd_sqe_set_opc(&ctx->cmd, XNVME_SPEC_NVM_READ_OPCODE);
 		break;
 
-	case XNVME_SPEC_NVM_OPC_WRITE:
+	case XNVME_SPEC_NVM_WRITE_OPCODE:
 		break;
 
 	case XNVME_SPEC_FS_OPC_WRITE:
-		ctx->cmd.nvm.slba = ctx->cmd.nvm.slba >> ctx->dev->geo.ssw;
-		ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_WRITE;
+		xnvme_cmd_sqe_set_cdw10_11(&ctx->cmd, xnvme_cmd_sqe_get_cdw10_11(&ctx->cmd) >>
+							      ctx->dev->geo.ssw);
+		xnvme_cmd_sqe_set_opc(&ctx->cmd, XNVME_SPEC_NVM_WRITE_OPCODE);
 		break;
 	}
 
@@ -70,7 +73,7 @@ cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf, si
 		XNVME_DEBUG("INFO: buf token: %llx: %llx, %llx", (uint64_t)buf->vaddr,
 			    (uint64_t)mbuf, cmd.mbuf_offset);
 	}
-	memcpy(cmd.cmd, &ctx->cmd, sizeof(union xnvme_spec_sqe));
+	memcpy(cmd.cmd, &ctx->cmd, sizeof(union xnvme_cmd_sqe));
 
 	ret = IOConnectCallStructMethod(state->ctrlr->device_connection, NVME_ONESHOT, &cmd,
 					sizeof(NvmeSubmitCmd), &cmd_return, &output_cnt);
@@ -80,7 +83,7 @@ cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf, si
 			    ret, mach_error_string(ret));
 		return -EIO;
 	}
-	memcpy(cmd.cpl, &ctx->cpl, sizeof(struct xnvme_spec_cqe));
+	memcpy(cmd.cpl, &ctx->cpl, sizeof(struct xnvme_spec_base_completion_queue_entry));
 
 	return 0;
 }

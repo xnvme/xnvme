@@ -19,9 +19,9 @@ xnvme_cmd_ctx_pr(const struct xnvme_cmd_ctx *ctx, int XNVME_UNUSED(opts))
 		return;
 	}
 
-	printf("{cdw0: 0x%" PRIx32 ", sc: 0x%" PRIx64 ", sct: 0x%" PRIx64 "}\n", ctx->cpl.cdw0,
-	       xnvme_bits_get(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC),
-	       xnvme_bits_get(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT));
+	printf("{cdw0: 0x%" PRIx32 ", sc: 0x%" PRIx64 ", sct: 0x%" PRIx64 "}\n", ctx->cpl.dw0,
+	       xnvme_bits_get(ctx->cpl.status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SC),
+	       xnvme_bits_get(ctx->cpl.status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SCT));
 }
 
 void
@@ -45,8 +45,8 @@ xnvme_cmd_ctx_get_data(const struct xnvme_cmd_ctx *ctx)
 int
 xnvme_cmd_ctx_cpl_status(const struct xnvme_cmd_ctx *ctx)
 {
-	return xnvme_bits_get(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC) ||
-	       xnvme_bits_get(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT);
+	return xnvme_bits_get(ctx->cpl.status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SC) ||
+	       xnvme_bits_get(ctx->cpl.status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SCT);
 }
 
 int

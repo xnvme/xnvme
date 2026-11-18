@@ -171,10 +171,13 @@ submit_io(struct xnvmeperf_job *job, struct xnvme_cmd_ctx *ctx)
 		ctx->async.cb_arg = &job->brefs[slot];
 	}
 
-	ctx->cmd.common.opcode = job->opcode;
+	ctx->cmd.common.cdw0 = xnvme_bits_set(
+		ctx->cmd.common.cdw0, XNVME_SPEC_BASE_COMMON_COMMAND_FORMAT_CDW0_OPC, job->opcode);
 	ctx->cmd.common.nsid = job->nsid;
-	ctx->cmd.nvm.nlb = job->nlb - 1;
-	ctx->cmd.nvm.slba = slba;
+	ctx->cmd.common.cdw12 = xnvme_bits_set(ctx->cmd.common.cdw12,
+					       XNVME_SPEC_NVM_WRITE_CDW12_NLB, job->nlb - 1);
+	ctx->cmd.common.cdw10 = (uint32_t)(slba);
+	ctx->cmd.common.cdw11 = (uint32_t)((slba) >> 32);
 
 	err = xnvme_cmd_pass(ctx, buf, (job->nbytes * job->nlb), job->mbuf, job->mbuf_nbytes);
 	if (!err) {
@@ -195,8 +198,8 @@ submit_io(struct xnvmeperf_job *job, struct xnvme_cmd_ctx *ctx)
 static bool
 refuses_metadata(uint16_t status)
 {
-	uint64_t sct = xnvme_bits_get(status, XNVME_SPEC_CQE_STATUS_SCT);
-	uint64_t sc = xnvme_bits_get(status, XNVME_SPEC_CQE_STATUS_SC);
+	uint64_t sct = xnvme_bits_get(status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SCT);
+	uint64_t sc = xnvme_bits_get(status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SC);
 
 	if (sct == XNVME_STATUS_CODE_TYPE_VENDOR) {
 		return sc == ENOTSUP || sc == ENOSYS;
@@ -465,11 +468,11 @@ setup_job(struct xnvmeperf_job *job, struct xnvme_dev *dev, struct xnvmeperf_arg
 	switch (job->args->pattern) {
 	case IOPATTERN_READ:
 	case IOPATTERN_RANDREAD:
-		job->opcode = XNVME_SPEC_NVM_OPC_READ;
+		job->opcode = XNVME_SPEC_NVM_READ_OPCODE;
 		break;
 	case IOPATTERN_WRITE:
 	case IOPATTERN_RANDWRITE:
-		job->opcode = XNVME_SPEC_NVM_OPC_WRITE;
+		job->opcode = XNVME_SPEC_NVM_WRITE_OPCODE;
 		break;
 	case IOPATTERN_VERIFY:
 		// skip as opcode is set manually
@@ -1343,7 +1346,7 @@ xnvmeperf_verify(struct xnvmeperf_args *args)
 		}
 
 		// Phase 1: Write known patterns
-		job.opcode = XNVME_SPEC_NVM_OPC_WRITE;
+		job.opcode = XNVME_SPEC_NVM_WRITE_OPCODE;
 		job.buf = write_buf;
 		job.mbuf = write_mbuf;
 		job.offset = 0;
@@ -1438,7 +1441,7 @@ without_metadata:
 		}
 
 		// Phase 2: Read back and verify
-		job.opcode = XNVME_SPEC_NVM_OPC_READ;
+		job.opcode = XNVME_SPEC_NVM_READ_OPCODE;
 		job.buf = read_buf;
 		job.mbuf = read_mbuf;
 		job.offset = 0;

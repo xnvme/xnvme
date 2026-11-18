@@ -31,7 +31,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_prep_adm_identify_args) % 8 == 0,
 static int
 sub_fields(struct xnvme_cli *XNVME_UNUSED(cli))
 {
-	union xnvme_spec_sqe sqe;
+	union xnvme_cmd_sqe sqe;
 	int err = 0;
 
 	struct xnvme_cmd_prep_nvm_read_args rd = {
@@ -122,7 +122,7 @@ static int
 sub_conditions(struct xnvme_cli *XNVME_UNUSED(cli))
 {
 	struct xnvme_cmd_prep_nvm_read_args rd = {.nsid = 1};
-	union xnvme_spec_sqe sqe;
+	union xnvme_cmd_sqe sqe;
 	int err = 0;
 
 	// CDW13 is DSM when CETYPE is zero, and CEV otherwise
@@ -140,7 +140,7 @@ sub_conditions(struct xnvme_cli *XNVME_UNUSED(cli))
 static int
 sub_ranges(struct xnvme_cli *XNVME_UNUSED(cli))
 {
-	union xnvme_spec_sqe sqe;
+	union xnvme_cmd_sqe sqe;
 	int err = 0;
 
 	struct xnvme_cmd_prep_nvm_read_args rd = {.prinfo = 0x10};
@@ -166,7 +166,7 @@ sub_sizes(struct xnvme_cli *XNVME_UNUSED(cli))
 		struct xnvme_cmd_prep_adm_get_log_page_args args;
 		uint64_t more;
 	} newer = {lp, 0};
-	union xnvme_spec_sqe sqe;
+	union xnvme_cmd_sqe sqe;
 	int err = 0;
 
 	CHECK(xnvme_cmd_prep_adm_get_log_page(NULL, &lp) == -EINVAL);

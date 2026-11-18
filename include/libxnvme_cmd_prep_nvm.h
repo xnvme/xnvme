@@ -84,7 +84,7 @@ struct xnvme_cmd_prep_nvm_write_args {
  * @errno
  */
 int
-xnvme_cmd_prep_nvm_write_sized(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_nvm_write_sized(union xnvme_cmd_sqe *sqe,
 			       const struct xnvme_cmd_prep_nvm_write_args *args,
 			       size_t args_nbytes);
 
@@ -97,7 +97,7 @@ xnvme_cmd_prep_nvm_write_sized(union xnvme_spec_sqe *sqe,
  * @return The return value of xnvme_cmd_prep_nvm_write_sized()
  */
 static inline int
-xnvme_cmd_prep_nvm_write(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_nvm_write(union xnvme_cmd_sqe *sqe,
 			 const struct xnvme_cmd_prep_nvm_write_args *args)
 {
 	return xnvme_cmd_prep_nvm_write_sized(sqe, args, sizeof(*args));
@@ -163,7 +163,7 @@ struct xnvme_cmd_prep_nvm_read_args {
  * @errno
  */
 int
-xnvme_cmd_prep_nvm_read_sized(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_nvm_read_sized(union xnvme_cmd_sqe *sqe,
 			      const struct xnvme_cmd_prep_nvm_read_args *args, size_t args_nbytes);
 
 /**
@@ -175,7 +175,7 @@ xnvme_cmd_prep_nvm_read_sized(union xnvme_spec_sqe *sqe,
  * @return The return value of xnvme_cmd_prep_nvm_read_sized()
  */
 static inline int
-xnvme_cmd_prep_nvm_read(union xnvme_spec_sqe *sqe, const struct xnvme_cmd_prep_nvm_read_args *args)
+xnvme_cmd_prep_nvm_read(union xnvme_cmd_sqe *sqe, const struct xnvme_cmd_prep_nvm_read_args *args)
 {
 	return xnvme_cmd_prep_nvm_read_sized(sqe, args, sizeof(*args));
 }
@@ -227,7 +227,7 @@ struct xnvme_cmd_prep_nvm_write_uncorrectable_args {
  */
 int
 xnvme_cmd_prep_nvm_write_uncorrectable_sized(
-	union xnvme_spec_sqe *sqe, const struct xnvme_cmd_prep_nvm_write_uncorrectable_args *args,
+	union xnvme_cmd_sqe *sqe, const struct xnvme_cmd_prep_nvm_write_uncorrectable_args *args,
 	size_t args_nbytes);
 
 /**
@@ -241,7 +241,7 @@ xnvme_cmd_prep_nvm_write_uncorrectable_sized(
  */
 static inline int
 xnvme_cmd_prep_nvm_write_uncorrectable(
-	union xnvme_spec_sqe *sqe, const struct xnvme_cmd_prep_nvm_write_uncorrectable_args *args)
+	union xnvme_cmd_sqe *sqe, const struct xnvme_cmd_prep_nvm_write_uncorrectable_args *args)
 {
 	return xnvme_cmd_prep_nvm_write_uncorrectable_sized(sqe, args, sizeof(*args));
 }
@@ -304,7 +304,7 @@ struct xnvme_cmd_prep_nvm_compare_args {
  * @errno
  */
 int
-xnvme_cmd_prep_nvm_compare_sized(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_nvm_compare_sized(union xnvme_cmd_sqe *sqe,
 				 const struct xnvme_cmd_prep_nvm_compare_args *args,
 				 size_t args_nbytes);
 
@@ -317,7 +317,7 @@ xnvme_cmd_prep_nvm_compare_sized(union xnvme_spec_sqe *sqe,
  * @return The return value of xnvme_cmd_prep_nvm_compare_sized()
  */
 static inline int
-xnvme_cmd_prep_nvm_compare(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_nvm_compare(union xnvme_cmd_sqe *sqe,
 			   const struct xnvme_cmd_prep_nvm_compare_args *args)
 {
 	return xnvme_cmd_prep_nvm_compare_sized(sqe, args, sizeof(*args));
@@ -384,7 +384,7 @@ struct xnvme_cmd_prep_nvm_write_zeroes_args {
  * @errno
  */
 int
-xnvme_cmd_prep_nvm_write_zeroes_sized(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_nvm_write_zeroes_sized(union xnvme_cmd_sqe *sqe,
 				      const struct xnvme_cmd_prep_nvm_write_zeroes_args *args,
 				      size_t args_nbytes);
 
@@ -398,7 +398,7 @@ xnvme_cmd_prep_nvm_write_zeroes_sized(union xnvme_spec_sqe *sqe,
  * @return The return value of xnvme_cmd_prep_nvm_write_zeroes_sized()
  */
 static inline int
-xnvme_cmd_prep_nvm_write_zeroes(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_nvm_write_zeroes(union xnvme_cmd_sqe *sqe,
 				const struct xnvme_cmd_prep_nvm_write_zeroes_args *args)
 {
 	return xnvme_cmd_prep_nvm_write_zeroes_sized(sqe, args, sizeof(*args));
@@ -447,7 +447,7 @@ struct xnvme_cmd_prep_nvm_dataset_management_args {
  */
 int
 xnvme_cmd_prep_nvm_dataset_management_sized(
-	union xnvme_spec_sqe *sqe, const struct xnvme_cmd_prep_nvm_dataset_management_args *args,
+	union xnvme_cmd_sqe *sqe, const struct xnvme_cmd_prep_nvm_dataset_management_args *args,
 	size_t args_nbytes);
 
 /**
@@ -461,7 +461,7 @@ xnvme_cmd_prep_nvm_dataset_management_sized(
  */
 static inline int
 xnvme_cmd_prep_nvm_dataset_management(
-	union xnvme_spec_sqe *sqe, const struct xnvme_cmd_prep_nvm_dataset_management_args *args)
+	union xnvme_cmd_sqe *sqe, const struct xnvme_cmd_prep_nvm_dataset_management_args *args)
 {
 	return xnvme_cmd_prep_nvm_dataset_management_sized(sqe, args, sizeof(*args));
 }
@@ -524,7 +524,7 @@ struct xnvme_cmd_prep_nvm_verify_args {
  * @errno
  */
 int
-xnvme_cmd_prep_nvm_verify_sized(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_nvm_verify_sized(union xnvme_cmd_sqe *sqe,
 				const struct xnvme_cmd_prep_nvm_verify_args *args,
 				size_t args_nbytes);
 
@@ -537,7 +537,7 @@ xnvme_cmd_prep_nvm_verify_sized(union xnvme_spec_sqe *sqe,
  * @return The return value of xnvme_cmd_prep_nvm_verify_sized()
  */
 static inline int
-xnvme_cmd_prep_nvm_verify(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_nvm_verify(union xnvme_cmd_sqe *sqe,
 			  const struct xnvme_cmd_prep_nvm_verify_args *args)
 {
 	return xnvme_cmd_prep_nvm_verify_sized(sqe, args, sizeof(*args));
@@ -604,7 +604,7 @@ struct xnvme_cmd_prep_nvm_copy_args {
  * @errno
  */
 int
-xnvme_cmd_prep_nvm_copy_sized(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_nvm_copy_sized(union xnvme_cmd_sqe *sqe,
 			      const struct xnvme_cmd_prep_nvm_copy_args *args, size_t args_nbytes);
 
 /**
@@ -616,7 +616,7 @@ xnvme_cmd_prep_nvm_copy_sized(union xnvme_spec_sqe *sqe,
  * @return The return value of xnvme_cmd_prep_nvm_copy_sized()
  */
 static inline int
-xnvme_cmd_prep_nvm_copy(union xnvme_spec_sqe *sqe, const struct xnvme_cmd_prep_nvm_copy_args *args)
+xnvme_cmd_prep_nvm_copy(union xnvme_cmd_sqe *sqe, const struct xnvme_cmd_prep_nvm_copy_args *args)
 {
 	return xnvme_cmd_prep_nvm_copy_sized(sqe, args, sizeof(*args));
 }
