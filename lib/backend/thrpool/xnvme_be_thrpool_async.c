@@ -145,6 +145,7 @@ _thrpool_thread_loop(void *arg)
 			XNVME_DEBUG("FAILED: pthread_mutex_unlock()");
 		}
 
+		entry->ctx->cpl.status = 0;
 		err = entry->is_vectored
 			      ? queue->base.dev->be.sync.cmd_iov(
 					entry->ctx, entry->data, entry->data_vec_cnt,
@@ -154,9 +155,12 @@ _thrpool_thread_loop(void *arg)
 								entry->meta_nbytes);
 		///< On submission-error; ctx.cpl is not filled, thus assigned below
 		if (err) {
-			if (!xnvme_bits_get(entry->ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC)) {
+			if (!xnvme_cmd_ctx_cpl_status(entry->ctx)) {
 				entry->ctx->cpl.status = xnvme_bits_set(
-					entry->ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC, err);
+					entry->ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC, -err);
+				entry->ctx->cpl.status = xnvme_bits_set(
+					entry->ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT,
+					XNVME_STATUS_CODE_TYPE_VENDOR);
 			}
 			XNVME_DEBUG("FAILED: sync.cmd_io{v}(), err: %d", err);
 		}
