@@ -134,6 +134,19 @@ xnvme_be_linux_nvme_map_cpl(struct xnvme_cmd_ctx *ctx, unsigned long ioctl_req, 
 	return 0;
 }
 
+void
+xnvme_be_linux_nvme_map_errno(struct xnvme_cmd_ctx *ctx, int err)
+{
+	ctx->cpl.result = 0;
+	ctx->cpl.sqhd = 0;
+	ctx->cpl.sqid = 0;
+	ctx->cpl.cid = 0;
+	ctx->cpl.status = 0;
+	ctx->cpl.status = xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC, err & 0xFF);
+	ctx->cpl.status = xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT,
+					 XNVME_STATUS_CODE_TYPE_VENDOR);
+}
+
 int
 xnvme_be_linux_nvme_ioctl(struct xnvme_dev *dev, unsigned long ioctl_req,
 			  struct xnvme_cmd_ctx *ctx)
@@ -150,15 +163,11 @@ xnvme_be_linux_nvme_ioctl(struct xnvme_dev *dev, unsigned long ioctl_req,
 
 	if ((err == -1) && errno) {
 		XNVME_DEBUG("INFO: retconv: -1 and set errno")
-		if (xnvme_be_linux_nvme_map_cpl(ctx, ioctl_req, errno)) {
-			XNVME_DEBUG("FAILED: xnvme_be_linux_nvme_map_cpl(errno:%d)", errno);
-		}
+		xnvme_be_linux_nvme_map_errno(ctx, errno);
 		return -errno;
 	} else if (err < 0) {
 		XNVME_DEBUG("INFO: retconv: -errno; unexpected ioctl() return-val convention.")
-		if (xnvme_be_linux_nvme_map_cpl(ctx, ioctl_req, err)) {
-			XNVME_DEBUG("FAILED: xnvme_be_linux_nvme_map_cpl(err:%d)", err);
-		}
+		xnvme_be_linux_nvme_map_errno(ctx, -err);
 		return err;
 	}
 
