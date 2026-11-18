@@ -89,7 +89,7 @@ xnvme_dev_get_geo(const struct xnvme_dev *dev);
  * @return On success, pointer to namespace structure. On error, NULL is
  * returned and `errno` is set to indicate the error
  */
-const struct xnvme_spec_idfy_ctrlr *
+const struct xnvme_spec_base_identify_controller *
 xnvme_dev_get_ctrlr(const struct xnvme_dev *dev);
 
 /**
@@ -101,7 +101,7 @@ xnvme_dev_get_ctrlr(const struct xnvme_dev *dev);
  * @return On success, pointer to namespace structure. On error, NULL is
  * returned and `errno` is set to indicate the error
  */
-const struct xnvme_spec_idfy_ctrlr *
+const struct xnvme_spec_base_identify_controller *
 xnvme_dev_get_ctrlr_css(const struct xnvme_dev *dev);
 
 /**
@@ -113,7 +113,7 @@ xnvme_dev_get_ctrlr_css(const struct xnvme_dev *dev);
  * @return On success, pointer to namespace structure. On error, NULL is
  * returned and `errno` is set to indicate the error
  */
-const struct xnvme_spec_idfy_ns *
+const struct xnvme_spec_nvm_identify_namespace *
 xnvme_dev_get_ns(const struct xnvme_dev *dev);
 
 /**
@@ -125,7 +125,7 @@ xnvme_dev_get_ns(const struct xnvme_dev *dev);
  * @return On success, pointer to namespace structure. On error, NULL is
  * returned and `errno` is set to indicate the error
  */
-const struct xnvme_spec_idfy_ns *
+const struct xnvme_spec_nvm_identify_namespace *
 xnvme_dev_get_ns_css(const struct xnvme_dev *dev);
 
 /**

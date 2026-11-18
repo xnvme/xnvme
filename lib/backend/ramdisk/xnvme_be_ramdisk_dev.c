@@ -66,7 +66,7 @@ xnvme_be_ramdisk_dev_open(struct xnvme_dev *dev)
 	}
 
 	dev->ident.dtype = XNVME_DEV_TYPE_RAMDISK;
-	dev->ident.csi = XNVME_SPEC_CSI_NVM;
+	dev->ident.csi = XNVME_SPEC_ADMIN_IDENTIFY_CDW11_CSI_NVM_COMMAND_SET;
 	dev->ident.nsid = 1;
 
 	return 0;

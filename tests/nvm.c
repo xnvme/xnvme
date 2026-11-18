@@ -12,7 +12,7 @@ enumerate_cb(struct xnvme_dev *dev, void *cb_args)
 	const struct xnvme_ident *ident;
 
 	ident = xnvme_dev_get_ident(dev);
-	if (ident->csi != XNVME_SPEC_CSI_NVM) {
+	if (ident->csi != XNVME_SPEC_ADMIN_IDENTIFY_CDW11_CSI_NVM_COMMAND_SET) {
 		return XNVME_ENUMERATE_DEV_CLOSE;
 	}
 
@@ -79,7 +79,7 @@ sub_idfy(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
 	struct xnvme_cmd_ctx ctx = {0};
-	union xnvme_spec_idfy *idfy = NULL;
+	struct xnvme_spec_nvm_identify_namespace *idfy = NULL;
 	uint32_t nsid = xnvme_dev_get_nsid(cli->args.dev);
 	int err;
 
@@ -97,7 +97,7 @@ sub_idfy(struct xnvme_cli *cli)
 	struct xnvme_cmd_prep_adm_identify_args args = {
 		.args_nbytes = sizeof(args),
 		.nsid = nsid ? nsid : xnvme_dev_get_nsid(dev),
-		.cns = XNVME_SPEC_IDFY_NS,
+		.cns = XNVME_SPEC_ADMIN_IDENTIFY_CDW10_CNS_NVM_COMMAND_SET_IDENTIFY_NAMESPACE_DATA_STRUCTURE,
 	};
 
 	err = xnvme_cmd_prep_adm_identify(&ctx.cmd, &args);
@@ -111,7 +111,7 @@ sub_idfy(struct xnvme_cli *cli)
 		goto exit;
 	}
 
-	xnvme_spec_idfy_ns_pr(&idfy->ns, XNVME_PR_DEF);
+	xnvme_spec_idfy_ns_pr(idfy, XNVME_PR_DEF);
 
 	if (cli->args.data_output) {
 		xnvme_cli_pinf("Dumping to: '%s'", cli->args.data_output);
@@ -765,12 +765,12 @@ sub_write_read_pi(struct xnvme_cli *cli)
 	case XNVME_PI_TYPE1:
 	case XNVME_PI_TYPE2:
 		switch (geo->pi_format) {
-		case XNVME_SPEC_NVM_NS_16B_GUARD:
+		case XNVME_SPEC_NVM_EXTENDED_LBA_FORMAT_PIF_16B_GUARD_PROTECTION_INFORMATION:
 			if (prchk & XNVME_PI_FLAGS_REFTAG_CHECK) {
 				wargs.lbtl = (uint32_t)slba;
 			}
 			break;
-		case XNVME_SPEC_NVM_NS_64B_GUARD:
+		case XNVME_SPEC_NVM_EXTENDED_LBA_FORMAT_PIF_64B_GUARD_PROTECTION_INFORMATION:
 			if (prchk & XNVME_PI_FLAGS_REFTAG_CHECK) {
 				wargs.lbtl = (uint32_t)slba;
 				wargs.lbtu = (uint64_t)((slba >> 32) & 0xffff) << 32;

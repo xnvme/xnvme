@@ -145,14 +145,14 @@ xnvme_be_freebsd_dev_open(struct xnvme_dev *dev)
 							       &state->ctrlr_fd)) {
 			XNVME_DEBUG("INFO: open() : assuming it is an NVMe controller");
 			dev->ident.dtype = XNVME_DEV_TYPE_NVME_CONTROLLER;
-			dev->ident.csi = XNVME_SPEC_CSI_NVM;
+			dev->ident.csi = XNVME_SPEC_ADMIN_IDENTIFY_CDW11_CSI_NVM_COMMAND_SET;
 			dev->ident.nsid = 0;
 			state->ctrlr_fd = state->posix.fd;
 		}
 
 		XNVME_DEBUG("INFO: open() : responds like an NVMe namespace");
 		dev->ident.dtype = XNVME_DEV_TYPE_NVME_NAMESPACE;
-		dev->ident.csi = XNVME_SPEC_CSI_NVM;
+		dev->ident.csi = XNVME_SPEC_ADMIN_IDENTIFY_CDW11_CSI_NVM_COMMAND_SET;
 		break;
 
 	default:
