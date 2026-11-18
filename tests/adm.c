@@ -175,7 +175,7 @@ sub_log_health(struct xnvme_cli *cli)
 	struct xnvme_cmd_ctx ctx = {0};
 	uint32_t nsid = cli->args.nsid;
 
-	struct xnvme_spec_log_health_entry *log = NULL;
+	struct xnvme_spec_base_log_smart_health_information *log = NULL;
 	const size_t log_nbytes = sizeof(*log);
 	int err;
 
@@ -204,7 +204,7 @@ sub_log_health(struct xnvme_cli *cli)
 	struct xnvme_cmd_prep_adm_get_log_page_args args = {
 		.args_nbytes = sizeof(args),
 		.nsid = nsid,
-		.lid = XNVME_SPEC_LOG_HEALTH,
+		.lid = XNVME_SPEC_BASE_LOG_PAGE_SMART_HEALTH_INFORMATION,
 	};
 
 	err = get_log_page(&ctx, &args, log, log_nbytes);
@@ -230,7 +230,7 @@ sub_log_erri(struct xnvme_cli *cli)
 	struct xnvme_cmd_ctx ctx = {0};
 	uint32_t limit = cli->args.limit;
 
-	struct xnvme_spec_log_erri_entry *log = NULL;
+	struct xnvme_spec_base_error_information_log_entry *log = NULL;
 	uint32_t log_nentries = 0;
 	uint32_t log_nbytes = 0;
 	int err;
@@ -262,7 +262,7 @@ sub_log_erri(struct xnvme_cli *cli)
 	struct xnvme_cmd_prep_adm_get_log_page_args args = {
 		.args_nbytes = sizeof(args),
 		.nsid = 0xFFFFFFFF,
-		.lid = XNVME_SPEC_LOG_ERRI,
+		.lid = XNVME_SPEC_BASE_LOG_PAGE_ERROR_INFORMATION,
 	};
 
 	err = get_log_page(&ctx, &args, log, log_nbytes);
@@ -289,7 +289,7 @@ sub_log_sanitize(struct xnvme_cli *cli)
 	struct xnvme_cmd_ctx ctx = {0};
 	uint32_t nsid = cli->args.nsid;
 
-	struct xnvme_spec_log_sanitize_entry *log = NULL;
+	struct xnvme_spec_base_log_sanitize_status *log = NULL;
 	const size_t log_nbytes = sizeof(*log);
 	int err;
 
@@ -317,7 +317,7 @@ sub_log_sanitize(struct xnvme_cli *cli)
 	struct xnvme_cmd_prep_adm_get_log_page_args args = {
 		.args_nbytes = sizeof(args),
 		.nsid = nsid,
-		.lid = XNVME_SPEC_LOG_SANITIZE,
+		.lid = XNVME_SPEC_BASE_LOG_PAGE_SANITIZE_STATUS,
 	};
 
 	err = get_log_page(&ctx, &args, log, log_nbytes);
@@ -344,7 +344,7 @@ sub_log_fdp_config(struct xnvme_cli *cli)
 	uint32_t nsid = cli->args.nsid;
 	uint32_t egi = cli->args.lsi;
 
-	struct xnvme_spec_log_fdp_conf *log = NULL;
+	struct xnvme_spec_base_log_fdp_configurations *log = NULL;
 	uint32_t log_nbytes = cli->args.data_nbytes;
 	int err;
 
@@ -377,7 +377,7 @@ sub_log_fdp_config(struct xnvme_cli *cli)
 	struct xnvme_cmd_prep_adm_get_log_page_args args = {
 		.args_nbytes = sizeof(args),
 		.nsid = nsid,
-		.lid = XNVME_SPEC_LOG_FDPCONF,
+		.lid = XNVME_SPEC_BASE_LOG_PAGE_FDP_CONFIGURATIONS,
 		.lsi = egi,
 	};
 
@@ -406,7 +406,7 @@ sub_log_ruhu(struct xnvme_cli *cli)
 	uint32_t nsid = cli->args.nsid;
 	uint32_t egi = cli->args.lsi;
 
-	struct xnvme_spec_log_ruhu *log = NULL;
+	struct xnvme_spec_base_log_reclaim_unit_handle_usage *log = NULL;
 	uint32_t log_nbytes = 0;
 	int err;
 
@@ -416,7 +416,8 @@ sub_log_ruhu(struct xnvme_cli *cli)
 		nsid = xnvme_dev_get_nsid(cli->args.dev);
 	}
 
-	log_nbytes = sizeof(*log) + limit * sizeof(struct xnvme_spec_ruhu_desc);
+	log_nbytes = sizeof(*log) +
+		     limit * sizeof(struct xnvme_spec_base_reclaim_unit_handle_usage_descriptor);
 
 	xnvme_cli_pinf("Allocating and clearing buffer...");
 	log = xnvme_buf_alloc(dev, log_nbytes);
@@ -436,7 +437,7 @@ sub_log_ruhu(struct xnvme_cli *cli)
 	struct xnvme_cmd_prep_adm_get_log_page_args args = {
 		.args_nbytes = sizeof(args),
 		.nsid = nsid,
-		.lid = XNVME_SPEC_LOG_FDPRUHU,
+		.lid = XNVME_SPEC_BASE_LOG_PAGE_RECLAIM_UNIT_HANDLE_USAGE,
 		.lsi = egi,
 	};
 
@@ -465,7 +466,7 @@ sub_log_fdp_stats(struct xnvme_cli *cli)
 	uint32_t nsid = cli->args.nsid;
 	uint32_t egi = cli->args.lsi;
 
-	struct xnvme_spec_log_fdp_stats *log = NULL;
+	struct xnvme_spec_base_log_fdp_statistics *log = NULL;
 
 	const size_t log_nbytes = sizeof(*log);
 	int err;
@@ -493,7 +494,7 @@ sub_log_fdp_stats(struct xnvme_cli *cli)
 	struct xnvme_cmd_prep_adm_get_log_page_args args = {
 		.args_nbytes = sizeof(args),
 		.nsid = nsid,
-		.lid = XNVME_SPEC_LOG_FDPSTATS,
+		.lid = XNVME_SPEC_BASE_LOG_PAGE_FDP_STATISTICS,
 		.lsi = egi,
 	};
 
@@ -523,7 +524,7 @@ sub_log_fdp_events(struct xnvme_cli *cli)
 	uint32_t egi = cli->args.lsi;
 	uint32_t lsp = cli->args.lsp;
 
-	struct xnvme_spec_log_fdp_events *log = NULL;
+	struct xnvme_spec_base_log_fdp_events *log = NULL;
 	uint32_t log_nbytes = 0;
 	int err;
 
@@ -533,7 +534,7 @@ sub_log_fdp_events(struct xnvme_cli *cli)
 		nsid = xnvme_dev_get_nsid(cli->args.dev);
 	}
 
-	log_nbytes = sizeof(*log) + limit * sizeof(struct xnvme_spec_fdp_event);
+	log_nbytes = sizeof(*log) + limit * sizeof(struct xnvme_spec_base_fdp_event);
 
 	xnvme_cli_pinf("Allocating and clearing buffer...");
 	log = xnvme_buf_alloc(dev, log_nbytes);
@@ -553,7 +554,7 @@ sub_log_fdp_events(struct xnvme_cli *cli)
 	struct xnvme_cmd_prep_adm_get_log_page_args args = {
 		.args_nbytes = sizeof(args),
 		.nsid = nsid,
-		.lid = XNVME_SPEC_LOG_FDPEVENTS,
+		.lid = XNVME_SPEC_BASE_LOG_PAGE_FDP_EVENTS,
 		.lsp = lsp,
 		.lsi = egi,
 	};
@@ -970,7 +971,7 @@ sub_ruhs(struct xnvme_cli *cli)
 	uint32_t limit = cli->args.limit;
 	uint32_t nsid = cli->args.nsid;
 
-	struct xnvme_spec_ruhs *ruhs = NULL;
+	struct xnvme_spec_base_reclaim_unit_handle_status *ruhs = NULL;
 	uint32_t ruhs_nbytes = 0;
 	int err;
 
@@ -980,7 +981,8 @@ sub_ruhs(struct xnvme_cli *cli)
 		nsid = xnvme_dev_get_nsid(cli->args.dev);
 	}
 
-	ruhs_nbytes = sizeof(*ruhs) + limit * sizeof(struct xnvme_spec_ruhs_desc);
+	ruhs_nbytes = sizeof(*ruhs) +
+		      limit * sizeof(struct xnvme_spec_nvm_reclaim_unit_handle_status_descriptor);
 
 	xnvme_cli_pinf("Allocating and clearing buffer...");
 	ruhs = xnvme_buf_alloc(dev, ruhs_nbytes);
@@ -1000,7 +1002,7 @@ sub_ruhs(struct xnvme_cli *cli)
 	struct xnvme_cmd_prep_io_io_management_receive_args args = {
 		.args_nbytes = sizeof(args),
 		.nsid = nsid,
-		.mo = XNVME_SPEC_IO_MGMT_RECV_RUHS,
+		.mo = XNVME_SPEC_IO_IO_MANAGEMENT_RECEIVE_CDW10_MO_RECLAIM_UNIT_HANDLE_STATUS,
 		.numd = ruhs_nbytes / sizeof(uint32_t) - 1,
 	};
 
@@ -1060,7 +1062,7 @@ sub_ruhu(struct xnvme_cli *cli)
 		.args_nbytes = sizeof(args),
 		.nsid = nsid,
 		.mos = (uint16_t)(npids - 1),
-		.mo = XNVME_SPEC_IO_MGMT_SEND_RUHU,
+		.mo = XNVME_SPEC_IO_IO_MANAGEMENT_SEND_CDW10_MO_RECLAIM_UNIT_HANDLE_UPDATE,
 	};
 
 	err = xnvme_cmd_prep_io_io_management_send(&ctx.cmd, &args);
