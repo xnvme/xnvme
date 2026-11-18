@@ -114,6 +114,15 @@ xnvme_cuda_bits_get(uint64_t val, uint64_t mask)
 }
 
 /**
+ * 'val' with the bits under 'mask' set to 'bits', as xnvme_bits_set() does, in device code
+ */
+static inline __device__ uint64_t
+xnvme_cuda_bits_set(uint64_t val, uint64_t mask, uint64_t bits)
+{
+	return (val & ~mask) | ((bits * (mask & (~mask + 1))) & mask);
+}
+
+/**
  * Enqueue a command into an NVMe submission queue at a certain index
  *
  * That is, writes it into the submission queue memory. It does **not** increment
@@ -124,10 +133,10 @@ xnvme_cuda_bits_get(uint64_t val, uint64_t mask)
  * @param offset Where to insert the Command in the queue in relation to the tail
  */
 static inline __device__ void
-xnvme_cuda_enqueue_at_i(struct xnvme_cuda_queue *qp, union xnvme_spec_sqe *cmd, uint16_t offset)
+xnvme_cuda_enqueue_at_i(struct xnvme_cuda_queue *qp, union xnvme_cmd_sqe *cmd, uint16_t offset)
 {
-	union xnvme_spec_sqe *sq = (union xnvme_spec_sqe *)qp->sq;
-	uint16_t index           = (qp->tail + offset) % qp->depth;
+	union xnvme_cmd_sqe *sq = (union xnvme_cmd_sqe *)qp->sq;
+	uint16_t index          = (qp->tail + offset) % qp->depth;
 
 	// 16-byte stores cached at L2 only: the L2 combines them into whole sectors,
 	// where narrower stores to a host-memory SQ each cross PCIe on their own
@@ -135,7 +144,7 @@ xnvme_cuda_enqueue_at_i(struct xnvme_cuda_queue *qp, union xnvme_spec_sqe *cmd, 
 	uint4 *dst       = (uint4 *)&sq[index];
 
 #pragma unroll
-	for (unsigned i = 0; i < sizeof(union xnvme_spec_sqe) / sizeof(uint4); i++) {
+	for (unsigned i = 0; i < sizeof(union xnvme_cmd_sqe) / sizeof(uint4); i++) {
 		__stcg(&dst[i], src[i]);
 	}
 }
@@ -171,12 +180,13 @@ xnvme_cuda_sq_update(struct xnvme_cuda_queue *qp, uint16_t increment)
  * @return 0 on success, -EAGAIN on timeout
  */
 static inline __device__ int
-xnvme_cuda_reap_at_i(struct xnvme_cuda_queue *qp, int timeout_ms, struct xnvme_spec_cqe *cpl,
-		     uint16_t offset)
+xnvme_cuda_reap_at_i(struct xnvme_cuda_queue *qp, int timeout_ms,
+		     struct xnvme_spec_base_completion_queue_entry *cpl, uint16_t offset)
 {
-	volatile struct xnvme_spec_cqe *cq = (volatile struct xnvme_spec_cqe *)qp->cq;
-	uint16_t index                     = (qp->head + offset) % qp->depth;
-	volatile struct xnvme_spec_cqe *cqe;
+	volatile struct xnvme_spec_base_completion_queue_entry *cq =
+		(volatile struct xnvme_spec_base_completion_queue_entry *)qp->cq;
+	uint16_t index = (qp->head + offset) % qp->depth;
+	volatile struct xnvme_spec_base_completion_queue_entry *cqe;
 	// If this thread's entry is past the CQ wrap point, the controller will
 	// have already flipped its phase tag for that entry.
 	uint8_t expected_phase =
@@ -188,7 +198,8 @@ xnvme_cuda_reap_at_i(struct xnvme_cuda_queue *qp, int timeout_ms, struct xnvme_s
 		cqe = &cq[index];
 
 		if ((cqe->cid < 0xFFFF) &&
-		    (xnvme_cuda_bits_get(cqe->status, XNVME_SPEC_CQE_STATUS_P) ==
+		    (xnvme_cuda_bits_get(cqe->status,
+					 XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_P) ==
 		     expected_phase)) {
 			const volatile uint64_t *src = (const volatile uint64_t *)cqe;
 			uint64_t *dst                = (uint64_t *)cpl;
@@ -263,14 +274,15 @@ xnvme_cuda_cq_update(struct xnvme_cuda_queue *qp, uint16_t increment)
  *         code on device error.
  */
 static inline __device__ int
-xnvme_cuda_cmd_io(struct xnvme_cuda_queue *qp, union xnvme_spec_sqe *cmd, size_t tid,
+xnvme_cuda_cmd_io(struct xnvme_cuda_queue *qp, union xnvme_cmd_sqe *cmd, size_t tid,
 		  size_t batch_size)
 {
-	struct xnvme_spec_cqe cpl = {0};
-	int err                   = 0;
+	struct xnvme_spec_base_completion_queue_entry cpl = {0};
+	int err                                           = 0;
 
 	if (tid < batch_size) {
-		cmd->common.cid = tid;
+		cmd->common.cdw0 = (uint32_t)xnvme_cuda_bits_set(
+			cmd->common.cdw0, XNVME_SPEC_BASE_COMMON_COMMAND_FORMAT_CDW0_CID, tid);
 		xnvme_cuda_enqueue_at_i(qp, cmd, tid);
 	}
 
@@ -294,7 +306,7 @@ xnvme_cuda_cmd_io(struct xnvme_cuda_queue *qp, union xnvme_spec_sqe *cmd, size_t
 		return err;
 	}
 
-	return xnvme_cuda_bits_get(cpl.status, XNVME_SPEC_CQE_STATUS_SC);
+	return xnvme_cuda_bits_get(cpl.status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SC);
 }
 
 #endif /* __CUDACC__ */

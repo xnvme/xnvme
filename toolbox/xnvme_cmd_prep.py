@@ -672,7 +672,7 @@ class CmdPrep:
             " * @errno",
             " */",
             "int",
-            f"{name}(union xnvme_spec_sqe *sqe, const struct {record} *args);",
+            f"{name}(union xnvme_cmd_sqe *sqe, const struct {record} *args);",
             "",
         ]
 
@@ -686,7 +686,7 @@ class CmdPrep:
             '\t\t    "The record has padding")',
             "",
             "int",
-            f"{name}(union xnvme_spec_sqe *sqe, const struct {record} *args)",
+            f"{name}(union xnvme_cmd_sqe *sqe, const struct {record} *args)",
             "{",
         ]
         if reserved:
@@ -896,7 +896,7 @@ class CmdPrep:
             " * @param value The value of the field",
             " */",
             "static void",
-            "prep_bits(union xnvme_spec_sqe *sqe, unsigned int cdw, unsigned int bit, unsigned int width,",
+            "prep_bits(union xnvme_cmd_sqe *sqe, unsigned int cdw, unsigned int bit, unsigned int width,",
             "\t  uint64_t value)",
             "{",
             "\tbit += 32 * cdw;",

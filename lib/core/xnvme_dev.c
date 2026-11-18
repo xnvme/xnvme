@@ -285,9 +285,11 @@ _dev_idfy_ns_desc_csi(struct xnvme_dev *dev, union xnvme_spec_idfy *idfy, uint8_
 	}
 
 	xnvme_dev_get_cmd_ctx(dev, &ctx);
-	ctx.cmd.common.opcode = XNVME_SPEC_ADM_OPC_IDFY;
+	xnvme_cmd_sqe_set_opc(&ctx.cmd, XNVME_SPEC_ADMIN_IDENTIFY_OPCODE);
 	ctx.cmd.common.nsid = dev->ident.nsid;
-	ctx.cmd.idfy.cns = XNVME_SPEC_IDFY_NS_DESC;
+	ctx.cmd.common.cdw10 =
+		xnvme_bits_set(ctx.cmd.common.cdw10, XNVME_SPEC_ADMIN_IDENTIFY_CDW10_CNS,
+			       XNVME_SPEC_IDFY_NS_DESC);
 
 	err = xnvme_cmd_pass_admin(&ctx, idfy, sizeof(*idfy), NULL, 0x0);
 	err = _dev_idfy_cmd_err(&ctx, err);

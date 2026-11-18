@@ -6,6 +6,7 @@
 #define _GNU_SOURCE
 #endif
 #include <libxnvme.h>
+#include <xnvme_cmd.h>
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
 #ifdef XNVME_BE_LIBAIO_ENABLED
@@ -139,15 +140,16 @@ _linux_libaio_poke(struct xnvme_queue *q, uint32_t max)
 			return -EIO;
 		}
 
-		ctx->cpl.result = ev->res;
+		xnvme_cmd_cpl_set_dw0_1(&ctx->cpl, ev->res);
 		if (((int64_t)ev->res) < 0) {
 			XNVME_DEBUG("FAILED: res: %lu, res2: %lu", ev->res, ev->res2);
-			ctx->cpl.result = 0;
-			ctx->cpl.status = xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC,
-							 -ev->res);
-			ctx->cpl.status =
-				xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT,
-					       XNVME_STATUS_CODE_TYPE_VENDOR);
+			xnvme_cmd_cpl_set_dw0_1(&ctx->cpl, 0);
+			ctx->cpl.status = xnvme_bits_set(
+				ctx->cpl.status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SC,
+				-ev->res);
+			ctx->cpl.status = xnvme_bits_set(
+				ctx->cpl.status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SCT,
+				XNVME_STATUS_CODE_TYPE_VENDOR);
 		}
 
 		ctx->async.cb(ctx, ctx->async.cb_arg);
@@ -216,15 +218,16 @@ _linux_libaio_reap(struct xnvme_queue *q, struct xnvme_cmd_ctx **completions, ui
 			continue;
 		}
 
-		ctx->cpl.result = ev->res;
+		xnvme_cmd_cpl_set_dw0_1(&ctx->cpl, ev->res);
 		if (((int64_t)ev->res) < 0) {
 			XNVME_DEBUG("FAILED: res: %lu, res2: %lu", ev->res, ev->res2);
-			ctx->cpl.result = 0;
-			ctx->cpl.status = xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC,
-							 -ev->res);
-			ctx->cpl.status =
-				xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT,
-					       XNVME_STATUS_CODE_TYPE_VENDOR);
+			xnvme_cmd_cpl_set_dw0_1(&ctx->cpl, 0);
+			ctx->cpl.status = xnvme_bits_set(
+				ctx->cpl.status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SC,
+				-ev->res);
+			ctx->cpl.status = xnvme_bits_set(
+				ctx->cpl.status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SCT,
+				XNVME_STATUS_CODE_TYPE_VENDOR);
 		}
 
 		*completions++ = ctx;
@@ -256,39 +259,43 @@ _linux_libaio_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, 
 
 	///< Convert the NVMe command/sqe to an Linux aio io-control-block
 	///< NOTE: opcode-dispatch (io)
-	switch (ctx->cmd.common.opcode) {
-	case XNVME_SPEC_NVM_OPC_WRITE:
+	switch (xnvme_cmd_sqe_get_opc(&ctx->cmd)) {
+	case XNVME_SPEC_NVM_WRITE_OPCODE:
 		io_prep_pwrite(&iocb, state->posix.fd, dbuf, dbuf_nbytes,
-			       ctx->cmd.nvm.slba << ssw);
+			       xnvme_cmd_sqe_get_cdw10_11(&ctx->cmd) << ssw);
 		break;
 
-	case XNVME_SPEC_NVM_OPC_READ:
-		io_prep_pread(&iocb, state->posix.fd, dbuf, dbuf_nbytes, ctx->cmd.nvm.slba << ssw);
+	case XNVME_SPEC_NVM_READ_OPCODE:
+		io_prep_pread(&iocb, state->posix.fd, dbuf, dbuf_nbytes,
+			      xnvme_cmd_sqe_get_cdw10_11(&ctx->cmd) << ssw);
 		break;
 
 	case XNVME_SPEC_FS_OPC_WRITE:
-		io_prep_pwrite(&iocb, state->posix.fd, dbuf, dbuf_nbytes, ctx->cmd.nvm.slba);
+		io_prep_pwrite(&iocb, state->posix.fd, dbuf, dbuf_nbytes,
+			       xnvme_cmd_sqe_get_cdw10_11(&ctx->cmd));
 		break;
 
 	case XNVME_SPEC_FS_OPC_READ:
-		io_prep_pread(&iocb, state->posix.fd, dbuf, dbuf_nbytes, ctx->cmd.nvm.slba);
+		io_prep_pread(&iocb, state->posix.fd, dbuf, dbuf_nbytes,
+			      xnvme_cmd_sqe_get_cdw10_11(&ctx->cmd));
 		break;
 
-	case XNVME_SPEC_NVM_OPC_FLUSH:
+	case XNVME_SPEC_IO_FLUSH_OPCODE:
 	case XNVME_SPEC_FS_OPC_FLUSH:
 		// NOTE: full fsync, matching the psync backend
 		io_prep_fsync(&iocb, state->posix.fd);
 		break;
 
 	default:
-		XNVME_DEBUG("FAILED: unsupported opcode: %d", ctx->cmd.common.opcode);
+		XNVME_DEBUG("FAILED: unsupported opcode: %d", xnvme_cmd_sqe_get_opc(&ctx->cmd));
 		return -ENOSYS;
 	}
 
 	// Honour the FUA bit of an NVM write; on a raw block device RWF_DSYNC
 	// makes the kernel issue the write with REQ_FUA. Only for the NVM opcode:
 	// 'fua' is an NVMe command-field, it does not exist for the FS opcodes
-	if (ctx->cmd.nvm.fua && ctx->cmd.common.opcode == XNVME_SPEC_NVM_OPC_WRITE) {
+	if (xnvme_bits_get(ctx->cmd.common.cdw12, XNVME_SPEC_NVM_WRITE_CDW12_FUA) &&
+	    xnvme_cmd_sqe_get_opc(&ctx->cmd) == XNVME_SPEC_NVM_WRITE_OPCODE) {
 		iocb.aio_rw_flags = RWF_DSYNC;
 	}
 
@@ -332,38 +339,43 @@ _linux_libaio_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec
 
 	///< Convert the NVMe command/sqe to an Linux aio io-control-block
 	///< NOTE: opcode-dispatch (io)
-	switch (ctx->cmd.common.opcode) {
-	case XNVME_SPEC_NVM_OPC_WRITE:
-		io_prep_pwritev(&iocb, state->posix.fd, dvec, dvec_cnt, ctx->cmd.nvm.slba << ssw);
+	switch (xnvme_cmd_sqe_get_opc(&ctx->cmd)) {
+	case XNVME_SPEC_NVM_WRITE_OPCODE:
+		io_prep_pwritev(&iocb, state->posix.fd, dvec, dvec_cnt,
+				xnvme_cmd_sqe_get_cdw10_11(&ctx->cmd) << ssw);
 		break;
 
-	case XNVME_SPEC_NVM_OPC_READ:
-		io_prep_preadv(&iocb, state->posix.fd, dvec, dvec_cnt, ctx->cmd.nvm.slba << ssw);
+	case XNVME_SPEC_NVM_READ_OPCODE:
+		io_prep_preadv(&iocb, state->posix.fd, dvec, dvec_cnt,
+			       xnvme_cmd_sqe_get_cdw10_11(&ctx->cmd) << ssw);
 		break;
 
 	case XNVME_SPEC_FS_OPC_WRITE:
-		io_prep_pwritev(&iocb, state->posix.fd, dvec, dvec_cnt, ctx->cmd.nvm.slba);
+		io_prep_pwritev(&iocb, state->posix.fd, dvec, dvec_cnt,
+				xnvme_cmd_sqe_get_cdw10_11(&ctx->cmd));
 		break;
 
 	case XNVME_SPEC_FS_OPC_READ:
-		io_prep_preadv(&iocb, state->posix.fd, dvec, dvec_cnt, ctx->cmd.nvm.slba);
+		io_prep_preadv(&iocb, state->posix.fd, dvec, dvec_cnt,
+			       xnvme_cmd_sqe_get_cdw10_11(&ctx->cmd));
 		break;
 
-	case XNVME_SPEC_NVM_OPC_FLUSH:
+	case XNVME_SPEC_IO_FLUSH_OPCODE:
 	case XNVME_SPEC_FS_OPC_FLUSH:
 		// NOTE: full fsync, matching the psync backend
 		io_prep_fsync(&iocb, state->posix.fd);
 		break;
 
 	default:
-		XNVME_DEBUG("FAILED: unsupported opcode: %d", ctx->cmd.common.opcode);
+		XNVME_DEBUG("FAILED: unsupported opcode: %d", xnvme_cmd_sqe_get_opc(&ctx->cmd));
 		return -ENOSYS;
 	}
 
 	// Honour the FUA bit of an NVM write; on a raw block device RWF_DSYNC
 	// makes the kernel issue the write with REQ_FUA. Only for the NVM opcode:
 	// 'fua' is an NVMe command-field, it does not exist for the FS opcodes
-	if (ctx->cmd.nvm.fua && ctx->cmd.common.opcode == XNVME_SPEC_NVM_OPC_WRITE) {
+	if (xnvme_bits_get(ctx->cmd.common.cdw12, XNVME_SPEC_NVM_WRITE_CDW12_FUA) &&
+	    xnvme_cmd_sqe_get_opc(&ctx->cmd) == XNVME_SPEC_NVM_WRITE_OPCODE) {
 		iocb.aio_rw_flags = RWF_DSYNC;
 	}
 

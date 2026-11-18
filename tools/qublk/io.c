@@ -186,8 +186,10 @@ submit_commit_and_fetch(struct qublk_queue *q, struct qublk_io *io, int result)
 static int
 range_op_error(struct xnvme_cmd_ctx *ctx)
 {
-	uint16_t sct = xnvme_bits_get(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT);
-	uint16_t sc = xnvme_bits_get(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC);
+	uint16_t sct =
+		xnvme_bits_get(ctx->cpl.status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SCT);
+	uint16_t sc =
+		xnvme_bits_get(ctx->cpl.status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SC);
 
 	if (sct == XNVME_STATUS_CODE_TYPE_GENERIC &&
 	    (sc == XNVME_STATUS_CODE_INVALID_OPCODE || sc == XNVME_STATUS_CODE_INVALID_FIELD)) {

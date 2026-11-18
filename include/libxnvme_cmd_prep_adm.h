@@ -51,7 +51,7 @@ struct xnvme_cmd_prep_adm_delete_io_submission_queue_args {
  */
 int
 xnvme_cmd_prep_adm_delete_io_submission_queue(
-	union xnvme_spec_sqe *sqe,
+	union xnvme_cmd_sqe *sqe,
 	const struct xnvme_cmd_prep_adm_delete_io_submission_queue_args *args);
 
 /**
@@ -96,7 +96,7 @@ struct xnvme_cmd_prep_adm_create_io_submission_queue_args {
  */
 int
 xnvme_cmd_prep_adm_create_io_submission_queue(
-	union xnvme_spec_sqe *sqe,
+	union xnvme_cmd_sqe *sqe,
 	const struct xnvme_cmd_prep_adm_create_io_submission_queue_args *args);
 
 /**
@@ -146,7 +146,7 @@ struct xnvme_cmd_prep_adm_get_log_page_args {
  * @errno
  */
 int
-xnvme_cmd_prep_adm_get_log_page(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_adm_get_log_page(union xnvme_cmd_sqe *sqe,
 				const struct xnvme_cmd_prep_adm_get_log_page_args *args);
 
 /**
@@ -184,7 +184,7 @@ struct xnvme_cmd_prep_adm_delete_io_completion_queue_args {
  */
 int
 xnvme_cmd_prep_adm_delete_io_completion_queue(
-	union xnvme_spec_sqe *sqe,
+	union xnvme_cmd_sqe *sqe,
 	const struct xnvme_cmd_prep_adm_delete_io_completion_queue_args *args);
 
 /**
@@ -228,7 +228,7 @@ struct xnvme_cmd_prep_adm_create_io_completion_queue_args {
  */
 int
 xnvme_cmd_prep_adm_create_io_completion_queue(
-	union xnvme_spec_sqe *sqe,
+	union xnvme_cmd_sqe *sqe,
 	const struct xnvme_cmd_prep_adm_create_io_completion_queue_args *args);
 
 /**
@@ -271,7 +271,7 @@ struct xnvme_cmd_prep_adm_identify_args {
  * @errno
  */
 int
-xnvme_cmd_prep_adm_identify(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_adm_identify(union xnvme_cmd_sqe *sqe,
 			    const struct xnvme_cmd_prep_adm_identify_args *args);
 
 /**
@@ -307,7 +307,7 @@ struct xnvme_cmd_prep_adm_abort_args {
  * @errno
  */
 int
-xnvme_cmd_prep_adm_abort(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_adm_abort(union xnvme_cmd_sqe *sqe,
 			 const struct xnvme_cmd_prep_adm_abort_args *args);
 
 /**
@@ -352,7 +352,7 @@ struct xnvme_cmd_prep_adm_set_features_args {
  * @errno
  */
 int
-xnvme_cmd_prep_adm_set_features(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_adm_set_features(union xnvme_cmd_sqe *sqe,
 				const struct xnvme_cmd_prep_adm_set_features_args *args);
 
 /**
@@ -393,7 +393,7 @@ struct xnvme_cmd_prep_adm_get_features_args {
  * @errno
  */
 int
-xnvme_cmd_prep_adm_get_features(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_adm_get_features(union xnvme_cmd_sqe *sqe,
 				const struct xnvme_cmd_prep_adm_get_features_args *args);
 
 /**
@@ -426,7 +426,7 @@ struct xnvme_cmd_prep_adm_asynchronous_event_request_args {
  */
 int
 xnvme_cmd_prep_adm_asynchronous_event_request(
-	union xnvme_spec_sqe *sqe,
+	union xnvme_cmd_sqe *sqe,
 	const struct xnvme_cmd_prep_adm_asynchronous_event_request_args *args);
 
 /**
@@ -466,8 +466,7 @@ struct xnvme_cmd_prep_adm_namespace_management_args {
  */
 int
 xnvme_cmd_prep_adm_namespace_management(
-	union xnvme_spec_sqe *sqe,
-	const struct xnvme_cmd_prep_adm_namespace_management_args *args);
+	union xnvme_cmd_sqe *sqe, const struct xnvme_cmd_prep_adm_namespace_management_args *args);
 
 /**
  * The arguments of xnvme_cmd_prep_adm_firmware_commit(): the fields of Firmware Commit
@@ -504,7 +503,7 @@ struct xnvme_cmd_prep_adm_firmware_commit_args {
  * @errno
  */
 int
-xnvme_cmd_prep_adm_firmware_commit(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_adm_firmware_commit(union xnvme_cmd_sqe *sqe,
 				   const struct xnvme_cmd_prep_adm_firmware_commit_args *args);
 
 /**
@@ -544,7 +543,7 @@ struct xnvme_cmd_prep_adm_firmware_image_download_args {
  */
 int
 xnvme_cmd_prep_adm_firmware_image_download(
-	union xnvme_spec_sqe *sqe,
+	union xnvme_cmd_sqe *sqe,
 	const struct xnvme_cmd_prep_adm_firmware_image_download_args *args);
 
 /**
@@ -583,7 +582,7 @@ struct xnvme_cmd_prep_adm_device_self_test_args {
  * @errno
  */
 int
-xnvme_cmd_prep_adm_device_self_test(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_adm_device_self_test(union xnvme_cmd_sqe *sqe,
 				    const struct xnvme_cmd_prep_adm_device_self_test_args *args);
 
 /**
@@ -621,8 +620,7 @@ struct xnvme_cmd_prep_adm_namespace_attachment_args {
  */
 int
 xnvme_cmd_prep_adm_namespace_attachment(
-	union xnvme_spec_sqe *sqe,
-	const struct xnvme_cmd_prep_adm_namespace_attachment_args *args);
+	union xnvme_cmd_sqe *sqe, const struct xnvme_cmd_prep_adm_namespace_attachment_args *args);
 
 /**
  * The arguments of xnvme_cmd_prep_adm_keep_alive(): the fields of Keep Alive
@@ -652,7 +650,7 @@ struct xnvme_cmd_prep_adm_keep_alive_args {
  * @errno
  */
 int
-xnvme_cmd_prep_adm_keep_alive(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_adm_keep_alive(union xnvme_cmd_sqe *sqe,
 			      const struct xnvme_cmd_prep_adm_keep_alive_args *args);
 
 /**
@@ -697,7 +695,7 @@ struct xnvme_cmd_prep_adm_directive_send_args {
  * @errno
  */
 int
-xnvme_cmd_prep_adm_directive_send(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_adm_directive_send(union xnvme_cmd_sqe *sqe,
 				  const struct xnvme_cmd_prep_adm_directive_send_args *args);
 
 /**
@@ -742,7 +740,7 @@ struct xnvme_cmd_prep_adm_directive_receive_args {
  * @errno
  */
 int
-xnvme_cmd_prep_adm_directive_receive(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_adm_directive_receive(union xnvme_cmd_sqe *sqe,
 				     const struct xnvme_cmd_prep_adm_directive_receive_args *args);
 
 /**
@@ -784,7 +782,7 @@ struct xnvme_cmd_prep_adm_virtualization_management_args {
  */
 int
 xnvme_cmd_prep_adm_virtualization_management(
-	union xnvme_spec_sqe *sqe,
+	union xnvme_cmd_sqe *sqe,
 	const struct xnvme_cmd_prep_adm_virtualization_management_args *args);
 
 /**
@@ -815,7 +813,7 @@ struct xnvme_cmd_prep_adm_nvme_mi_send_args {
  * @errno
  */
 int
-xnvme_cmd_prep_adm_nvme_mi_send(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_adm_nvme_mi_send(union xnvme_cmd_sqe *sqe,
 				const struct xnvme_cmd_prep_adm_nvme_mi_send_args *args);
 
 /**
@@ -846,7 +844,7 @@ struct xnvme_cmd_prep_adm_nvme_mi_receive_args {
  * @errno
  */
 int
-xnvme_cmd_prep_adm_nvme_mi_receive(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_adm_nvme_mi_receive(union xnvme_cmd_sqe *sqe,
 				   const struct xnvme_cmd_prep_adm_nvme_mi_receive_args *args);
 
 /**
@@ -887,7 +885,7 @@ struct xnvme_cmd_prep_adm_capacity_management_args {
  */
 int
 xnvme_cmd_prep_adm_capacity_management(
-	union xnvme_spec_sqe *sqe, const struct xnvme_cmd_prep_adm_capacity_management_args *args);
+	union xnvme_cmd_sqe *sqe, const struct xnvme_cmd_prep_adm_capacity_management_args *args);
 
 /**
  * The arguments of xnvme_cmd_prep_adm_discovery_information_management(): the fields of Discovery
@@ -925,7 +923,7 @@ struct xnvme_cmd_prep_adm_discovery_information_management_args {
  */
 int
 xnvme_cmd_prep_adm_discovery_information_management(
-	union xnvme_spec_sqe *sqe,
+	union xnvme_cmd_sqe *sqe,
 	const struct xnvme_cmd_prep_adm_discovery_information_management_args *args);
 
 /**
@@ -968,7 +966,7 @@ struct xnvme_cmd_prep_adm_fabric_zoning_receive_args {
  */
 int
 xnvme_cmd_prep_adm_fabric_zoning_receive(
-	union xnvme_spec_sqe *sqe,
+	union xnvme_cmd_sqe *sqe,
 	const struct xnvme_cmd_prep_adm_fabric_zoning_receive_args *args);
 
 /**
@@ -1012,7 +1010,7 @@ struct xnvme_cmd_prep_adm_lockdown_args {
  * @errno
  */
 int
-xnvme_cmd_prep_adm_lockdown(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_adm_lockdown(union xnvme_cmd_sqe *sqe,
 			    const struct xnvme_cmd_prep_adm_lockdown_args *args);
 
 /**
@@ -1044,8 +1042,7 @@ struct xnvme_cmd_prep_adm_fabric_zoning_lookup_args {
  */
 int
 xnvme_cmd_prep_adm_fabric_zoning_lookup(
-	union xnvme_spec_sqe *sqe,
-	const struct xnvme_cmd_prep_adm_fabric_zoning_lookup_args *args);
+	union xnvme_cmd_sqe *sqe, const struct xnvme_cmd_prep_adm_fabric_zoning_lookup_args *args);
 
 /**
  * The arguments of xnvme_cmd_prep_adm_clear_exported_nvm_resource_configuration(): the fields of
@@ -1078,7 +1075,7 @@ struct xnvme_cmd_prep_adm_clear_exported_nvm_resource_configuration_args {
  */
 int
 xnvme_cmd_prep_adm_clear_exported_nvm_resource_configuration(
-	union xnvme_spec_sqe *sqe,
+	union xnvme_cmd_sqe *sqe,
 	const struct xnvme_cmd_prep_adm_clear_exported_nvm_resource_configuration_args *args);
 
 /**
@@ -1122,7 +1119,7 @@ struct xnvme_cmd_prep_adm_fabric_zoning_send_args {
  */
 int
 xnvme_cmd_prep_adm_fabric_zoning_send(
-	union xnvme_spec_sqe *sqe, const struct xnvme_cmd_prep_adm_fabric_zoning_send_args *args);
+	union xnvme_cmd_sqe *sqe, const struct xnvme_cmd_prep_adm_fabric_zoning_send_args *args);
 
 /**
  * The arguments of xnvme_cmd_prep_adm_manage_exported_nvm_subsystem_receive(): the fields of
@@ -1173,7 +1170,7 @@ struct xnvme_cmd_prep_adm_manage_exported_nvm_subsystem_receive_args {
  */
 int
 xnvme_cmd_prep_adm_manage_exported_nvm_subsystem_receive(
-	union xnvme_spec_sqe *sqe,
+	union xnvme_cmd_sqe *sqe,
 	const struct xnvme_cmd_prep_adm_manage_exported_nvm_subsystem_receive_args *args);
 
 /**
@@ -1219,7 +1216,7 @@ struct xnvme_cmd_prep_adm_manage_exported_nvm_subsystem_send_args {
  */
 int
 xnvme_cmd_prep_adm_manage_exported_nvm_subsystem_send(
-	union xnvme_spec_sqe *sqe,
+	union xnvme_cmd_sqe *sqe,
 	const struct xnvme_cmd_prep_adm_manage_exported_nvm_subsystem_send_args *args);
 
 /**
@@ -1262,7 +1259,7 @@ struct xnvme_cmd_prep_adm_manage_exported_namespace_args {
  */
 int
 xnvme_cmd_prep_adm_manage_exported_namespace(
-	union xnvme_spec_sqe *sqe,
+	union xnvme_cmd_sqe *sqe,
 	const struct xnvme_cmd_prep_adm_manage_exported_namespace_args *args);
 
 /**
@@ -1300,8 +1297,7 @@ struct xnvme_cmd_prep_adm_manage_exported_port_args {
  */
 int
 xnvme_cmd_prep_adm_manage_exported_port(
-	union xnvme_spec_sqe *sqe,
-	const struct xnvme_cmd_prep_adm_manage_exported_port_args *args);
+	union xnvme_cmd_sqe *sqe, const struct xnvme_cmd_prep_adm_manage_exported_port_args *args);
 
 /**
  * The arguments of xnvme_cmd_prep_adm_cross_controller_reset(): the fields of Cross-Controller
@@ -1342,7 +1338,7 @@ struct xnvme_cmd_prep_adm_cross_controller_reset_args {
  */
 int
 xnvme_cmd_prep_adm_cross_controller_reset(
-	union xnvme_spec_sqe *sqe,
+	union xnvme_cmd_sqe *sqe,
 	const struct xnvme_cmd_prep_adm_cross_controller_reset_args *args);
 
 /**
@@ -1389,7 +1385,7 @@ struct xnvme_cmd_prep_adm_send_discovery_log_page_args {
  */
 int
 xnvme_cmd_prep_adm_send_discovery_log_page(
-	union xnvme_spec_sqe *sqe,
+	union xnvme_cmd_sqe *sqe,
 	const struct xnvme_cmd_prep_adm_send_discovery_log_page_args *args);
 
 /**
@@ -1430,7 +1426,7 @@ struct xnvme_cmd_prep_adm_track_send_args {
  * @errno
  */
 int
-xnvme_cmd_prep_adm_track_send(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_adm_track_send(union xnvme_cmd_sqe *sqe,
 			      const struct xnvme_cmd_prep_adm_track_send_args *args);
 
 /**
@@ -1470,7 +1466,7 @@ struct xnvme_cmd_prep_adm_track_receive_args {
  * @errno
  */
 int
-xnvme_cmd_prep_adm_track_receive(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_adm_track_receive(union xnvme_cmd_sqe *sqe,
 				 const struct xnvme_cmd_prep_adm_track_receive_args *args);
 
 /**
@@ -1526,7 +1522,7 @@ struct xnvme_cmd_prep_adm_migration_send_args {
  * @errno
  */
 int
-xnvme_cmd_prep_adm_migration_send(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_adm_migration_send(union xnvme_cmd_sqe *sqe,
 				  const struct xnvme_cmd_prep_adm_migration_send_args *args);
 
 /**
@@ -1573,7 +1569,7 @@ struct xnvme_cmd_prep_adm_migration_receive_args {
  * @errno
  */
 int
-xnvme_cmd_prep_adm_migration_receive(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_adm_migration_receive(union xnvme_cmd_sqe *sqe,
 				     const struct xnvme_cmd_prep_adm_migration_receive_args *args);
 
 /**
@@ -1619,7 +1615,7 @@ struct xnvme_cmd_prep_adm_controller_data_queue_args {
  */
 int
 xnvme_cmd_prep_adm_controller_data_queue(
-	union xnvme_spec_sqe *sqe,
+	union xnvme_cmd_sqe *sqe,
 	const struct xnvme_cmd_prep_adm_controller_data_queue_args *args);
 
 /**
@@ -1652,7 +1648,7 @@ struct xnvme_cmd_prep_adm_doorbell_buffer_config_args {
  */
 int
 xnvme_cmd_prep_adm_doorbell_buffer_config(
-	union xnvme_spec_sqe *sqe,
+	union xnvme_cmd_sqe *sqe,
 	const struct xnvme_cmd_prep_adm_doorbell_buffer_config_args *args);
 
 /**
@@ -1694,7 +1690,7 @@ struct xnvme_cmd_prep_adm_format_nvm_args {
  * @errno
  */
 int
-xnvme_cmd_prep_adm_format_nvm(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_adm_format_nvm(union xnvme_cmd_sqe *sqe,
 			      const struct xnvme_cmd_prep_adm_format_nvm_args *args);
 
 /**
@@ -1735,7 +1731,7 @@ struct xnvme_cmd_prep_adm_security_send_args {
  * @errno
  */
 int
-xnvme_cmd_prep_adm_security_send(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_adm_security_send(union xnvme_cmd_sqe *sqe,
 				 const struct xnvme_cmd_prep_adm_security_send_args *args);
 
 /**
@@ -1776,7 +1772,7 @@ struct xnvme_cmd_prep_adm_security_receive_args {
  * @errno
  */
 int
-xnvme_cmd_prep_adm_security_receive(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_adm_security_receive(union xnvme_cmd_sqe *sqe,
 				    const struct xnvme_cmd_prep_adm_security_receive_args *args);
 
 /**
@@ -1820,7 +1816,7 @@ struct xnvme_cmd_prep_adm_sanitize_args {
  * @errno
  */
 int
-xnvme_cmd_prep_adm_sanitize(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_adm_sanitize(union xnvme_cmd_sqe *sqe,
 			    const struct xnvme_cmd_prep_adm_sanitize_args *args);
 
 /**
@@ -1868,7 +1864,7 @@ struct xnvme_cmd_prep_adm_load_program_args {
  * @errno
  */
 int
-xnvme_cmd_prep_adm_load_program(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_adm_load_program(union xnvme_cmd_sqe *sqe,
 				const struct xnvme_cmd_prep_adm_load_program_args *args);
 
 /**
@@ -1910,7 +1906,7 @@ struct xnvme_cmd_prep_adm_get_lba_status_args {
  * @errno
  */
 int
-xnvme_cmd_prep_adm_get_lba_status(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_adm_get_lba_status(union xnvme_cmd_sqe *sqe,
 				  const struct xnvme_cmd_prep_adm_get_lba_status_args *args);
 
 /**
@@ -1952,7 +1948,7 @@ struct xnvme_cmd_prep_adm_program_activation_management_args {
  */
 int
 xnvme_cmd_prep_adm_program_activation_management(
-	union xnvme_spec_sqe *sqe,
+	union xnvme_cmd_sqe *sqe,
 	const struct xnvme_cmd_prep_adm_program_activation_management_args *args);
 
 /**
@@ -1994,7 +1990,7 @@ struct xnvme_cmd_prep_adm_memory_range_set_management_args {
  */
 int
 xnvme_cmd_prep_adm_memory_range_set_management(
-	union xnvme_spec_sqe *sqe,
+	union xnvme_cmd_sqe *sqe,
 	const struct xnvme_cmd_prep_adm_memory_range_set_management_args *args);
 
 /**
@@ -2035,4 +2031,4 @@ struct xnvme_cmd_prep_adm_sanitize_namespace_args {
  */
 int
 xnvme_cmd_prep_adm_sanitize_namespace(
-	union xnvme_spec_sqe *sqe, const struct xnvme_cmd_prep_adm_sanitize_namespace_args *args);
+	union xnvme_cmd_sqe *sqe, const struct xnvme_cmd_prep_adm_sanitize_namespace_args *args);

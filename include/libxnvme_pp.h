@@ -389,7 +389,7 @@ int
 xnvme_spec_feat_fdp_events_pr(void *buf, const struct xnvme_spec_feat *feat, int opts);
 
 /**
- * Prints the given :;xnvme_spec_sqe to the given output stream
+ * Prints the given :;xnvme_cmd_sqe to the given output stream
  *
  * @param stream output stream used for printing
  * @param cmd pointer to structure to print
@@ -397,17 +397,17 @@ xnvme_spec_feat_fdp_events_pr(void *buf, const struct xnvme_spec_feat *feat, int
  * @return On success, the number of characters printed is returned.
  */
 int
-xnvme_spec_sqe_fpr(FILE *stream, union xnvme_spec_sqe *cmd, int opts);
+xnvme_spec_sqe_fpr(FILE *stream, union xnvme_cmd_sqe *cmd, int opts);
 
 /**
- * Prints the given :;xnvme_spec_sqe to stdout
+ * Prints the given :;xnvme_cmd_sqe to stdout
  *
  * @param cmd pointer to structure to print
  * @param opts printer options, see ::xnvme_pr
  * @return On success, the number of characters printed is returned.
  */
 int
-xnvme_spec_sqe_pr(union xnvme_spec_sqe *cmd, int opts);
+xnvme_spec_sqe_pr(union xnvme_cmd_sqe *cmd, int opts);
 
 /**
  * Prints the given :;xnvme_spec_idfy_dir_rp to stdout
@@ -701,14 +701,14 @@ int
 xnvme_spec_kvs_idfy_ns_pr(const struct xnvme_spec_kvs_idfy_ns *idfy, int opts);
 
 /**
- * Produces a string representation of the given ::xnvme_spec_adm_opc
+ * Produces a string representation of the given ::xnvme_spec_admin_opcode
  *
  * @param eval the enum value to produce a string representation of
  * @return On success, a string representation is returned. On error, the string
  * "ENOSYS" is returned.
  */
 const char *
-xnvme_spec_adm_opc_str(enum xnvme_spec_adm_opc eval);
+xnvme_spec_adm_opc_str(enum xnvme_spec_admin_opcode eval);
 
 /**
  * Produces a string representation of the given ::xnvme_spec_csi
@@ -791,14 +791,15 @@ const char *
 xnvme_spec_nvm_cmd_cpl_sc_str(enum xnvme_spec_nvm_cmd_cpl_sc eval);
 
 /**
- * Produces a string representation of the given ::xnvme_spec_nvm_opc
+ * Produces a string representation of the given opcode, one of ::xnvme_spec_nvm_opcode,
+ * ::xnvme_spec_io_opcode, or the Format NVM and Sanitize values of ::xnvme_spec_admin_opcode
  *
- * @param eval the enum value to produce a string representation of
+ * @param eval the opcode to produce a string representation of
  * @return On success, a string representation is returned. On error, the string
  * "ENOSYS" is returned.
  */
 const char *
-xnvme_spec_nvm_opc_str(enum xnvme_spec_nvm_opc eval);
+xnvme_spec_nvm_opc_str(int eval);
 
 /**
  * Produces a string representation of the given ::xnvme_spec_psdt
@@ -851,14 +852,14 @@ const char *
 xnvme_spec_znd_cmd_mgmt_send_action_str(enum xnvme_spec_znd_cmd_mgmt_send_action eval);
 
 /**
- * Produces a string representation of the given ::xnvme_spec_znd_opc
+ * Produces a string representation of the given ::xnvme_spec_zns_opcode
  *
  * @param eval the enum value to produce a string representation of
  * @return On success, a string representation is returned. On error, the string
  * "ENOSYS" is returned.
  */
 const char *
-xnvme_spec_znd_opc_str(enum xnvme_spec_znd_opc eval);
+xnvme_spec_znd_opc_str(enum xnvme_spec_zns_opcode eval);
 
 /**
  * Produces a string representation of the given ::xnvme_spec_znd_mgmt_send_action_so

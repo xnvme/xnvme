@@ -61,7 +61,8 @@ nil_poke(struct xnvme_queue *q, uint32_t max)
 			return -EIO;
 		}
 
-		ctx->cpl.status = xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC, 0);
+		ctx->cpl.status = xnvme_bits_set(
+			ctx->cpl.status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SC, 0);
 		ctx->async.cb(ctx, ctx->async.cb_arg);
 		queue->ctx[cur] = NULL;
 
@@ -94,7 +95,8 @@ nil_reap(struct xnvme_queue *q, struct xnvme_cmd_ctx **completions, uint32_t max
 			return -EIO;
 		}
 
-		ctx->cpl.status = xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC, 0);
+		ctx->cpl.status = xnvme_bits_set(
+			ctx->cpl.status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SC, 0);
 		*completions++ = ctx;
 		queue->ctx[cur] = NULL;
 

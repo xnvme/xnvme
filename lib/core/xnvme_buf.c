@@ -7,6 +7,7 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <libxnvme.h>
+#include <xnvme_cmd.h>
 #include <xnvme_dev.h>
 #include <xnvme_be.h>
 #include <xnvme_host_buf.h>
@@ -203,18 +204,18 @@ fdio_func(void *buf, size_t nbytes, const char *path, struct xnvme_opts *opts)
 			err = xnvme_file_pread(&ctx, buf + transferred, nbytes_call, transferred);
 		}
 		if (err) {
-			XNVME_DEBUG("FAILED: opts->wronly: %d, cpl.result: %" PRIu64 ", errno: %d",
-				    opts->wronly, ctx.cpl.result, errno);
+			XNVME_DEBUG("FAILED: opts->wronly: %d, cpl.dw0_1: %" PRIu64 ", errno: %d",
+				    opts->wronly, xnvme_cmd_cpl_get_dw0_1(&ctx.cpl), errno);
 			xnvme_file_close(fh);
 			return -errno;
 		}
 
 		// when reading, break at end of file
-		if (!opts->wronly && ctx.cpl.result == 0) {
+		if (!opts->wronly && xnvme_cmd_cpl_get_dw0_1(&ctx.cpl) == 0) {
 			break;
 		}
 
-		transferred += ctx.cpl.result;
+		transferred += xnvme_cmd_cpl_get_dw0_1(&ctx.cpl);
 	}
 
 	err = xnvme_file_close(fh);

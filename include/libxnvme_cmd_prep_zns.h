@@ -56,8 +56,7 @@ struct xnvme_cmd_prep_zns_zone_management_send_args {
  */
 int
 xnvme_cmd_prep_zns_zone_management_send(
-	union xnvme_spec_sqe *sqe,
-	const struct xnvme_cmd_prep_zns_zone_management_send_args *args);
+	union xnvme_cmd_sqe *sqe, const struct xnvme_cmd_prep_zns_zone_management_send_args *args);
 
 /**
  * The arguments of xnvme_cmd_prep_zns_zone_management_receive(): the fields of Zone Management
@@ -101,7 +100,7 @@ struct xnvme_cmd_prep_zns_zone_management_receive_args {
  */
 int
 xnvme_cmd_prep_zns_zone_management_receive(
-	union xnvme_spec_sqe *sqe,
+	union xnvme_cmd_sqe *sqe,
 	const struct xnvme_cmd_prep_zns_zone_management_receive_args *args);
 
 /**
@@ -161,5 +160,5 @@ struct xnvme_cmd_prep_zns_zone_append_args {
  * @errno
  */
 int
-xnvme_cmd_prep_zns_zone_append(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_zns_zone_append(union xnvme_cmd_sqe *sqe,
 			       const struct xnvme_cmd_prep_zns_zone_append_args *args);

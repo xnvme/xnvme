@@ -420,7 +420,7 @@ CHECK = r"""
 int
 main(void)
 {
-    union xnvme_spec_sqe sqe;
+    union xnvme_cmd_sqe sqe;
     struct xnvme_cmd_prep_nvm_ding_args args = {
         .args_nbytes = sizeof(args),
         .nsid = 7,
@@ -463,7 +463,7 @@ main(void)
 STUB = """#include <stddef.h>
 #include <stdint.h>
 #define XNVME_STATIC_ASSERT(cond, msg) _Static_assert(cond, msg);
-union xnvme_spec_sqe {
+union xnvme_cmd_sqe {
     uint32_t cdw[16];
 };
 #include "libxnvme_cmd_prep_adm.h"
