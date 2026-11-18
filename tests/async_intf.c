@@ -823,6 +823,156 @@ exit:
 	return err;
 }
 
+/// Checks for Status Code Type 7 with ENOSYS in the Status Code, the sync backend's refusal
+static int
+check_errno_status(struct xnvme_cmd_ctx *ctx)
+{
+	int sct = xnvme_bits_get(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT);
+	int sc = xnvme_bits_get(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC);
+
+	if (sct == XNVME_STATUS_CODE_TYPE_VENDOR && sc == ENOSYS) {
+		return 0;
+	}
+
+	xnvme_cli_pinf("FAILED: sct: 0x%x, sc: 0x%x, expected sct: 0x%x, sc: ENOSYS (0x%x)", sct,
+		       sc, XNVME_STATUS_CODE_TYPE_VENDOR, ENOSYS);
+	xnvme_cmd_ctx_pr(ctx, XNVME_PR_DEF);
+
+	return -EIO;
+}
+
+/// Counts, in 'cb_arg', the completions that carry the vendor status
+static void
+cb_errno(struct xnvme_cmd_ctx *ctx, void *cb_arg)
+{
+	int *npassed = cb_arg;
+
+	if (!check_errno_status(ctx)) {
+		*npassed += 1;
+	}
+}
+
+/// Submits a Write Uncorrectable, which the ramdisk refuses with -ENOSYS, on 'ctx' as it is;
+/// 'round' 2 first plants a device status that only the clearing before the sync call replaces
+static int
+submit_nosys(struct xnvme_cmd_ctx *ctx, uint32_t nsid, int round)
+{
+	if (round == 2) {
+		ctx->cpl.status = xnvme_bits_set(0, XNVME_SPEC_CQE_STATUS_SC,
+						 XNVME_STATUS_CODE_INVALID_FIELD);
+	}
+
+	memset(&ctx->cmd, 0, sizeof(ctx->cmd));
+	ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_WRITE_UNCORRECTABLE;
+	ctx->cmd.common.nsid = nsid;
+
+	return xnvme_cmd_pass(ctx, NULL, 0, NULL, 0);
+}
+
+/// The three rounds of submit_nosys() on one context of a callback queue
+static int
+errno_rounds_cb(struct xnvme_queue *queue, uint32_t nsid)
+{
+	struct xnvme_cmd_ctx *ctx = xnvme_queue_get_cmd_ctx(queue);
+	int npassed = 0;
+	int err;
+
+	err = xnvme_queue_set_cb(queue, cb_errno, &npassed);
+	if (err) {
+		xnvme_cli_perr("xnvme_queue_set_cb()", err);
+		return err;
+	}
+
+	for (int round = 0; round < 3; ++round) {
+		err = submit_nosys(ctx, nsid, round);
+		if (err) {
+			xnvme_cli_perr("xnvme_cmd_pass()", err);
+			return err;
+		}
+		err = xnvme_queue_drain(queue);
+		if (err < 0) {
+			xnvme_cli_perr("xnvme_queue_drain()", err);
+			return err;
+		}
+		if (err != 1 || npassed != round + 1) {
+			return -EIO;
+		}
+	}
+
+	return 0;
+}
+
+/// The three rounds on one context of a reap queue, reaped until nothing is outstanding, since
+/// thrpool completes on a worker thread; a lost completion fails after a million empty reaps
+static int
+errno_rounds_reap(struct xnvme_queue *queue, uint32_t nsid)
+{
+	struct xnvme_cmd_ctx *ctx = xnvme_queue_get_cmd_ctx(queue);
+	struct xnvme_cmd_ctx *completion = NULL;
+	int err;
+
+	for (int round = 0; round < 3; ++round) {
+		uint32_t reaped = 0;
+
+		err = submit_nosys(ctx, nsid, round);
+		if (err) {
+			xnvme_cli_perr("xnvme_cmd_pass()", err);
+			return err;
+		}
+		for (int i = 0; xnvme_queue_get_outstanding(queue); ++i) {
+			uint32_t n = 0;
+
+			if (i == 1000000) {
+				xnvme_cli_pinf("FAILED: round %d: nothing to reap", round);
+				return -ETIMEDOUT;
+			}
+			err = reap(queue, &completion, 1, &n);
+			if (err) {
+				xnvme_cli_perr("xnvme_queue_reap()", err);
+				return err;
+			}
+			reaped += n;
+		}
+		if (reaped != 1 || check_errno_status(completion)) {
+			return -EIO;
+		}
+	}
+
+	return 0;
+}
+
+/// A command the sync backend refuses before the device sees it completes with Status Code Type 7
+/// and the errno in the Status Code, on a callback queue and on a reap queue, also on a context
+/// that still carries the status of a failed command
+static int
+test_cmd_errno(struct xnvme_cli *cli)
+{
+	struct xnvme_dev *dev = cli->args.dev;
+	uint32_t nsid = xnvme_dev_get_nsid(dev);
+	int opts[] = {0, XNVME_QUEUE_REAP};
+	int err = 0;
+
+	for (size_t i = 0; i < sizeof(opts) / sizeof(*opts); ++i) {
+		struct xnvme_queue *queue = NULL;
+
+		err = xnvme_queue_init(dev, cli->args.qdepth, opts[i], &queue);
+		if (err) {
+			xnvme_cli_perr("xnvme_queue_init()", err);
+			break;
+		}
+		err = opts[i] ? errno_rounds_reap(queue, nsid) : errno_rounds_cb(queue, nsid);
+		if (xnvme_queue_term(queue)) {
+			XNVME_DEBUG("FAILED: xnvme_queue_term()");
+			err = err ? err : -EIO;
+		}
+		if (err) {
+			break;
+		}
+	}
+
+	return err;
+}
+
 /**
  * A queue delivers completions the one way it was initialized for: xnvme_queue_reap() returns
  * -EINVAL for a callback queue, and xnvme_queue_poke() and xnvme_queue_drain() return -EINVAL for
@@ -1078,6 +1228,21 @@ static struct xnvme_cli_sub g_subs[] = {
 			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
 			{XNVME_CLI_OPT_QDEPTH, XNVME_CLI_LREQ},
 			{XNVME_CLI_OPT_P2P_CQ_MIRROR, XNVME_CLI_LFLG},
+
+			XNVME_CLI_ASYNC_OPTS,
+		},
+	},
+	{
+		"cmd_errno",
+		"Submit a command the sync backend refuses with -ENOSYS, check the vendor status",
+		"Submit a command the sync backend refuses with -ENOSYS, check the vendor status",
+		test_cmd_errno,
+		{
+			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
+
+			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_QDEPTH, XNVME_CLI_LREQ},
 
 			XNVME_CLI_ASYNC_OPTS,
 		},

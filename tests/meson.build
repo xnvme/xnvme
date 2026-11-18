@@ -25,6 +25,7 @@ tests = {
     ['reap_flush', ['reap_flush', '1GB', '--qdepth', '8']],
     ['reap_cmd_fail emu', ['reap_cmd_fail', '1GB', '--qdepth', '8', '--async', 'emu']],
     ['reap_cmd_fail thrpool', ['reap_cmd_fail', '1GB', '--qdepth', '8', '--async', 'thrpool']],
+    ['cmd_errno emu', ['cmd_errno', '1GB', '--qdepth', '8', '--be', 'ramdisk_emu']],
     ['cb nil', ['cb', '1GB', '--qdepth', '8', '--async', 'nil']],
     ['cb emu', ['cb', '1GB', '--qdepth', '64', '--async', 'emu']],
     ['cb thrpool', ['cb', '1GB', '--qdepth', '64', '--async', 'thrpool']],
@@ -196,6 +197,12 @@ if conf_data.get('XNVME_BE_THRPOOL_ENABLED') and conf_data.get('XNVME_BE_RAMDISK
       suite: 'async_intf',
     )
   endforeach
+  test(
+    'tests - async_intf, cmd_errno thrpool',
+    tests_exe['async_intf'],
+    args: ['cmd_errno', '1GB', '--qdepth', '8', '--be', 'ramdisk_thrpool'],
+    suite: 'async_intf',
+  )
 endif
 
 test(
