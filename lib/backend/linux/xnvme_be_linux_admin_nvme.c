@@ -101,10 +101,10 @@ xnvme_be_linux_nvme_cmd_pseudo(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbu
 
 	switch (xnvme_cmd_sqe_get_opc(&ctx->cmd)) {
 	case XNVME_SPEC_PSEUDO_OPC_SHOW_REGS:
-		if (dbuf_nbytes != sizeof(struct xnvme_spec_ctrlr_bar)) {
-			XNVME_DEBUG(
-				"FAILED: dbuf_nbytes(%zu) != sizeof(struct xnvme_spec_ctrlr_bar)",
-				dbuf_nbytes);
+		if (dbuf_nbytes != sizeof(struct xnvme_spec_base_registers)) {
+			XNVME_DEBUG("FAILED: dbuf_nbytes(%zu) != sizeof(struct "
+				    "xnvme_spec_base_registers)",
+				    dbuf_nbytes);
 			return -EINVAL;
 		}
 		return _controller_get_registers(ctx->dev, dbuf, dbuf_nbytes);
