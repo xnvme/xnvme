@@ -77,10 +77,10 @@ xnvme_be_macos_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
 							     XNVME_SPEC_ADMIN_IDENTIFY_CDW10_CNS));
 			ctx->cpl.status = xnvme_bits_set(
 				ctx->cpl.status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SCT,
-				XNVME_STATUS_CODE_TYPE_GENERIC);
+				XNVME_SPEC_BASE_STATUS_CODE_TYPE_GENERIC_COMMAND_STATUS);
 			ctx->cpl.status = xnvme_bits_set(
 				ctx->cpl.status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SC,
-				XNVME_STATUS_CODE_INVALID_FIELD);
+				XNVME_SPEC_BASE_GENERIC_COMMAND_STATUS_INVALID_FIELD_IN_COMMAND);
 			ctx->cpl.status = xnvme_bits_set(
 				ctx->cpl.status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_DNR,
 				1);

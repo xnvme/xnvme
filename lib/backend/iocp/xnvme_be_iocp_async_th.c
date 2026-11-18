@@ -210,7 +210,7 @@ _windows_async_iocp_th_poke(struct xnvme_queue *q, uint32_t max)
 			cmd_ctx->cpl.status =
 				xnvme_bits_set(cmd_ctx->cpl.status,
 					       XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SCT,
-					       XNVME_STATUS_CODE_TYPE_VENDOR);
+					       XNVME_SPEC_BASE_STATUS_CODE_TYPE_VENDOR_SPECIFIC);
 			break;
 
 		default:
@@ -276,7 +276,7 @@ _windows_async_iocp_th_reap(struct xnvme_queue *q, struct xnvme_cmd_ctx **comple
 			cmd_ctx->cpl.status =
 				xnvme_bits_set(cmd_ctx->cpl.status,
 					       XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SCT,
-					       XNVME_STATUS_CODE_TYPE_VENDOR);
+					       XNVME_SPEC_BASE_STATUS_CODE_TYPE_VENDOR_SPECIFIC);
 			break;
 
 		default:
