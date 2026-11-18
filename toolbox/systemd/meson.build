@@ -10,7 +10,7 @@ if not systemd_opt.disabled()
       # pkg-config answers with an absolute path that ignores this build's prefix
       systemd_unitdir = systemd_dep.get_variable(
         pkgconfig: 'systemdsystemunitdir',
-        pkgconfig_define: ['prefix', get_option('prefix')],
+        pkgconfig_define: ['rootprefix', get_option('prefix')],
       )
     endif
   endif
