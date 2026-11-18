@@ -298,7 +298,7 @@ cmd_errors(struct xnvme_cli *cli)
 		err = xnvme_cmd_pass_admin(&ctx, log, log_nbytes, NULL, 0);
 	}
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		xnvme_cli_perr("get_log_page(XNVME_SPEC_LOG_ERRI)", err);
+		xnvme_cli_perr("get_log_page(XNVME_SPEC_BASE_LOG_PAGE_ERROR_INFORMATION)", err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;
