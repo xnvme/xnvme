@@ -204,6 +204,10 @@ const char *
 xnvme_spec_nvm_cmd_cpl_sc_str(enum xnvme_spec_nvm_cmd_cpl_sc eval)
 {
 	switch (eval) {
+	case XNVME_SPEC_NVM_CMD_CPL_SC_BAD_ATTRIBUTES:
+		return "NVM_CMD_CPL_SC_BAD_ATTRIBUTES";
+	case XNVME_SPEC_NVM_CMD_CPL_SC_INVALID_PI:
+		return "NVM_CMD_CPL_SC_INVALID_PI";
 	case XNVME_SPEC_NVM_CMD_CPL_SC_WRITE_TO_RONLY:
 		return "NVM_CMD_CPL_SC_WRITE_TO_RONLY";
 	}
