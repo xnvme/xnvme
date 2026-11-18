@@ -194,7 +194,7 @@ test_ctrlr_gfeat_nqueues(struct xnvme_cli *cli)
 		err = err ? err : -EIO;
 		goto exit;
 	}
-	feat.val = ctx.cpl.cdw0;
+	feat.val = ctx.cpl.dw0;
 
 	// NSQA and NCQA are zero-based
 	xnvme_cli_pinf("nsq: %u, ncq: %u", (uint32_t)feat.nqueues.nsqa + 1,

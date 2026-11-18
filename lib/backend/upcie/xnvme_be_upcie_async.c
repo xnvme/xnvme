@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <libxnvme.h>
+#include <xnvme_cmd.h>
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
 #ifdef XNVME_BE_UPCIE_ENABLED
@@ -201,15 +202,17 @@ xnvme_be_upcie_async_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_n
 		return -EBUSY;
 	}
 
-	switch (ctx->cmd.common.opcode) {
+	switch (xnvme_cmd_sqe_get_opc(&ctx->cmd)) {
 	case XNVME_SPEC_FS_OPC_READ:
-		ctx->cmd.nvm.slba = ctx->cmd.nvm.slba >> ctx->dev->geo.ssw;
-		ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_READ;
+		xnvme_cmd_sqe_set_cdw10_11(&ctx->cmd, xnvme_cmd_sqe_get_cdw10_11(&ctx->cmd) >>
+							      ctx->dev->geo.ssw);
+		xnvme_cmd_sqe_set_opc(&ctx->cmd, XNVME_SPEC_NVM_READ_OPCODE);
 		break;
 
 	case XNVME_SPEC_FS_OPC_WRITE:
-		ctx->cmd.nvm.slba = ctx->cmd.nvm.slba >> ctx->dev->geo.ssw;
-		ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_WRITE;
+		xnvme_cmd_sqe_set_cdw10_11(&ctx->cmd, xnvme_cmd_sqe_get_cdw10_11(&ctx->cmd) >>
+							      ctx->dev->geo.ssw);
+		xnvme_cmd_sqe_set_opc(&ctx->cmd, XNVME_SPEC_NVM_WRITE_OPCODE);
 		break;
 	}
 
@@ -267,15 +270,17 @@ xnvme_be_upcie_async_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size
 		return -EBUSY;
 	}
 
-	switch (ctx->cmd.common.opcode) {
+	switch (xnvme_cmd_sqe_get_opc(&ctx->cmd)) {
 	case XNVME_SPEC_FS_OPC_READ:
-		ctx->cmd.nvm.slba = ctx->cmd.nvm.slba >> ctx->dev->geo.ssw;
-		ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_READ;
+		xnvme_cmd_sqe_set_cdw10_11(&ctx->cmd, xnvme_cmd_sqe_get_cdw10_11(&ctx->cmd) >>
+							      ctx->dev->geo.ssw);
+		xnvme_cmd_sqe_set_opc(&ctx->cmd, XNVME_SPEC_NVM_READ_OPCODE);
 		break;
 
 	case XNVME_SPEC_FS_OPC_WRITE:
-		ctx->cmd.nvm.slba = ctx->cmd.nvm.slba >> ctx->dev->geo.ssw;
-		ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_WRITE;
+		xnvme_cmd_sqe_set_cdw10_11(&ctx->cmd, xnvme_cmd_sqe_get_cdw10_11(&ctx->cmd) >>
+							      ctx->dev->geo.ssw);
+		xnvme_cmd_sqe_set_opc(&ctx->cmd, XNVME_SPEC_NVM_WRITE_OPCODE);
 		break;
 	}
 

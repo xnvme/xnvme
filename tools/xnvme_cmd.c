@@ -411,14 +411,16 @@ cli_cmd(enum cli_cmd_kind kind, int argc, char **argv)
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		fprintf(stderr, "xnvme %s: the command failed: err(%d), sct(0x%x), sc(0x%x)\n",
 			name, err,
-			(unsigned int)xnvme_bits_get(ctx.cpl.status, XNVME_SPEC_CQE_STATUS_SCT),
-			(unsigned int)xnvme_bits_get(ctx.cpl.status, XNVME_SPEC_CQE_STATUS_SC));
+			(unsigned int)xnvme_bits_get(
+				ctx.cpl.status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SCT),
+			(unsigned int)xnvme_bits_get(
+				ctx.cpl.status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SC));
 		err = err ? err : -EIO;
 		goto exit;
 	}
 	if (!raw) {
 		printf("%s Command is Success and result: 0x%08x\n",
-		       kind == CLI_CMD_ADMIN ? "Admin" : "IO", ctx.cpl.cdw0);
+		       kind == CLI_CMD_ADMIN ? "Admin" : "IO", (unsigned int)ctx.cpl.dw0);
 	}
 	if (latency) {
 		printf("latency: %" PRIu64 " us\n", (uint64_t)xnvme_timer_elapsed_usecs(&timer));

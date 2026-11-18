@@ -60,8 +60,7 @@ struct xnvme_cmd_prep_kv_store_args {
  * @errno
  */
 int
-xnvme_cmd_prep_kv_store(union xnvme_spec_sqe *sqe,
-			const struct xnvme_cmd_prep_kv_store_args *args);
+xnvme_cmd_prep_kv_store(union xnvme_cmd_sqe *sqe, const struct xnvme_cmd_prep_kv_store_args *args);
 
 /**
  * The arguments of xnvme_cmd_prep_kv_retrieve(): the fields of Retrieve
@@ -107,7 +106,7 @@ struct xnvme_cmd_prep_kv_retrieve_args {
  * @errno
  */
 int
-xnvme_cmd_prep_kv_retrieve(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_kv_retrieve(union xnvme_cmd_sqe *sqe,
 			   const struct xnvme_cmd_prep_kv_retrieve_args *args);
 
 /**
@@ -149,7 +148,7 @@ struct xnvme_cmd_prep_kv_list_args {
  * @errno
  */
 int
-xnvme_cmd_prep_kv_list(union xnvme_spec_sqe *sqe, const struct xnvme_cmd_prep_kv_list_args *args);
+xnvme_cmd_prep_kv_list(union xnvme_cmd_sqe *sqe, const struct xnvme_cmd_prep_kv_list_args *args);
 
 /**
  * The arguments of xnvme_cmd_prep_kv_delete(): the fields of Delete
@@ -188,7 +187,7 @@ struct xnvme_cmd_prep_kv_delete_args {
  * @errno
  */
 int
-xnvme_cmd_prep_kv_delete(union xnvme_spec_sqe *sqe,
+xnvme_cmd_prep_kv_delete(union xnvme_cmd_sqe *sqe,
 			 const struct xnvme_cmd_prep_kv_delete_args *args);
 
 /**
@@ -228,5 +227,4 @@ struct xnvme_cmd_prep_kv_exist_args {
  * @errno
  */
 int
-xnvme_cmd_prep_kv_exist(union xnvme_spec_sqe *sqe,
-			const struct xnvme_cmd_prep_kv_exist_args *args);
+xnvme_cmd_prep_kv_exist(union xnvme_cmd_sqe *sqe, const struct xnvme_cmd_prep_kv_exist_args *args);
