@@ -10,54 +10,37 @@
 #define __LIBXNVME_SPEC_FS_H
 
 /**
+ * Limits of the file-system, part of struct xnvme_spec_fs_idfy_ctrlr
+ */
+struct xnvme_spec_fs_idfy_ctrlr_limits {
+	uint64_t file_data_size;  ///< Maximum size of file content, in bytes
+	uint64_t file_name_len;   ///< Maximum length of file-names, in bytes
+	uint64_t path_name_len;   ///< Maximum length of file-paths, in bytes
+	uint64_t number_of_files; ///< Maximum number of files
+};
+
+/**
+ * I/O sizes of the file-system, in bytes, part of struct xnvme_spec_fs_idfy_ctrlr
+ */
+struct xnvme_spec_fs_idfy_ctrlr_iosizes {
+	uint32_t min; ///< Minimum
+	uint32_t max; ///< Maximum
+	uint32_t opt; ///< Optimal
+};
+
+/**
  * Encapsulate file-system properties as Identify Controller
  */
 struct xnvme_spec_fs_idfy_ctrlr {
 	uint8_t byte0_519[520];
 
-	struct {
-		uint64_t direct : 1; ///< Direct I/O possible, e.g. by-passing OS caching
+	uint64_t caps; ///< File System Capabilities, see XNVME_SPEC_FS_IDFY_CTRLR_CAPS_*
 
-		uint64_t rsvd   : 63;
-	} caps; ///< File System Capabilities
+	struct xnvme_spec_fs_idfy_ctrlr_limits limits; ///< Limits of the file-system
 
-	struct {
-		uint64_t file_data_size;  ///< Maximum size of file content, in bytes
-		uint64_t file_name_len;   ///< Maximum length of file-names, in bytes
-		uint64_t path_name_len;   ///< Maximum length of file-paths, in bytes
-		uint64_t number_of_files; ///< Maximum number of files
-	} limits;
+	uint64_t properties; ///< File System Properties, see XNVME_SPEC_FS_IDFY_CTRLR_PROPERTIES_*
 
-	struct {
-		uint64_t permissions_posix : 1; ///< Supports POSIX permissions
-		uint64_t permissions_acl   : 1; ///< Supports Access-control-lists
-
-		uint64_t stamp_creation    : 1;
-		uint64_t stamp_access      : 1;
-		uint64_t stamp_change      : 1;
-		uint64_t stamp_archive     : 1;
-
-		uint64_t hardlinks         : 1;
-		uint64_t symlinks          : 1;
-
-		uint64_t case_sensitive    : 1;
-		uint64_t case_preserving   : 1;
-
-		uint64_t journaling_block  : 1;
-		uint64_t journaling_meta   : 1;
-
-		uint64_t snapshotting      : 1;
-		uint64_t compressed        : 1;
-		uint64_t encrypted         : 1;
-
-		uint64_t rsvd              : 48;
-	} properties;
-
-	struct {
-		uint32_t min;
-		uint32_t max;
-		uint32_t opt;
-	} iosizes;
+	struct xnvme_spec_fs_idfy_ctrlr_iosizes iosizes; ///< I/O sizes of the file-system
 
 	uint8_t rsvd[3509];
 
@@ -65,6 +48,39 @@ struct xnvme_spec_fs_idfy_ctrlr {
 	uint8_t dc;
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_fs_idfy_ctrlr) == 4096, "Incorrect size")
+
+/** Direct I/O possible, e.g. by-passing OS caching; bit 0 of 'caps' */
+#define XNVME_SPEC_FS_IDFY_CTRLR_CAPS_DIRECT 0x1
+/** Supports POSIX permissions; bit 0 of 'properties' */
+#define XNVME_SPEC_FS_IDFY_CTRLR_PROPERTIES_PERMISSIONS_POSIX 0x1
+/** Supports Access-control-lists; bit 1 of 'properties' */
+#define XNVME_SPEC_FS_IDFY_CTRLR_PROPERTIES_PERMISSIONS_ACL 0x2
+/** Keeps a time stamp of creation; bit 2 of 'properties' */
+#define XNVME_SPEC_FS_IDFY_CTRLR_PROPERTIES_STAMP_CREATION 0x4
+/** Keeps a time stamp of access; bit 3 of 'properties' */
+#define XNVME_SPEC_FS_IDFY_CTRLR_PROPERTIES_STAMP_ACCESS 0x8
+/** Keeps a time stamp of change; bit 4 of 'properties' */
+#define XNVME_SPEC_FS_IDFY_CTRLR_PROPERTIES_STAMP_CHANGE 0x10
+/** Keeps a time stamp of archival; bit 5 of 'properties' */
+#define XNVME_SPEC_FS_IDFY_CTRLR_PROPERTIES_STAMP_ARCHIVE 0x20
+/** Supports hard links; bit 6 of 'properties' */
+#define XNVME_SPEC_FS_IDFY_CTRLR_PROPERTIES_HARDLINKS 0x40
+/** Supports symbolic links; bit 7 of 'properties' */
+#define XNVME_SPEC_FS_IDFY_CTRLR_PROPERTIES_SYMLINKS 0x80
+/** File names are case sensitive; bit 8 of 'properties' */
+#define XNVME_SPEC_FS_IDFY_CTRLR_PROPERTIES_CASE_SENSITIVE 0x100
+/** File names preserve their case; bit 9 of 'properties' */
+#define XNVME_SPEC_FS_IDFY_CTRLR_PROPERTIES_CASE_PRESERVING 0x200
+/** Journals blocks; bit 10 of 'properties' */
+#define XNVME_SPEC_FS_IDFY_CTRLR_PROPERTIES_JOURNALING_BLOCK 0x400
+/** Journals metadata; bit 11 of 'properties' */
+#define XNVME_SPEC_FS_IDFY_CTRLR_PROPERTIES_JOURNALING_META 0x800
+/** Supports snapshots; bit 12 of 'properties' */
+#define XNVME_SPEC_FS_IDFY_CTRLR_PROPERTIES_SNAPSHOTTING 0x1000
+/** Compresses content; bit 13 of 'properties' */
+#define XNVME_SPEC_FS_IDFY_CTRLR_PROPERTIES_COMPRESSED 0x2000
+/** Encrypts content; bit 14 of 'properties' */
+#define XNVME_SPEC_FS_IDFY_CTRLR_PROPERTIES_ENCRYPTED 0x4000
 
 /**
  * Encapsulate file properties as Identify Namespace

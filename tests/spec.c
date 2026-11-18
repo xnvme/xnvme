@@ -289,6 +289,35 @@ XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_cs_vector, bits,
 				 XNVME_SPEC_CS_VECTOR_BITS_ZNS),
 		    "bits of struct xnvme_spec_cs_vector")
 
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_fs_idfy_ctrlr, caps,
+			 XNVME_SPEC_FS_IDFY_CTRLR_CAPS_DIRECT),
+		    "caps of struct xnvme_spec_fs_idfy_ctrlr")
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_fs_idfy_ctrlr, properties,
+			 XNVME_SPEC_FS_IDFY_CTRLR_PROPERTIES_PERMISSIONS_POSIX |
+				 XNVME_SPEC_FS_IDFY_CTRLR_PROPERTIES_PERMISSIONS_ACL |
+				 XNVME_SPEC_FS_IDFY_CTRLR_PROPERTIES_STAMP_CREATION |
+				 XNVME_SPEC_FS_IDFY_CTRLR_PROPERTIES_STAMP_ACCESS |
+				 XNVME_SPEC_FS_IDFY_CTRLR_PROPERTIES_STAMP_CHANGE |
+				 XNVME_SPEC_FS_IDFY_CTRLR_PROPERTIES_STAMP_ARCHIVE |
+				 XNVME_SPEC_FS_IDFY_CTRLR_PROPERTIES_HARDLINKS |
+				 XNVME_SPEC_FS_IDFY_CTRLR_PROPERTIES_SYMLINKS |
+				 XNVME_SPEC_FS_IDFY_CTRLR_PROPERTIES_CASE_SENSITIVE |
+				 XNVME_SPEC_FS_IDFY_CTRLR_PROPERTIES_CASE_PRESERVING |
+				 XNVME_SPEC_FS_IDFY_CTRLR_PROPERTIES_JOURNALING_BLOCK |
+				 XNVME_SPEC_FS_IDFY_CTRLR_PROPERTIES_JOURNALING_META |
+				 XNVME_SPEC_FS_IDFY_CTRLR_PROPERTIES_SNAPSHOTTING |
+				 XNVME_SPEC_FS_IDFY_CTRLR_PROPERTIES_COMPRESSED |
+				 XNVME_SPEC_FS_IDFY_CTRLR_PROPERTIES_ENCRYPTED),
+		    "properties of struct xnvme_spec_fs_idfy_ctrlr")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_fs_idfy_ctrlr, caps) == 520,
+		    "caps of struct xnvme_spec_fs_idfy_ctrlr")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_fs_idfy_ctrlr, limits) == 528,
+		    "limits of struct xnvme_spec_fs_idfy_ctrlr")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_fs_idfy_ctrlr, properties) == 560,
+		    "properties of struct xnvme_spec_fs_idfy_ctrlr")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_fs_idfy_ctrlr, iosizes) == 568,
+		    "iosizes of struct xnvme_spec_fs_idfy_ctrlr")
+
 struct offset_case {
 	const char *name;
 	size_t offset; ///< As the structure has it
@@ -443,6 +472,28 @@ sub_sqe_dwords(struct xnvme_cli *XNVME_UNUSED(cli))
 	return err;
 }
 
+static int
+sub_fs_masks(struct xnvme_cli *XNVME_UNUSED(cli))
+{
+	uint8_t raw[sizeof(struct xnvme_spec_fs_idfy_ctrlr)] = {0};
+	struct xnvme_spec_fs_idfy_ctrlr ctrlr;
+	int err = 0;
+
+	raw[520] = 0x01; // File-system Identify Controller caps: direct
+	raw[561] = 0x40; // properties bit 14: encrypted
+	memcpy(&ctrlr, raw, sizeof(ctrlr));
+	if (!xnvme_bits_get(ctrlr.caps, XNVME_SPEC_FS_IDFY_CTRLR_CAPS_DIRECT) ||
+	    xnvme_bits_get(ctrlr.properties,
+			   XNVME_SPEC_FS_IDFY_CTRLR_PROPERTIES_PERMISSIONS_POSIX) ||
+	    !xnvme_bits_get(ctrlr.properties, XNVME_SPEC_FS_IDFY_CTRLR_PROPERTIES_ENCRYPTED)) {
+		xnvme_cli_pinf("FAILED: caps: %#" PRIx64 ", properties: %#" PRIx64, ctrlr.caps,
+			       ctrlr.properties);
+		err = -EINVAL;
+	}
+
+	return err;
+}
+
 static struct xnvme_cli_sub g_subs[] = {
 	{
 		"idfy-offsets",
@@ -476,6 +527,15 @@ static struct xnvme_cli_sub g_subs[] = {
 		"Read the completion status through its masks",
 		"Read the completion status through its masks",
 		sub_status_masks,
+		{
+			{XNVME_CLI_OPT_NONE, XNVME_CLI_LOPT},
+		},
+	},
+	{
+		"fs-masks",
+		"Read the file-system Identify Controller through its masks",
+		"Read the file-system Identify Controller through its masks",
+		sub_fs_masks,
 		{
 			{XNVME_CLI_OPT_NONE, XNVME_CLI_LOPT},
 		},
