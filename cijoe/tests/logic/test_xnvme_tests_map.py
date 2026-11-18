@@ -9,6 +9,7 @@ REGISTERS_HOST_MEMORY = (
     "libvfn",
     "posix",
     "spdk",
+    "upcie",
     "windows",
 )
 
@@ -33,6 +34,16 @@ def skip_unless_registers_host_memory(cijoe, device, be_opts):
         err, _ = cijoe.run('test "$XNVME_SPDK_IOVA_MODE" = pa')
         if not err:
             pytest.skip(reason="SPDK with iova_mode=pa registers hugetlb memory only")
+
+    # On uio_pci_generic, uPCIe registers only memory in hugetlb pages, also where
+    # the device is in an IOMMU group of identity type
+    if be_opts["mem"] == "upcie" and "pcie" in device["labels"]:
+        uri = device["uri"]
+        err, state = cijoe.run(
+            f"sh -c 'basename $(readlink -f /sys/bus/pci/devices/{uri}/driver)'"
+        )
+        if err or "vfio-pci" not in state.output():
+            pytest.skip(reason="uPCIe on uio_pci_generic registers hugetlb memory only")
 
 
 @xnvme_parametrize(labels=["dev"], opts=["be"])

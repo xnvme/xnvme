@@ -27,8 +27,9 @@ DMA buffer space needed by the application.
 ### IOVA of the heap
 
 With the controller on `vfio-pci`, through iommufd or type1, the heap is mapped
-at an IOVA equal to its address. User addresses lie far above the IOVAs a
-platform reserves low, listed in
+at an IOVA equal to its address, as is memory registered with
+`xnvme_buf_register()`, so both translate alike. User addresses lie far above
+the IOVAs a platform reserves low, listed in
 `/sys/bus/pci/devices/<bdf>/iommu_group/reserved_regions`, but have to fit the
 IOMMU's aperture, typically 48 bits, and stay clear of the device-memory window
 (see `XNVME_UPCIE_IOVA_BASE`).
@@ -54,8 +55,24 @@ reserved regions.
 
 - **No `buf_realloc`.** Buffer reallocation is not implemented and returns
   `ENOSYS`.
-- **No registering of memory** (`xnvme_buf_register()` / `xnvme_buf_unregister()`). These
-  return `ENOSYS`.
+- **Registering memory** (`xnvme_buf_register()` / `xnvme_buf_unregister()`):
+  - Through an IOMMU (iommufd or type1), any memory aligned to the larger of the
+    CPU's page and the IOMMU's smallest page, where the heap sits at its
+    address (see above), and outside the device-memory window, which fails
+    with `ERANGE`. The pages are pinned, and count against the locked-memory
+    limit unless the process has `CAP_IPC_LOCK`. A client of a server
+    registers nothing.
+  - With `uio_pci_generic`, only memory in hugetlb pages of the heap's hugepage
+    size, aligned to it, since only those keep the physical address the device
+    was given. Reading that address needs `CAP_SYS_ADMIN`. Memory mapped
+    `MAP_PRIVATE` does not keep it across `fork()`: whichever of parent and
+    child writes first is moved to a copy, and if that is the parent, the
+    device goes on using the page the child now has. A process that forks
+    while memory is registered should map it `MAP_SHARED`, or mark it
+    `MADV_DONTFORK`.
+
+  `xnvme_buf_get_alignment()` reports the alignment for the case at hand, and
+  `ENOSYS` where registering is not possible.
 - **Controller reset** and **subsystem reset** are not supported. These
   operations disable the controller and re-enable it, but do not re-program the
   admin submission/completion queues. Without full re-initialization the
