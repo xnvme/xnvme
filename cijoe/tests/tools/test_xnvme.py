@@ -299,11 +299,8 @@ def test_cmd_admin(cijoe, device, be_opts, cli_args):
     assert not err
 
 
-@xnvme_parametrize(labels=["dev"], opts=["be", "admin"])
-def test_cmd_io(cijoe, device, be_opts, cli_args):
-    """Construct and send an I/O command (read)"""
-
-    opcode = "0x02"
+def _lba_nbytes(cijoe, cli_args):
+    """The lba_nbytes of the namespace, as 'xnvme info' reports it"""
 
     err, state = cijoe.run(f"xnvme info {cli_args}")
     assert not err
@@ -318,10 +315,40 @@ def test_cmd_io(cijoe, device, be_opts, cli_args):
 
     assert data_nbytes > 0
 
+    return data_nbytes
+
+
+@xnvme_parametrize(labels=["dev"], opts=["be", "admin"])
+def test_cmd_io(cijoe, device, be_opts, cli_args):
+    """Construct and send an I/O command (read)"""
+
+    opcode = "0x02"
+    data_nbytes = _lba_nbytes(cijoe, cli_args)
+
     err, _ = cijoe.run(
         f"xnvme cmd-io {cli_args} --opcode {opcode} --namespace-id {device['nsid']} --data-len {data_nbytes} --read"
     )
     assert not err
+
+
+@xnvme_parametrize(labels=["dev"], opts=["be", "sync"])
+def test_cmd_io_inactive_nsid(cijoe, device, be_opts, cli_args):
+    """A read to an inactive namespace fails with Status Code Type 7 and EINVAL"""
+
+    if get_osname() != "linux" or be_opts["sync"] != "nvme":
+        pytest.skip(
+            reason="Only the ioctl path of sync nvme on linux refuses a command with a kernel errno"
+        )
+
+    opcode = "0x02"
+    nsid = cijoe_config_inactive_nsid(device)
+    data_nbytes = _lba_nbytes(cijoe, cli_args)
+
+    err, state = cijoe.run(
+        f"xnvme cmd-io {cli_args} --opcode {opcode} --namespace-id {nsid} --data-len {data_nbytes} --read"
+    )
+    assert err, f"the kernel accepted nsid {nsid}: {state.output()}"
+    assert "sct(0x7), sc(0x16)" in state.output()
 
 
 @xnvme_parametrize(labels=["pcie"], opts=["be"])
