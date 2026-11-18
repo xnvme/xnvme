@@ -183,7 +183,7 @@ xnvme_ident_fpr(FILE *stream, const struct xnvme_ident *ident, int opts);
 int
 xnvme_ident_pr(const struct xnvme_ident *ident, int opts);
 
-/* Printers of libxnvme_spec.h */
+/* Printers of the structures of the generated libxnvme_spec_<doc>.h */
 
 /**
  * Prints the given :;xnvme_spec_base_log_smart_health_information to the given output stream
@@ -795,16 +795,6 @@ xnvme_spec_feat_id_str(enum xnvme_spec_base_feature_identifier eval);
  */
 const char *
 xnvme_spec_feat_sel_str(enum xnvme_spec_admin_get_features_cdw10_sel eval);
-
-/**
- * Produces a string representation of the given ::xnvme_spec_flag
- *
- * @param eval the enum value to produce a string representation of
- * @return On success, a string representation is returned. On error, the string
- * "ENOSYS" is returned.
- */
-const char *
-xnvme_spec_flag_str(enum xnvme_spec_flag eval);
 
 /**
  * Produces a string representation of the given value of ::xnvme_spec_admin_identify_cdw10_cns
