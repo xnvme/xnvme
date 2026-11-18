@@ -1,13 +1,18 @@
 """
 The example of reading at a queue depth, xpy_perf, completes every read both
-by callback and by reaping, on the ramdisk, which needs no device
+by callback and by reaping, on the ramdisk, which needs no device, and through
+the module that --bindings names
 """
 
 import importlib.machinery
 import importlib.util
+import shutil
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
+import xnvme
 
 XPY_PERF = Path(__file__).resolve().parents[1] / "bindings" / "bin" / "xpy_perf"
 
@@ -36,7 +41,7 @@ def test_xpy_perf_completes_every_read(completion):
             "--ios=1000",
         ]
     )
-    binding, _ = perf.load()
+    binding, _ = perf.load(None)
     result = perf.run(binding, args)
 
     assert result["ios"] == 1000
@@ -48,3 +53,36 @@ def test_xpy_perf_needs_a_read():
 
     with pytest.raises(SystemExit):
         xpy_perf().parse_args(["--uri=1GB", "--ios=0"])
+
+
+def test_xpy_perf_reads_through_the_module_of_bindings(tmp_path):
+    """--bindings loads the module xnvme in the directory given, here a copy of
+    the installed module, in place of the installed one"""
+
+    copy = tmp_path / "xnvme"
+    shutil.copytree(
+        Path(xnvme.__file__).parent,
+        copy,
+        ignore=shutil.ignore_patterns("__pycache__", "tests"),
+    )
+
+    # A process of its own, since this one has imported the installed module
+    proc = subprocess.run(
+        [
+            sys.executable,
+            str(XPY_PERF),
+            f"--bindings={tmp_path}",
+            "--uri=1GB",
+            "--be=ramdisk",
+            "--async=nil",
+            "--qdepth=8",
+            "--ios=1000",
+        ],
+        capture_output=True,
+        text=True,
+    )
+    assert proc.returncode == 0, proc.stderr
+
+    result = dict(line.strip().split(": ", 1) for line in proc.stdout.splitlines()[1:])
+    assert result["bindings"] == f"'{copy / '__init__.py'}'"
+    assert result["ios"] == "1000"
