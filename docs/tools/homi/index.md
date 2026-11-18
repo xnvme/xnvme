@@ -97,7 +97,9 @@ ioctl() interface, the same mimic `qublk` serves as `/dev/ublkb<N>-nvme` (see
 {ref}`sec-tools-qublk`). A controller reached any other way
 (fabrics, a bare device-file path) has no such address and is left
 unexposed, with no fallback name. Pass `--no-cuse` to skip it entirely. The
-mimic itself is Linux-only; on another platform **homi** still runs, quietly
+mimic itself is Linux-only, and needs Linux 6.6 or later, at build time and at
+runtime; {ref}`sec-tools-qublk` lists what the build requires. On another
+platform, or in a build without the mimic, **homi** still runs, quietly
 skipping the character device for every controller.
 
 While it runs, clients connect by passing the same

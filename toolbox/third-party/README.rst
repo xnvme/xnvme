@@ -35,6 +35,16 @@ REPOS/subprojects/upcie/
 
   Repos: https://github.com/safl/upcie
 
+REPOS/subprojects/ufuse/
+  Summary: Header-only library for the FUSE and CUSE wire protocols, used by
+  the character devices of ``homi`` and ``qublk``. Retrieved by
+  ``subprojects/ufuse.wrap`` at the release tag it pins.
+
+  License: BSD-3-Clause
+  https://github.com/safl/ufuse/blob/main/LICENSE
+
+  Repos: https://github.com/safl/ufuse
+
 SYSTEM:freebsd:/
   Summary: Headers for the FreeBSD Kernel NVMe driver IOCTLs are used by the
   ``be/fbsd``, then headers for backend. These headers are not distributed with

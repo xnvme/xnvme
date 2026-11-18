@@ -30,6 +30,7 @@
       && !(type == "directory" && builtins.elem rel [
         "subprojects/upcie"
         "subprojects/spdk"
+        "subprojects/ufuse"
       ]);
   };
 })

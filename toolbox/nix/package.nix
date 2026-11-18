@@ -24,6 +24,15 @@ let
     tag = "v0.12.0";
     hash = "sha256-0uZaPZ1sTWBMbdnAfQEKh0WNlDjECNxQWgmOO5/E5nM=";
   };
+
+  # Header-only; the CUSE devices of homi and qublk take it as a meson
+  # subproject, which the build sandbox cannot fetch either
+  ufuse = fetchFromGitHub {
+    owner = "safl";
+    repo = "ufuse";
+    tag = "v0.4.0";
+    hash = "sha256-U/YeKvRCaK59zgeu1O8ilNeQ0i+rslr5Gx/qNOIVp44=";
+  };
 in
 stdenv.mkDerivation {
   pname = "xnvme";
@@ -39,6 +48,8 @@ stdenv.mkDerivation {
   postUnpack = ''
     cp -r ${upcie} $sourceRoot/subprojects/upcie
     chmod -R u+w $sourceRoot/subprojects/upcie
+    cp -r ${ufuse} $sourceRoot/subprojects/ufuse
+    chmod -R u+w $sourceRoot/subprojects/ufuse
   '';
 
   nativeBuildInputs = [

@@ -180,8 +180,8 @@ static const struct libconf_part g_libconf_parts[] = {
 #ifdef XNVME_CUSE_ENABLED
 		.built = true,
 #endif
-		.brings = "the character devices homi serve exposes",
-		.without = "homi serve exposes none",
+		.brings = "the NVMe-driver ioctl() character devices of homi and qublk",
+		.without = "homi and qublk serve none",
 	},
 	{
 		.name = "isal",

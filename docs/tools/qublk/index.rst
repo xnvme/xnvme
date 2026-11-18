@@ -30,14 +30,18 @@ Requirements
 * for user space backends such as **uPCIe**, a device bound to
   ``uio_pci_generic`` and hugepages configured; see :ref:`sec-backends-upcie`
 
-The Linux-NVMe-driver ioctl() mimic (see below) additionally needs a kernel
-new enough to carry ``NVME_IOCTL_IO64_CMD_VEC`` in ``<linux/nvme_ioctl.h>``
-(5.17+) alongside ``<linux/fuse.h>``, both at build time;
-``-Dwith-cuse=disabled`` skips it explicitly, and without either header
-**qublk** still builds, quietly serving every device without its ``-nvme``
-character device, since that is a permanent build-time condition rather
-than a one-off failure; a CUSE device that fails to come up at runtime for
-some other reason still warns and does the same.
+The Linux-NVMe-driver ioctl() mimic (see below) additionally needs Linux 6.6 or
+later, at build time and at runtime. Its CUSE protocol comes from `uFuse
+<https://github.com/safl/ufuse>`_, a header-only library that the build
+retrieves by ``subprojects/ufuse.wrap`` unless a 0.4 release is installed.
+uFuse needs a ``<linux/fuse.h>`` of protocol 7.39 (Linux 6.6), and the mimic
+needs ``NVME_IOCTL_IO64_CMD_VEC`` in ``<linux/nvme_ioctl.h>`` (5.17+). Where
+one of these is missing, configure reports its check of them as ``NO``, and
+**qublk** still builds, serving every device without its ``-nvme`` character
+device; ``-Dwith-cuse=enabled`` fails the build instead, and
+``-Dwith-cuse=disabled`` skips the mimic. ``xnvme env library`` reports the
+outcome as ``cuse``. A CUSE device that fails to come up at runtime warns, and
+the block device is served without it.
 
 ``serve`` — Serve a block-device
 ================================
