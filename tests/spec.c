@@ -201,6 +201,47 @@ sub_fs_masks(struct xnvme_cli *XNVME_UNUSED(cli))
 	return err;
 }
 
+static int
+sub_pif_reftag(struct xnvme_cli *XNVME_UNUSED(cli))
+{
+	static uint8_t data[4096];
+	uint8_t md[16];
+	const uint8_t g64[6] = {0x00, 0x00, 0x89, 0xab, 0xcd, 0xef};
+	const uint8_t g16[4] = {0x89, 0xab, 0xcd, 0xef};
+	struct xnvme_pi_ctx ctx = {0};
+	int err = 0;
+
+	// 64b Guard: the reference tag is the low bits of the 48 bits of bytes 15:10
+	memset(md, 0, sizeof(md));
+	if (xnvme_pi_ctx_init(&ctx, sizeof(data), sizeof(md), false, false, XNVME_PI_TYPE1,
+			      XNVME_PI_FLAGS_REFTAG_CHECK, 0x89abcdef, 0, 0,
+			      XNVME_SPEC_NVM_PIF_64B_GUARD_PROTECTION_INFORMATION)) {
+		xnvme_cli_pinf("FAILED: xnvme_pi_ctx_init(64b)");
+		return -EINVAL;
+	}
+	xnvme_pi_generate(&ctx, data, md, 1);
+	if (memcmp(&md[10], g64, sizeof(g64)) || xnvme_pi_verify(&ctx, data, md, 1)) {
+		xnvme_cli_pinf("FAILED: 64b guard: reference tag in bytes 15:10");
+		err = -EINVAL;
+	}
+
+	// 16b Guard: the reference tag is bytes 7:4
+	memset(md, 0, sizeof(md));
+	if (xnvme_pi_ctx_init(&ctx, sizeof(data), 8, false, false, XNVME_PI_TYPE1,
+			      XNVME_PI_FLAGS_REFTAG_CHECK, 0x89abcdef, 0, 0,
+			      XNVME_SPEC_NVM_PIF_16B_GUARD_PROTECTION_INFORMATION)) {
+		xnvme_cli_pinf("FAILED: xnvme_pi_ctx_init(16b)");
+		return -EINVAL;
+	}
+	xnvme_pi_generate(&ctx, data, md, 1);
+	if (memcmp(&md[4], g16, sizeof(g16)) || xnvme_pi_verify(&ctx, data, md, 1)) {
+		xnvme_cli_pinf("FAILED: 16b guard: reference tag in bytes 7:4");
+		err = -EINVAL;
+	}
+
+	return err;
+}
+
 static struct xnvme_cli_sub g_subs[] = {
 	{
 		"idfy-offsets",
@@ -243,6 +284,15 @@ static struct xnvme_cli_sub g_subs[] = {
 		"Read the file-system Identify Controller through its masks",
 		"Read the file-system Identify Controller through its masks",
 		sub_fs_masks,
+		{
+			{XNVME_CLI_OPT_NONE, XNVME_CLI_LOPT},
+		},
+	},
+	{
+		"pif-reftag",
+		"Write and read the reference tag of the protection information formats",
+		"Write and read the reference tag of the protection information formats",
+		sub_pif_reftag,
 		{
 			{XNVME_CLI_OPT_NONE, XNVME_CLI_LOPT},
 		},

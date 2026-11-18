@@ -126,6 +126,7 @@ tests = {
     ['status-masks', ['status-masks']],
     ['sqe-dwords', ['sqe-dwords']],
     ['fs-masks', ['fs-masks']],
+    ['pif-reftag', ['pif-reftag']],
   ],
   'threads.c': [
     ['reopen', ['reopen', '1GB', '--count', '5']],
