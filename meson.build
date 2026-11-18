@@ -333,7 +333,11 @@ bash_completion_dep = dependency(
   required: false
 )
 if bash_completion_dep.found()
-  bash_completions_dir = bash_completion_dep.get_variable('completionsdir')
+  # Relative to the prefix, as everything else installed, rather than to bash-completion's own prefix
+  bash_completions_dir = bash_completion_dep.get_variable(
+    pkgconfig: 'completionsdir',
+    pkgconfig_define: ['datadir', get_option('prefix') / get_option('datadir')],
+  )
   message('Bash-completions: ' + bash_completions_dir)
   install_completions = true
 elif get_option('force_completions') and not is_windows
@@ -343,7 +347,7 @@ elif get_option('force_completions') and not is_windows
   elif is_freebsd
      bash_completions_dir = get_option('prefix') / 'share/bash-completion/completions'
   elif is_linux
-     bash_completions_dir = '/usr/share/bash-completion/completions'
+     bash_completions_dir = get_option('prefix') / get_option('datadir') / 'bash-completion/completions'
   endif
 
   message('Bash-completions: ' + bash_completions_dir)
@@ -378,3 +382,14 @@ if get_option('examples')
   subdir('examples')
   subdir('man/examples')
 endif
+
+# sysconfdir is /etc for the prefix /usr, and -Dsystemd_unitdir is taken as given
+install_dirs = [get_option('prefix'), get_option('prefix') / get_option('sysconfdir')]
+if get_option('systemd_unitdir') != ''
+  install_dirs += [get_option('systemd_unitdir')]
+endif
+test(
+  'install, under the prefix',
+  python3,
+  args: [files('toolbox/install_prefix_check.py'), meson.project_build_root()] + install_dirs,
+)
