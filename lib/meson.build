@@ -66,7 +66,11 @@ pconf.generate(
   install_dir: is_freebsd ? 'libdata/pkgconfig' : xnvmelib_libdir + '/pkgconfig',
   version: meson.project_version(),
   variables: [
-    'datadir=' + get_option('prefix') / get_option('datadir') / meson.project_name()
+    'datadir=' + get_option('prefix') / get_option('datadir') / meson.project_name(),
+    # Where an extension installs its xnvme-<name> program, for 'xnvme <name>' to run it
+    'libexecdir=' + get_option('prefix') / xnvme_libexecdir,
+    # Where an extension installs its <name>.extension, for the overview of 'xnvme' to list it
+    'extensiondir=' + get_option('prefix') / xnvme_extensiondir,
   ],
   name: 'xNVMe',
   filebase: 'xnvme',
