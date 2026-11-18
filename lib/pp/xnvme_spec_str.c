@@ -91,27 +91,6 @@ xnvme_spec_feat_sel_str(enum xnvme_spec_admin_get_features_cdw10_sel eval)
 }
 
 const char *
-xnvme_spec_flag_str(enum xnvme_spec_flag eval)
-{
-	switch (eval) {
-	case XNVME_SPEC_FLAG_FORCE_UNIT_ACCESS:
-		return "FLAG_FORCE_UNIT_ACCESS";
-	case XNVME_SPEC_FLAG_LIMITED_RETRY:
-		return "FLAG_LIMITED_RETRY";
-	case XNVME_SPEC_FLAG_PRINFO_PRACT:
-		return "FLAG_PRINFO_PRACT";
-	case XNVME_SPEC_FLAG_PRINFO_PRCHK_APP:
-		return "FLAG_PRINFO_PRCHK_APP";
-	case XNVME_SPEC_FLAG_PRINFO_PRCHK_GUARD:
-		return "FLAG_PRINFO_PRCHK_GUARD";
-	case XNVME_SPEC_FLAG_PRINFO_PRCHK_REF:
-		return "FLAG_PRINFO_PRCHK_REF";
-	}
-
-	return "ENOSYS";
-}
-
-const char *
 xnvme_spec_idfy_cns_str(int eval)
 {
 	switch (eval) {

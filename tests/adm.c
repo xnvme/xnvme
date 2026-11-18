@@ -209,7 +209,8 @@ sub_log_health(struct xnvme_cli *cli)
 
 	err = get_log_page(&ctx, &args, log, log_nbytes);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		xnvme_cli_perr("get_log_page(XNVME_SPEC_LOG_HEALTH)", err);
+		xnvme_cli_perr("get_log_page(XNVME_SPEC_BASE_LOG_PAGE_SMART_HEALTH_INFORMATION)",
+			       err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;
@@ -267,7 +268,7 @@ sub_log_erri(struct xnvme_cli *cli)
 
 	err = get_log_page(&ctx, &args, log, log_nbytes);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		xnvme_cli_perr("get_log_page(XNVME_SPEC_LOG_ERRI)", err);
+		xnvme_cli_perr("get_log_page(XNVME_SPEC_BASE_LOG_PAGE_ERROR_INFORMATION)", err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;
@@ -322,7 +323,7 @@ sub_log_sanitize(struct xnvme_cli *cli)
 
 	err = get_log_page(&ctx, &args, log, log_nbytes);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		xnvme_cli_perr("get_log_page(XNVME_SPEC_LOG_SANITIZE)", err);
+		xnvme_cli_perr("get_log_page(XNVME_SPEC_BASE_LOG_PAGE_SANITIZE_STATUS)", err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;
@@ -384,7 +385,7 @@ sub_log_fdp_config(struct xnvme_cli *cli)
 	xnvme_cli_pinf("Retrieving FDP configurations log page ...");
 	err = get_log_page(&ctx, &args, log, log_nbytes);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		xnvme_cli_perr("get_log_page(XNVME_SPEC_LOG_FDPCONF)", err);
+		xnvme_cli_perr("get_log_page(XNVME_SPEC_BASE_LOG_PAGE_FDP_CONFIGURATIONS)", err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;
@@ -443,7 +444,8 @@ sub_log_ruhu(struct xnvme_cli *cli)
 
 	err = get_log_page(&ctx, &args, log, log_nbytes);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		xnvme_cli_perr("get_log_page(XNVME_SPEC_LOG_FDPRUHU)", err);
+		xnvme_cli_perr("get_log_page(XNVME_SPEC_BASE_LOG_PAGE_RECLAIM_UNIT_HANDLE_USAGE)",
+			       err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;
@@ -501,7 +503,7 @@ sub_log_fdp_stats(struct xnvme_cli *cli)
 	xnvme_cli_pinf("Retrieving FDP statistics log page ...");
 	err = get_log_page(&ctx, &args, log, log_nbytes);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		xnvme_cli_perr("get_log_page(XNVME_SPEC_LOG_FDPSTATS)", err);
+		xnvme_cli_perr("get_log_page(XNVME_SPEC_BASE_LOG_PAGE_FDP_STATISTICS)", err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;
@@ -561,7 +563,7 @@ sub_log_fdp_events(struct xnvme_cli *cli)
 
 	err = get_log_page(&ctx, &args, log, log_nbytes);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		xnvme_cli_perr("get_log_page(XNVME_SPEC_LOG_FDPEVENTS)", err);
+		xnvme_cli_perr("get_log_page(XNVME_SPEC_BASE_LOG_PAGE_FDP_EVENTS)", err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;
@@ -1010,7 +1012,9 @@ sub_ruhs(struct xnvme_cli *cli)
 		err = xnvme_cmd_pass(&ctx, ruhs, ruhs_nbytes, NULL, 0x0);
 	}
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		xnvme_cli_perr("io_management_receive(XNVME_SPEC_IO_MGMT_RECV_RUHS)", err);
+		xnvme_cli_perr("io_management_receive(XNVME_SPEC_IO_IO_MANAGEMENT_RECEIVE_CDW10_"
+			       "MO_RECLAIM_UNIT_HANDLE_STATUS)",
+			       err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;
@@ -1069,7 +1073,9 @@ sub_ruhu(struct xnvme_cli *cli)
 		err = xnvme_cmd_pass(&ctx, pid_list, npids * 2, NULL, 0x0);
 	}
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		xnvme_cli_perr("io_management_send(XNVME_SPEC_IO_MGMT_SEND_RUHU)", err);
+		xnvme_cli_perr("io_management_send(XNVME_SPEC_IO_IO_MANAGEMENT_SEND_CDW10_MO_"
+			       "RECLAIM_UNIT_HANDLE_UPDATE)",
+			       err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;
