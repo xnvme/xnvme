@@ -285,13 +285,6 @@ dispatch(struct qublk_queue *q, struct qublk_io *io)
 		return -EBUSY;
 	}
 
-	/*
-	 * The ctx is pooled per xnvme queue and reused across commands.
-	 * xnvme_nvm_{read,write} only writes opcode/nsid/slba/nlb, so other
-	 * fields in cdw12 (fua, lr, prinfo, ...) carry over from the prior
-	 * command. Zero the NVMe command header before each submit.
-	 */
-	memset(&ctx->cmd, 0, sizeof(ctx->cmd));
 	xnvme_cmd_ctx_set_cb(ctx, on_xnvme_complete, io);
 
 	switch (op) {
@@ -304,20 +297,34 @@ dispatch(struct qublk_queue *q, struct qublk_io *io)
 		 * covers have completed. One FLUSH on the local queue
 		 * therefore covers writes completed on every queue.
 		 */
-		xnvme_prep_nvm(ctx, XNVME_SPEC_NVM_OPC_FLUSH, nsid, 0, 0);
-		rc = xnvme_cmd_pass(ctx, NULL, 0, NULL, 0);
+		rc = xnvme_cmd_prep_io_flush(
+			&ctx->cmd,
+			&(struct xnvme_cmd_prep_io_flush_args){
+				.args_nbytes = sizeof(struct xnvme_cmd_prep_io_flush_args),
+				.nsid = nsid,
+			});
+		if (!rc) {
+			rc = xnvme_cmd_pass(ctx, NULL, 0, NULL, 0);
+		}
 		break;
 	case UBLK_IO_OP_READ:
 		slba = iod->start_sector >> (lba_shift - XNVME_UNIVERSAL_SECT_SH);
 		nlb = (uint16_t)(((iod->nr_sectors << XNVME_UNIVERSAL_SECT_SH) >> lba_shift) - 1);
-		rc = xnvme_nvm_read(ctx, nsid, slba, nlb, io->buf, NULL);
+		rc = xnvme_cmd_prep_nvm_read(
+			&ctx->cmd,
+			&(struct xnvme_cmd_prep_nvm_read_args){
+				.args_nbytes = sizeof(struct xnvme_cmd_prep_nvm_read_args),
+				.nsid = nsid,
+				.slba = slba,
+				.nlb = nlb,
+			});
+		if (!rc) {
+			rc = xnvme_cmd_pass(ctx, io->buf, (size_t)bytes, NULL, 0);
+		}
 		break;
 	case UBLK_IO_OP_WRITE:
 		slba = iod->start_sector >> (lba_shift - XNVME_UNIVERSAL_SECT_SH);
 		nlb = (uint16_t)(((iod->nr_sectors << XNVME_UNIVERSAL_SECT_SH) >> lba_shift) - 1);
-		if (iod->op_flags & UBLK_IO_F_FUA) {
-			ctx->cmd.nvm.fua = 1;
-		}
 
 		// The data to write is fetched from the kernel before the command is submitted
 		if (dev->user_copy) {
@@ -327,7 +334,18 @@ dispatch(struct qublk_queue *q, struct qublk_io *io)
 			}
 		}
 
-		rc = xnvme_nvm_write(ctx, nsid, slba, nlb, io->buf, NULL);
+		rc = xnvme_cmd_prep_nvm_write(
+			&ctx->cmd,
+			&(struct xnvme_cmd_prep_nvm_write_args){
+				.args_nbytes = sizeof(struct xnvme_cmd_prep_nvm_write_args),
+				.nsid = nsid,
+				.slba = slba,
+				.fua = (iod->op_flags & UBLK_IO_F_FUA) ? 1 : 0,
+				.nlb = nlb,
+			});
+		if (!rc) {
+			rc = xnvme_cmd_pass(ctx, io->buf, (size_t)bytes, NULL, 0);
+		}
 		break;
 	case UBLK_IO_OP_DISCARD: {
 		// One deallocate range, as nvme_setup_discard() builds it, in the
@@ -345,7 +363,17 @@ dispatch(struct qublk_queue *q, struct qublk_io *io)
 		range->cattr = 0;
 		range->llb = (uint32_t)(bytes >> lba_shift);
 		range->slba = iod->start_sector >> (lba_shift - XNVME_UNIVERSAL_SECT_SH);
-		rc = xnvme_nvm_dsm(ctx, nsid, range, 0, true, false, false);
+		rc = xnvme_cmd_prep_nvm_dataset_management(
+			&ctx->cmd,
+			&(struct xnvme_cmd_prep_nvm_dataset_management_args){
+				.args_nbytes =
+					sizeof(struct xnvme_cmd_prep_nvm_dataset_management_args),
+				.nsid = nsid,
+				.ad = 1,
+			});
+		if (!rc) {
+			rc = xnvme_cmd_pass(ctx, range, sizeof(*range), NULL, 0);
+		}
 		break;
 	}
 	case UBLK_IO_OP_WRITE_ZEROES:
@@ -359,12 +387,19 @@ dispatch(struct qublk_queue *q, struct qublk_io *io)
 
 		slba = iod->start_sector >> (lba_shift - XNVME_UNIVERSAL_SECT_SH);
 		nlb = (uint16_t)((bytes >> lba_shift) - 1);
-		// As nvme_setup_write_zeroes(): deallocate unless NOUNMAP is set
-		if (dev->wz_deac && !(iod->op_flags & UBLK_IO_F_NOUNMAP)) {
-			ctx->cmd.write_zeroes.deac = 1;
+		rc = xnvme_cmd_prep_nvm_write_zeroes(
+			&ctx->cmd,
+			&(struct xnvme_cmd_prep_nvm_write_zeroes_args){
+				.args_nbytes = sizeof(struct xnvme_cmd_prep_nvm_write_zeroes_args),
+				.nsid = nsid,
+				.slba = slba,
+				// As nvme_setup_write_zeroes(): deallocate unless NOUNMAP is set
+				.deac = dev->wz_deac && !(iod->op_flags & UBLK_IO_F_NOUNMAP),
+				.nlb = nlb,
+			});
+		if (!rc) {
+			rc = xnvme_cmd_pass(ctx, NULL, 0, NULL, 0);
 		}
-
-		rc = xnvme_nvm_write_zeroes(ctx, nsid, slba, nlb);
 		break;
 	default:
 		rc = qublk_zoned_dispatch(q, io, ctx);

@@ -203,9 +203,18 @@ sub_deprecated_queue(struct xnvme_cli *cli)
 	xnvme_queue_set_cb(queue, cb_put_ctx, NULL);
 
 	ctx = xnvme_queue_get_cmd_ctx(queue);
-	err = xnvme_nvm_read(ctx, xnvme_dev_get_nsid(dev), 0, 0, buf, NULL);
+	struct xnvme_cmd_prep_nvm_read_args rd = {
+		.args_nbytes = sizeof(rd),
+		.nsid = xnvme_dev_get_nsid(dev),
+	};
+
+	err = xnvme_cmd_prep_nvm_read(&ctx->cmd, &rd);
+	if (!err) {
+		err = xnvme_cmd_pass(ctx, buf, (size_t)xnvme_dev_get_geo(ctx->dev)->lba_nbytes,
+				     NULL, 0);
+	}
 	if (err) {
-		xnvme_cli_perr("xnvme_nvm_read()", err);
+		xnvme_cli_perr("read", err);
 		xnvme_queue_put_cmd_ctx(queue, ctx);
 		goto exit;
 	}

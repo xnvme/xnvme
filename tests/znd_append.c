@@ -120,8 +120,19 @@ cmd_verify(struct xnvme_cli *cli)
 	for (uint64_t sect = 0; (sect < zone.zcap) && !cb_args.ecount; ++sect) {
 		struct xnvme_cmd_ctx *ctx = xnvme_queue_get_cmd_ctx(queue);
 
-		err = xnvme_znd_append(ctx, nsid, zone.zslba, 0, dbuf + sect * geo->lba_nbytes,
-				       NULL);
+		struct xnvme_cmd_prep_zns_zone_append_args app = {
+			.args_nbytes = sizeof(app),
+			.nsid = nsid,
+			.zslba = zone.zslba,
+		};
+
+		err = xnvme_cmd_prep_zns_zone_append(&ctx->cmd, &app);
+		if (!err) {
+			err = xnvme_cmd_pass(ctx, dbuf + sect * geo->lba_nbytes,
+					     (size_t)xnvme_dev_get_geo(ctx->dev)->lba_nbytes *
+						     (0 + 1),
+					     NULL, 0);
+		}
 		switch (err) {
 		case 0:
 			cb_args.submitted += 1;
@@ -166,10 +177,20 @@ cmd_verify(struct xnvme_cli *cli)
 
 		xnvme_dev_get_cmd_ctx(dev, &ctx);
 
-		err = xnvme_nvm_read(&ctx, nsid, zone.zslba + sect, 0,
-				     vbuf + sect * geo->lba_nbytes, NULL);
+		struct xnvme_cmd_prep_nvm_read_args rd = {
+			.args_nbytes = sizeof(rd),
+			.nsid = nsid,
+			.slba = zone.zslba + sect,
+		};
+
+		err = xnvme_cmd_prep_nvm_read(&ctx.cmd, &rd);
+		if (!err) {
+			err = xnvme_cmd_pass(&ctx, vbuf + sect * geo->lba_nbytes,
+					     (size_t)xnvme_dev_get_geo(ctx.dev)->lba_nbytes, NULL,
+					     0);
+		}
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-			xnvme_cli_perr("xnvme_nvm_read()", err);
+			xnvme_cli_perr("read", err);
 			xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 			err = err ? err : -EIO;
 			goto exit;

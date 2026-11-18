@@ -202,10 +202,18 @@ test_enum_keep_open(struct xnvme_cli *cli)
 			XNVME_DEBUG("FAILED: xnvme_buf_alloc()");
 			return -errno;
 		}
+		struct xnvme_cmd_prep_adm_identify_args id = {
+			.args_nbytes = sizeof(id),
+			.cns = XNVME_SPEC_IDFY_CTRLR,
+		};
+
 		xnvme_dev_get_cmd_ctx(devs[i], &ctx);
-		err = xnvme_adm_idfy_ctrlr(&ctx, idfy_ctrlr);
+		err = xnvme_cmd_prep_adm_identify(&ctx.cmd, &id);
+		if (!err) {
+			err = xnvme_cmd_pass_admin(&ctx, idfy_ctrlr, sizeof(*idfy_ctrlr), NULL, 0);
+		}
 		if (err) {
-			XNVME_DEBUG("FAILED: xnvme_adm_idfy_ctrlr()");
+			XNVME_DEBUG("FAILED: identify(CTRLR)");
 			return err;
 		}
 		xnvme_buf_free(devs[i], idfy_ctrlr);
