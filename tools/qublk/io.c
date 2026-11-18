@@ -179,19 +179,63 @@ submit_commit_and_fetch(struct qublk_queue *q, struct qublk_io *io, int result)
 	return 0;
 }
 
-/*
- * -EOPNOTSUPP for Invalid Command Opcode or Invalid Field of the generic type,
- * which the kernel nvme driver maps to BLK_STS_NOTSUPP; -EIO otherwise
- */
+// errno the kernel nvme driver gives this status (nvme_error_status)
 static int
-range_op_error(struct xnvme_cmd_ctx *ctx)
+nvme_status_errno(struct xnvme_cmd_ctx *ctx)
 {
 	uint16_t sct = xnvme_bits_get(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT);
 	uint16_t sc = xnvme_bits_get(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC);
 
-	if (sct == XNVME_STATUS_CODE_TYPE_GENERIC &&
-	    (sc == XNVME_STATUS_CODE_INVALID_OPCODE || sc == XNVME_STATUS_CODE_INVALID_FIELD)) {
-		return -EOPNOTSUPP;
+	switch (sct) {
+	case XNVME_STATUS_CODE_TYPE_GENERIC:
+		switch (sc) {
+		case XNVME_STATUS_CODE_CAP_EXCEEDED:
+			return -ENOSPC;
+		case XNVME_STATUS_CODE_LBA_RANGE:
+		case XNVME_STATUS_CODE_CMD_INTERRUPTED:
+		case XNVME_STATUS_CODE_NS_NOT_READY:
+			return -EREMOTEIO;
+		case XNVME_STATUS_CODE_INVALID_OPCODE:
+		case XNVME_STATUS_CODE_INVALID_FIELD:
+		case XNVME_STATUS_CODE_INVALID_NS:
+			return -EOPNOTSUPP;
+		case XNVME_STATUS_CODE_RESERVATION_CONFLICT:
+			return -EBADE;
+		}
+		break;
+	case XNVME_STATUS_CODE_TYPE_CMDSPEC:
+		switch (sc) {
+		case XNVME_SPEC_NVM_CMD_CPL_SC_BAD_ATTRIBUTES:
+			return -EOPNOTSUPP;
+		case XNVME_SPEC_NVM_CMD_CPL_SC_INVALID_PI:
+			return -EILSEQ;
+		case XNVME_SPEC_NVM_CMD_CPL_SC_WRITE_TO_RONLY:
+			return -ENODATA;
+		case XNVME_SPEC_ZND_SC_TOO_MANY_ACTIVE:
+			return -EOVERFLOW;
+		case XNVME_SPEC_ZND_SC_TOO_MANY_OPEN:
+			return -ETOOMANYREFS;
+		}
+		break;
+	case XNVME_STATUS_CODE_TYPE_MEDIA:
+		switch (sc) {
+		case XNVME_SPEC_MEDIA_SC_WRITE_FAULT:
+		case XNVME_SPEC_MEDIA_SC_READ_ERROR:
+		case XNVME_SPEC_MEDIA_SC_COMPARE_FAILED:
+		case XNVME_SPEC_MEDIA_SC_ACCESS_DENIED:
+		case XNVME_SPEC_MEDIA_SC_UNWRITTEN_BLOCK:
+			return -ENODATA;
+		case XNVME_SPEC_MEDIA_SC_GUARD_CHECK:
+		case XNVME_SPEC_MEDIA_SC_APPTAG_CHECK:
+		case XNVME_SPEC_MEDIA_SC_REFTAG_CHECK:
+			return -EILSEQ;
+		}
+		break;
+	case XNVME_STATUS_CODE_TYPE_PATH:
+		if (sc == XNVME_SPEC_PATH_SC_HOST_PATH_ERROR) {
+			return -ENOLINK;
+		}
+		break;
 	}
 
 	return -EIO;
@@ -206,9 +250,7 @@ on_xnvme_complete(struct xnvme_cmd_ctx *ctx, void *opaque)
 	int result;
 
 	if (xnvme_cmd_ctx_cpl_status(ctx)) {
-		result = op == UBLK_IO_OP_DISCARD || op == UBLK_IO_OP_WRITE_ZEROES
-				 ? range_op_error(ctx)
-				 : -EIO;
+		result = nvme_status_errno(ctx);
 	} else {
 		if (op == UBLK_IO_OP_READ || op == UBLK_IO_OP_WRITE) {
 			size_t bytes = (size_t)io->iod->nr_sectors << XNVME_UNIVERSAL_SECT_SH;
