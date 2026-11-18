@@ -136,8 +136,20 @@ nvm_rw(struct xnvme_dev *dev, int wr, char *buf, uint64_t nbytes)
 		int err;
 
 		xnvme_dev_get_cmd_ctx(dev, &ctx);
-		err = wr ? xnvme_nvm_write(&ctx, nsid, slba, nlb, buf + off, NULL)
-			 : xnvme_nvm_read(&ctx, nsid, slba, nlb, buf + off, NULL);
+		if (wr) {
+			struct xnvme_cmd_prep_nvm_write_args args = {
+				.nsid = nsid, .slba = slba, .nlb = nlb};
+
+			err = xnvme_cmd_prep_nvm_write(&ctx.cmd, &args);
+		} else {
+			struct xnvme_cmd_prep_nvm_read_args args = {
+				.nsid = nsid, .slba = slba, .nlb = nlb};
+
+			err = xnvme_cmd_prep_nvm_read(&ctx.cmd, &args);
+		}
+		if (!err) {
+			err = xnvme_cmd_pass(&ctx, buf + off, len, NULL, 0);
+		}
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 			xnvme_cli_pinf("FAILED: %s at offset %" PRIu64 "; err(%d)",
 				       wr ? "write" : "read", off, err);

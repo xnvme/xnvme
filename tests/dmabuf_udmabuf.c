@@ -96,8 +96,20 @@ nvm_rw(struct xnvme_dev *dev, int wr, char *buf, uint64_t nbytes)
 		int err;
 
 		xnvme_dev_get_cmd_ctx(dev, &ctx);
-		err = wr ? xnvme_nvm_write(&ctx, nsid, slba, nlb, buf + off, NULL)
-			 : xnvme_nvm_read(&ctx, nsid, slba, nlb, buf + off, NULL);
+		if (wr) {
+			struct xnvme_cmd_prep_nvm_write_args args = {
+				.nsid = nsid, .slba = slba, .nlb = nlb};
+
+			err = xnvme_cmd_prep_nvm_write(&ctx.cmd, &args);
+		} else {
+			struct xnvme_cmd_prep_nvm_read_args args = {
+				.nsid = nsid, .slba = slba, .nlb = nlb};
+
+			err = xnvme_cmd_prep_nvm_read(&ctx.cmd, &args);
+		}
+		if (!err) {
+			err = xnvme_cmd_pass(&ctx, buf + off, len, NULL, 0);
+		}
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 			xnvme_cli_pinf("FAILED: %s at offset %" PRIu64 "; err(%d)",
 				       wr ? "write" : "read", off, err);
@@ -147,14 +159,20 @@ check_mixed_iov(struct xnvme_dev *dev, char *hbuf, char *vaddr)
 	size_t nbytes = geo->lba_nbytes > 4096 ? geo->lba_nbytes : 4096;
 	struct iovec dvec[2] = {{.iov_base = hbuf, .iov_len = nbytes},
 				{.iov_base = vaddr, .iov_len = nbytes}};
+	struct xnvme_cmd_prep_nvm_read_args args = {
+		.nsid = xnvme_dev_get_nsid(dev),
+		.slba = 0,
+		.nlb = (uint16_t)(2 * nbytes / geo->lba_nbytes - 1),
+	};
 	struct xnvme_cmd_ctx ctx = {0};
 	int err;
 
 	xnvme_dev_get_cmd_ctx(dev, &ctx);
-	ctx.cmd.common.opcode = XNVME_SPEC_NVM_OPC_READ;
-	ctx.cmd.common.nsid = xnvme_dev_get_nsid(dev);
-	ctx.cmd.nvm.slba = 0;
-	ctx.cmd.nvm.nlb = (uint16_t)(2 * nbytes / geo->lba_nbytes - 1);
+	err = xnvme_cmd_prep_nvm_read(&ctx.cmd, &args);
+	if (err) {
+		xnvme_cli_perr("xnvme_cmd_prep_nvm_read()", err);
+		return err;
+	}
 	err = xnvme_cmd_pass_iov(&ctx, dvec, 2, 2 * nbytes, NULL, 0);
 	if (err != -EINVAL) {
 		xnvme_cli_pinf("FAILED: a vector over the heap and a dma-buf; err(%d)", err);
@@ -171,17 +189,19 @@ check_iov(struct xnvme_dev *dev, const char *expected, char *vaddr)
 	size_t nbytes = geo->lba_nbytes > 4096 ? geo->lba_nbytes : 4096;
 	struct iovec dvec[2] = {{.iov_base = vaddr + 2 * nbytes, .iov_len = nbytes},
 				{.iov_base = vaddr, .iov_len = nbytes}};
+	struct xnvme_cmd_prep_nvm_read_args args = {
+		.nsid = xnvme_dev_get_nsid(dev),
+		.slba = 0,
+		.nlb = (uint16_t)(2 * nbytes / geo->lba_nbytes - 1),
+	};
 	struct xnvme_cmd_ctx ctx = {0};
 	int err;
 
 	fill_complement(vaddr + 2 * nbytes, expected, nbytes);
 	fill_complement(vaddr, expected + nbytes, nbytes);
 	xnvme_dev_get_cmd_ctx(dev, &ctx);
-	ctx.cmd.common.opcode = XNVME_SPEC_NVM_OPC_READ;
-	ctx.cmd.common.nsid = xnvme_dev_get_nsid(dev);
-	ctx.cmd.nvm.slba = 0;
-	ctx.cmd.nvm.nlb = (uint16_t)(2 * nbytes / geo->lba_nbytes - 1);
-	err = xnvme_cmd_pass_iov(&ctx, dvec, 2, 2 * nbytes, NULL, 0);
+	err = xnvme_cmd_prep_nvm_read(&ctx.cmd, &args);
+	err = err ? err : xnvme_cmd_pass_iov(&ctx, dvec, 2, 2 * nbytes, NULL, 0);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		xnvme_cli_pinf("FAILED: a read into a vector over the dma-buf; err(%d)", err);
 		return err ? err : -EIO;
