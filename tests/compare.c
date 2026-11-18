@@ -62,9 +62,21 @@ test_compare(struct xnvme_cli *cli)
 	nsid = xnvme_dev_get_nsid(dev);
 	xnvme_dev_get_cmd_ctx(dev, &ctx);
 
-	err = xnvme_nvm_write(&ctx, nsid, slba, (nlb - 1), buf, NULL);
+	struct xnvme_cmd_prep_nvm_write_args wr = {
+		.args_nbytes = sizeof(wr),
+		.nsid = nsid,
+		.slba = slba,
+		.nlb = (nlb - 1),
+	};
+
+	err = xnvme_cmd_prep_nvm_write(&ctx.cmd, &wr);
+	if (!err) {
+		err = xnvme_cmd_pass(
+			&ctx, buf,
+			(size_t)xnvme_dev_get_geo(ctx.dev)->lba_nbytes * ((nlb - 1) + 1), NULL, 0);
+	}
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		xnvme_cli_pinf("xnvme_nvm_write(): "
+		xnvme_cli_pinf("write: "
 			       "{err: 0x%x, slba: 0x%016lx}",
 			       err, slba);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
@@ -72,9 +84,21 @@ test_compare(struct xnvme_cli *cli)
 	}
 
 	// Compare LBA's
-	err = xnvme_nvm_compare(&ctx, nsid, slba, (nlb - 1), buf, NULL);
+	struct xnvme_cmd_prep_nvm_compare_args cmp = {
+		.args_nbytes = sizeof(cmp),
+		.nsid = nsid,
+		.slba = slba,
+		.nlb = (nlb - 1),
+	};
+
+	err = xnvme_cmd_prep_nvm_compare(&ctx.cmd, &cmp);
+	if (!err) {
+		err = xnvme_cmd_pass(
+			&ctx, buf,
+			(size_t)xnvme_dev_get_geo(ctx.dev)->lba_nbytes * ((nlb - 1) + 1), NULL, 0);
+	}
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		xnvme_cli_pinf("xnvme_nvm_compare(): "
+		xnvme_cli_pinf("compare: "
 			       "{err: 0x%x, slba: 0x%016lx}",
 			       err, slba);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
@@ -82,7 +106,7 @@ test_compare(struct xnvme_cli *cli)
 		goto exit;
 	}
 
-	xnvme_cli_pinf("xnvme_nvm_compare(): Succeeded!");
+	xnvme_cli_pinf("compare: Succeeded!");
 
 exit:
 	xnvme_buf_free(dev, buf);
