@@ -309,18 +309,22 @@
  			goto exit;
  		}
  	}
-@@ -1253,6 +1296,10 @@ static int xnvme_fioe_fetch_ruhs(struct thread_data *td, struct fio_file *f,
+@@ -1251,8 +1294,13 @@ static int xnvme_fioe_fetch_ruhs(struct thread_data *td, struct fio_file *f,
+ {
+ 	struct xnvme_opts opts = xnvme_opts_from_fioe(td);
  	struct xnvme_dev *dev;
- 	struct xnvme_spec_ruhs *ruhs;
+-	struct xnvme_spec_ruhs *ruhs;
++	struct xnvme_spec_base_reclaim_unit_handle_status *ruhs;
++	struct xnvme_spec_nvm_reclaim_unit_handle_status_descriptor *desc;
  	struct xnvme_cmd_ctx ctx;
 +	struct xnvme_cmd_prep_io_io_management_receive_args args = {
 +		.args_nbytes = sizeof(args),
-+		.mo = XNVME_SPEC_IO_MGMT_RECV_RUHS,
++		.mo = XNVME_SPEC_IO_IO_MANAGEMENT_RECEIVE_CDW10_MO_RECLAIM_UNIT_HANDLE_STATUS,
 +	};
  	uint32_t ruhs_nbytes, nr_ruhs;
  	uint32_t nsid;
  	int err = 0, err_lock;
-@@ -1268,7 +1315,7 @@ static int xnvme_fioe_fetch_ruhs(struct thread_data *td, struct fio_file *f,
+@@ -1268,7 +1316,7 @@ static int xnvme_fioe_fetch_ruhs(struct thread_data *td, struct fio_file *f,
  		return -err;
  	}
  
@@ -329,7 +333,16 @@
  	if (!dev) {
  		log_err("ioeng->fdp_ruhs(): xnvme_dev_open(%s) failed, errno: %d\n",
  			f->file_name, errno);
-@@ -1285,20 +1332,25 @@ static int xnvme_fioe_fetch_ruhs(struct thread_data *td, struct fio_file *f,
+@@ -1277,7 +1325,7 @@ static int xnvme_fioe_fetch_ruhs(struct thread_data *td, struct fio_file *f,
+ 	}
+ 
+ 	nr_ruhs = fruhs_info->nr_ruhs;
+-	ruhs_nbytes = sizeof(*ruhs) + (fruhs_info->nr_ruhs * sizeof(struct xnvme_spec_ruhs_desc));
++	ruhs_nbytes = sizeof(*ruhs) + (fruhs_info->nr_ruhs * sizeof(*desc));
+ 	ruhs = xnvme_buf_alloc(dev, ruhs_nbytes);
+ 	if (!ruhs) {
+ 		err = -errno;
+@@ -1285,20 +1333,26 @@ static int xnvme_fioe_fetch_ruhs(struct thread_data *td, struct fio_file *f,
  	}
  	memset(ruhs, 0, ruhs_nbytes);
  
@@ -353,13 +366,14 @@
  	}
  
  	fruhs_info->nr_ruhs = ruhs->nruhsd;
++	desc = (void *)(ruhs + 1);
  	for (uint32_t idx = 0; idx < nr_ruhs; ++idx) {
 -		fruhs_info->plis[idx] = le16_to_cpu(ruhs->desc[idx].pi);
-+		fruhs_info->plis[idx] = le16_to_cpu(ruhs->desc[idx].pid);
++		fruhs_info->plis[idx] = le16_to_cpu(desc[idx].pid);
  	}
  
  free_buffer:
-@@ -1328,7 +1380,7 @@ static int xnvme_fioe_get_file_size(struct thread_data *td, struct fio_file *f)
+@@ -1328,7 +1382,7 @@ static int xnvme_fioe_get_file_size(struct thread_data *td, struct fio_file *f)
  		return -ret;
  	}
  
