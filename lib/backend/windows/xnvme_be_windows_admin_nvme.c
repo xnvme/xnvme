@@ -91,9 +91,9 @@ _be_windows_nvme_storage_property(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t 
 			xnvme_bits_get(ctx->cmd.common.cdw10, XNVME_SPEC_ADMIN_IDENTIFY_CDW10_CNS);
 		protocol_data->ProtocolDataRequestSubValue = ctx->cmd.common.nsid;
 		if (xnvme_bits_get(ctx->cmd.common.cdw10, XNVME_SPEC_ADMIN_IDENTIFY_CDW10_CNS) ==
-			    XNVME_SPEC_IDFY_NS ||
+			    XNVME_SPEC_ADMIN_IDENTIFY_CDW10_CNS_NVM_COMMAND_SET_IDENTIFY_NAMESPACE_DATA_STRUCTURE ||
 		    xnvme_bits_get(ctx->cmd.common.cdw10, XNVME_SPEC_ADMIN_IDENTIFY_CDW10_CNS) ==
-			    XNVME_SPEC_IDFY_CTRLR) {
+			    XNVME_SPEC_ADMIN_IDENTIFY_CDW10_CNS_IDENTIFY_CONTROLLER_DATA_STRUCTURE) {
 			query->PropertyId = StorageAdapterProtocolSpecificProperty;
 		}
 		break;

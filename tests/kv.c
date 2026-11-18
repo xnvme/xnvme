@@ -12,7 +12,7 @@ enumerate_cb(struct xnvme_dev *dev, void *cb_args)
 	const struct xnvme_ident *ident;
 
 	ident = xnvme_dev_get_ident(dev);
-	if (ident->csi != XNVME_SPEC_CSI_KV) {
+	if (ident->csi != XNVME_SPEC_ADMIN_IDENTIFY_CDW11_CSI_KEY_VALUE_COMMAND_SET) {
 		return XNVME_ENUMERATE_DEV_CLOSE;
 	}
 
@@ -76,7 +76,8 @@ cmd_idfy_ns(struct xnvme_cli *cli)
 	struct xnvme_dev *dev = cli->args.dev;
 	struct xnvme_cmd_ctx ctx = {0};
 	uint32_t nsid = xnvme_dev_get_nsid(cli->args.dev);
-	enum xnvme_spec_csi csi = XNVME_SPEC_CSI_KV;
+	enum xnvme_spec_admin_identify_cdw11_csi csi =
+		XNVME_SPEC_ADMIN_IDENTIFY_CDW11_CSI_KEY_VALUE_COMMAND_SET;
 	struct xnvme_spec_kvs_idfy *idfy = NULL;
 	int err;
 
@@ -98,8 +99,8 @@ cmd_idfy_ns(struct xnvme_cli *cli)
 	struct xnvme_cmd_prep_adm_identify_args args = {
 		.args_nbytes = sizeof(args),
 		.nsid = nsid ? nsid : xnvme_dev_get_nsid(dev),
-		.cns = XNVME_SPEC_IDFY_NS_IOCS,
-		.csi = XNVME_SPEC_CSI_KV,
+		.cns = XNVME_SPEC_ADMIN_IDENTIFY_CDW10_CNS_IO_COMMAND_SET_SPECIFIC_IDENTIFY_NAMESPACE_DATA_STRUCTURE,
+		.csi = XNVME_SPEC_ADMIN_IDENTIFY_CDW11_CSI_KEY_VALUE_COMMAND_SET,
 	};
 
 	err = xnvme_cmd_prep_adm_identify(&ctx.cmd, &args);

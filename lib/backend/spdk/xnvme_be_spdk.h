@@ -31,9 +31,11 @@ struct xnvme_queue_spdk {
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_queue_spdk) == XNVME_BE_QUEUE_STATE_NBYTES,
 		    "Incorrect size")
 
-XNVME_STATIC_ASSERT(sizeof(struct spdk_nvme_ctrlr_data) == sizeof(struct xnvme_spec_idfy_ctrlr),
+XNVME_STATIC_ASSERT(sizeof(struct spdk_nvme_ctrlr_data) ==
+			    sizeof(struct xnvme_spec_base_identify_controller),
 		    "Incorrect size")
-XNVME_STATIC_ASSERT(sizeof(struct spdk_nvme_ns_data) == sizeof(struct xnvme_spec_idfy_ns),
+XNVME_STATIC_ASSERT(sizeof(struct spdk_nvme_ns_data) ==
+			    sizeof(struct xnvme_spec_nvm_identify_namespace),
 		    "Incorrect size")
 
 #include <xnvme_be_spdk_state.h>

@@ -804,7 +804,7 @@ xnvme_be_upcie_dev_open(struct xnvme_dev *dev)
 
 	dev->ident.dtype =
 		dev->opts.nsid ? XNVME_DEV_TYPE_NVME_NAMESPACE : XNVME_DEV_TYPE_NVME_CONTROLLER;
-	dev->ident.csi = XNVME_SPEC_CSI_NVM;
+	dev->ident.csi = XNVME_SPEC_ADMIN_IDENTIFY_CDW11_CSI_NVM_COMMAND_SET;
 	dev->ident.nsid = dev->opts.nsid;
 
 	/* Data buffers come off the host heap; the GPU backends override this with

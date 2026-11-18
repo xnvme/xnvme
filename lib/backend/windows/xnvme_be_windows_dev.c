@@ -222,7 +222,7 @@ xnvme_be_windows_dev_open(struct xnvme_dev *dev)
 
 		XNVME_DEBUG("INFO: open() : block-device file (is a NVMe namespace)");
 		dev->ident.dtype = XNVME_DEV_TYPE_NVME_NAMESPACE;
-		dev->ident.csi = XNVME_SPEC_CSI_NVM;
+		dev->ident.csi = XNVME_SPEC_ADMIN_IDENTIFY_CDW11_CSI_NVM_COMMAND_SET;
 		// Making the nsid 1 by default
 		dev->ident.nsid = 1;
 		// SCSI/SATA backend configs aren't defined, so route admin to the block

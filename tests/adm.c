@@ -18,8 +18,8 @@ _sub_idfy(struct xnvme_cli *cli, uint8_t cns, uint16_t cntid, uint8_t nsid, uint
 {
 	struct xnvme_dev *dev = cli->args.dev;
 	struct xnvme_cmd_ctx ctx = {0};
-	union xnvme_spec_idfy *dbuf = NULL;
-	size_t dbuf_nbytes = sizeof(*dbuf);
+	size_t dbuf_nbytes = 4096; // The identify data of any CNS
+	void *dbuf = NULL;
 	int err;
 
 	xnvme_dev_get_cmd_ctx(dev, &ctx);
@@ -54,16 +54,16 @@ _sub_idfy(struct xnvme_cli *cli, uint8_t cns, uint16_t cntid, uint8_t nsid, uint
 	}
 
 	switch (cns) {
-	case XNVME_SPEC_IDFY_NS:
-		xnvme_spec_idfy_ns_pr(&dbuf->ns, XNVME_PR_DEF);
+	case XNVME_SPEC_ADMIN_IDENTIFY_CDW10_CNS_NVM_COMMAND_SET_IDENTIFY_NAMESPACE_DATA_STRUCTURE:
+		xnvme_spec_idfy_ns_pr(dbuf, XNVME_PR_DEF);
 		break;
 
-	case XNVME_SPEC_IDFY_CTRLR:
-		xnvme_spec_idfy_ctrlr_pr(&dbuf->ctrlr, XNVME_PR_DEF);
+	case XNVME_SPEC_ADMIN_IDENTIFY_CDW10_CNS_IDENTIFY_CONTROLLER_DATA_STRUCTURE:
+		xnvme_spec_idfy_ctrlr_pr(dbuf, XNVME_PR_DEF);
 		break;
 
-	case XNVME_SPEC_IDFY_IOCS:
-		xnvme_spec_idfy_cs_pr(&dbuf->cs, XNVME_PR_DEF);
+	case XNVME_SPEC_ADMIN_IDENTIFY_CDW10_CNS_IDENTIFY_IO_COMMAND_SET_DATA_STRUCTURE:
+		xnvme_spec_idfy_cs_pr(dbuf, XNVME_PR_DEF);
 		break;
 
 	default:
@@ -76,7 +76,7 @@ _sub_idfy(struct xnvme_cli *cli, uint8_t cns, uint16_t cntid, uint8_t nsid, uint
 
 	if (cli->args.data_output) {
 		xnvme_cli_pinf("Dumping to: '%s'", cli->args.data_output);
-		err = xnvme_buf_to_file((char *)dbuf, dbuf_nbytes, cli->args.data_output);
+		err = xnvme_buf_to_file(dbuf, dbuf_nbytes, cli->args.data_output);
 		if (err) {
 			xnvme_cli_perr("xnvme_buf_to_file()", err);
 		}
@@ -118,16 +118,16 @@ sub_idfy(struct xnvme_cli *cli)
 	uint8_t uuid = cli->args.uuid;
 
 	switch (cns) {
-	case XNVME_SPEC_IDFY_NS:
-	case XNVME_SPEC_IDFY_NSLIST:
-	case XNVME_SPEC_IDFY_NS_DESC:
-	case XNVME_SPEC_IDFY_NS_IOCS:
-	case XNVME_SPEC_IDFY_NSLIST_IOCS:
-	case XNVME_SPEC_IDFY_NSLIST_ALLOC:
-	case XNVME_SPEC_IDFY_NS_ALLOC:
-	case XNVME_SPEC_IDFY_CTRLR_NS:
-	case XNVME_SPEC_IDFY_NSLIST_ALLOC_IOCS:
-	case XNVME_SPEC_IDFY_NS_ALLOC_IOCS:
+	case XNVME_SPEC_ADMIN_IDENTIFY_CDW10_CNS_NVM_COMMAND_SET_IDENTIFY_NAMESPACE_DATA_STRUCTURE:
+	case XNVME_SPEC_ADMIN_IDENTIFY_CDW10_CNS_ACTIVE_NAMESPACE_ID_LIST:
+	case XNVME_SPEC_ADMIN_IDENTIFY_CDW10_CNS_NAMESPACE_IDENTIFICATION_DESCRIPTOR_LIST:
+	case XNVME_SPEC_ADMIN_IDENTIFY_CDW10_CNS_IO_COMMAND_SET_SPECIFIC_IDENTIFY_NAMESPACE_DATA_STRUCTURE:
+	case XNVME_SPEC_ADMIN_IDENTIFY_CDW10_CNS_IO_COMMAND_SET_SPECIFIC_ACTIVE_NAMESPACE_ID_LIST:
+	case XNVME_SPEC_ADMIN_IDENTIFY_CDW10_CNS_ALLOCATED_NAMESPACE_ID_LIST:
+	case XNVME_SPEC_ADMIN_IDENTIFY_CDW10_CNS_IDENTIFY_NAMESPACE_DATA_STRUCTURE_FOR_AN_ALLOCATED_NAMESPACE_ID:
+	case XNVME_SPEC_ADMIN_IDENTIFY_CDW10_CNS_NAMESPACE_ATTACHED_CONTROLLER_LIST:
+	case XNVME_SPEC_ADMIN_IDENTIFY_CDW10_CNS_IO_COMMAND_SET_SPECIFIC_ALLOCATED_NAMESPACE_ID_LIST:
+	case XNVME_SPEC_ADMIN_IDENTIFY_CDW10_CNS_IO_COMMAND_SET_SPECIFIC_IDENTIFY_NAMESPACE_DATA_STRUCTURE_FOR_AN_ALLOCATED_NAMESPACE_ID:
 		// Only add nsid if needed
 		if (!cli->given[XNVME_CLI_OPT_NSID]) {
 			nsid = xnvme_dev_get_nsid(cli->args.dev);
@@ -146,19 +146,26 @@ sub_idfy_ns(struct xnvme_cli *cli)
 		nsid = xnvme_dev_get_nsid(cli->args.dev);
 	}
 
-	return _sub_idfy(cli, XNVME_SPEC_IDFY_NS, 0x0, nsid, 0x0, 0x0);
+	return _sub_idfy(
+		cli,
+		XNVME_SPEC_ADMIN_IDENTIFY_CDW10_CNS_NVM_COMMAND_SET_IDENTIFY_NAMESPACE_DATA_STRUCTURE,
+		0x0, nsid, 0x0, 0x0);
 }
 
 static int
 sub_idfy_ctrlr(struct xnvme_cli *cli)
 {
-	return _sub_idfy(cli, XNVME_SPEC_IDFY_CTRLR, 0x0, 0x0, 0x0, 0x0);
+	return _sub_idfy(cli,
+			 XNVME_SPEC_ADMIN_IDENTIFY_CDW10_CNS_IDENTIFY_CONTROLLER_DATA_STRUCTURE,
+			 0x0, 0x0, 0x0, 0x0);
 }
 
 static int
 sub_idfy_cs(struct xnvme_cli *cli)
 {
-	return _sub_idfy(cli, XNVME_SPEC_IDFY_IOCS, 0xFFFF, 0x0, 0x0, 0x0);
+	return _sub_idfy(
+		cli, XNVME_SPEC_ADMIN_IDENTIFY_CDW10_CNS_IDENTIFY_IO_COMMAND_SET_DATA_STRUCTURE,
+		0xFFFF, 0x0, 0x0, 0x0);
 }
 
 static int
