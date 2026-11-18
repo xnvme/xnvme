@@ -165,7 +165,12 @@ Layout
   ``lib/<group>/xnvme_<topic>.c`` implements ``include/libxnvme_<topic>.h``,
   next to the private headers it shares, ``xnvme_<topic>.h``. The groups are
   the ones the API documentation uses, ``NAMESPACES`` in
-  ``docs/tooling/xnvme_docs/apigen.py``, so a new public header goes in both
+  ``docs/tooling/xnvme_docs/apigen.py``, so a new public header goes in both.
+  Doxygen reads only the headers that ``INPUT`` in ``docs/tooling/doxy.cfg``
+  lists, so a new public header goes there too. ``toolbox/xnvme_cmd_prep.py``
+  writes the preps of every command set into one source file, which goes to
+  ``lib/nvme/xnvme_cmd_prep.c`` and implements the headers
+  ``libxnvme_cmd_prep_<set>.h``
 
   - ``util``: utilities the other groups use: the lock, CRCs, LBA helpers,
     the version and the build configuration
@@ -339,7 +344,8 @@ Where new code goes
 
 1. Part of the public API: ``lib/<group>/xnvme_<topic>.c``, declared in
    ``include/libxnvme_<topic>.h``, with ``xnvme_<topic>`` added to the same
-   group in ``NAMESPACES``
+   group in ``NAMESPACES`` and the header to ``INPUT`` in
+   ``docs/tooling/doxy.cfg``
 2. A new library or mechanism: a new directory, ``lib/backend/<name>/``, with
    its header, its state header, one file per implementation, a
    ``meson.build`` adding its sources and include directory, its option
