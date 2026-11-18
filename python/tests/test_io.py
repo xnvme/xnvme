@@ -3,7 +3,7 @@ from ctypes import byref, pointer
 import numpy
 import xnvme
 from conftest import xnvme_parametrize
-from utils import buf_and_view, dev_from_params, xnvme_cmd_ctx_cpl_status
+from utils import buf_and_view, dev_from_params
 
 
 @xnvme_parametrize(labels=["dev"], opts=["be", "sync"])
@@ -27,14 +27,14 @@ def test_io_sync(cijoe, device, be_opts, cli_args):
     data_view[:] = 42
 
     err = xnvme.xnvme_nvm_write(byref(ctx), nsid, 0x0, nlb, data, None)
-    assert not err and not xnvme_cmd_ctx_cpl_status(pointer(ctx))
+    assert not err and not xnvme.xnvme_cmd_ctx_cpl_status(pointer(ctx))
 
     buf, buf_view = buf_and_view(dev, lba_nbytes)
     assert buf
     buf_view[:] = 0
 
     err = xnvme.xnvme_nvm_read(byref(ctx), nsid, 0x0, nlb, buf, None)
-    assert not err and not xnvme_cmd_ctx_cpl_status(pointer(ctx))
+    assert not err and not xnvme.xnvme_cmd_ctx_cpl_status(pointer(ctx))
 
     assert numpy.all(buf_view == data_view)
     assert numpy.all(buf_view == 42)
