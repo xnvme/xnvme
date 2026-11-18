@@ -75,15 +75,16 @@ For each command, the generator writes the masks of the fields of its dwords
 and of its completion queue entry, named by the command, the dword and the
 acronym of the field, such as XNVME_SPEC_ADMIN_ABORT_CQE_DW0_IANP. The
 generator writes no struct for a command: union xnvme_spec_sqe of
-libxnvme_spec.h holds the dwords of a submission queue entry. The commands of
-the Management Interface and PCIe Commands command sets of the Management
+libxnvme_spec.h holds the dwords of a submission queue entry, and the command
+preps of toolbox/xnvme_cmd_prep.py prepare the commands. The commands of the
+Management Interface and PCIe Commands command sets of the Management
 Interface are not in a submission queue entry. The data model records their
 dwords by number alone, so their masks name them Command Dwords as well, such
 as XNVME_SPEC_MI_CONFIGURATION_GET_CDW0_CID. A pair of dwords that a figure
 describes with fields across both, such as CDW10 and CDW11 of Read, is one
 64-bit value, and its masks are named by both dwords. A pair that starts at an
-odd dword is no 64-bit value, in the dwords of a command, of an operation, of a
-feature and of a completion queue entry; its fields have no masks, and the
+odd dword is no 64-bit value, in the dwords of a command, of an operation, of
+a feature and of a completion queue entry; its fields have no masks, and the
 comment of the command or the feature names them. For each feature, the
 generator writes the masks of the fields in the dwords of Set Features and in
 Dword 0 of the completion queue entry, such as
