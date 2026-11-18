@@ -77,7 +77,7 @@ cmd_idfy_ns(struct xnvme_cli *cli)
 	struct xnvme_cmd_ctx ctx = {0};
 	uint32_t nsid = xnvme_dev_get_nsid(cli->args.dev);
 	enum xnvme_spec_base_csi csi = XNVME_SPEC_BASE_CSI_KEY_VALUE_COMMAND_SET;
-	struct xnvme_spec_kvs_idfy *idfy = NULL;
+	struct xnvme_spec_kv_identify_namespace *idfy = NULL;
 	int err;
 
 	xnvme_dev_get_cmd_ctx(dev, &ctx);
@@ -103,7 +103,7 @@ cmd_idfy_ns(struct xnvme_cli *cli)
 
 	err = xnvme_cmd_prep_adm_identify(&ctx.cmd, &args);
 	if (!err) {
-		err = xnvme_cmd_pass_admin(&ctx, &idfy->base, sizeof(idfy->base), NULL, 0);
+		err = xnvme_cmd_pass_admin(&ctx, idfy, sizeof(*idfy), NULL, 0);
 	}
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		xnvme_cli_perr("identify", err);
@@ -112,7 +112,7 @@ cmd_idfy_ns(struct xnvme_cli *cli)
 		goto exit;
 	}
 
-	xnvme_spec_kvs_idfy_ns_pr(&idfy->ns, XNVME_PR_DEF);
+	xnvme_spec_kvs_idfy_ns_pr(idfy, XNVME_PR_DEF);
 
 	if (cli->args.data_output) {
 		xnvme_cli_pinf("Dumping to: '%s'", cli->args.data_output);
