@@ -82,7 +82,7 @@ cmd_idfy_ctrlr(struct xnvme_cli *cli)
 	uint32_t nsid = xnvme_dev_get_nsid(cli->args.dev);
 	enum xnvme_spec_admin_identify_cdw11_csi csi =
 		XNVME_SPEC_ADMIN_IDENTIFY_CDW11_CSI_ZONED_NAMESPACE_COMMAND_SET;
-	struct xnvme_spec_znd_idfy *idfy = NULL;
+	struct xnvme_spec_zns_io_command_set_specific_identify_controller *idfy = NULL;
 	int err;
 
 	xnvme_dev_get_cmd_ctx(dev, &ctx);
@@ -104,7 +104,7 @@ cmd_idfy_ctrlr(struct xnvme_cli *cli)
 
 	err = xnvme_cmd_prep_adm_identify(&ctx.cmd, &args);
 	if (!err) {
-		err = xnvme_cmd_pass_admin(&ctx, &idfy->base, sizeof(idfy->base), NULL, 0);
+		err = xnvme_cmd_pass_admin(&ctx, idfy, sizeof(*idfy), NULL, 0);
 	}
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		xnvme_cli_perr("identify", err);
@@ -113,7 +113,7 @@ cmd_idfy_ctrlr(struct xnvme_cli *cli)
 		goto exit;
 	}
 
-	xnvme_spec_znd_idfy_ctrlr_pr(&idfy->zctrlr, XNVME_PR_DEF);
+	xnvme_spec_znd_idfy_ctrlr_pr(idfy, XNVME_PR_DEF);
 
 	if (cli->args.data_output) {
 		xnvme_cli_pinf("Dumping to: '%s'", cli->args.data_output);
@@ -137,7 +137,7 @@ cmd_idfy_ns(struct xnvme_cli *cli)
 	uint32_t nsid = xnvme_dev_get_nsid(cli->args.dev);
 	enum xnvme_spec_admin_identify_cdw11_csi csi =
 		XNVME_SPEC_ADMIN_IDENTIFY_CDW11_CSI_ZONED_NAMESPACE_COMMAND_SET;
-	struct xnvme_spec_znd_idfy *idfy = NULL;
+	struct xnvme_spec_zns_io_command_set_specific_identify_namespace *idfy = NULL;
 	int err;
 
 	xnvme_dev_get_cmd_ctx(dev, &ctx);
@@ -160,7 +160,7 @@ cmd_idfy_ns(struct xnvme_cli *cli)
 
 	err = xnvme_cmd_prep_adm_identify(&ctx.cmd, &args);
 	if (!err) {
-		err = xnvme_cmd_pass_admin(&ctx, &idfy->base, sizeof(idfy->base), NULL, 0);
+		err = xnvme_cmd_pass_admin(&ctx, idfy, sizeof(*idfy), NULL, 0);
 	}
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		xnvme_cli_perr("identify", err);
@@ -169,7 +169,7 @@ cmd_idfy_ns(struct xnvme_cli *cli)
 		goto exit;
 	}
 
-	xnvme_spec_znd_idfy_ns_pr(&idfy->zns, XNVME_PR_DEF);
+	xnvme_spec_znd_idfy_ns_pr(idfy, XNVME_PR_DEF);
 
 	if (cli->args.data_output) {
 		xnvme_cli_pinf("Dumping to: '%s'", cli->args.data_output);
@@ -236,7 +236,7 @@ cmd_changes(struct xnvme_cli *cli)
 {
 	const struct xnvme_spec_base_identify_controller *idfy_ctrlr =
 		xnvme_dev_get_ctrlr_css(cli->args.dev);
-	struct xnvme_spec_znd_log_changes *changes = NULL;
+	struct xnvme_spec_zns_log_changed_zone_list *changes = NULL;
 	int err;
 
 	xnvme_cli_pinf("Retrieving the Changed Zone List");
@@ -582,7 +582,7 @@ _cmd_mgmt(struct xnvme_cli *cli, uint8_t zsa)
 	struct xnvme_cmd_ctx ctx = {0};
 	uint32_t nsid = cli->args.nsid;
 	const uint64_t zslba = cli->args.slba;
-	const struct xnvme_spec_znd_idfy_lbafe *lbafe = xnvme_znd_dev_get_lbafe(dev);
+	const struct xnvme_spec_zns_lba_format_extension *lbafe = xnvme_znd_dev_get_lbafe(dev);
 	bool select_all = false;
 
 	size_t dbuf_nbytes = lbafe ? (size_t)lbafe->zdes * 64 : 0; // ZDES counts 64-byte units
@@ -600,7 +600,8 @@ _cmd_mgmt(struct xnvme_cli *cli, uint8_t zsa)
 	xnvme_cli_pinf("MGMT: zslba: 0x%016lx, zsa: 0x%x, str: %s", zslba, zsa,
 		       xnvme_spec_znd_cmd_mgmt_send_action_str(zsa));
 
-	if ((zsa == XNVME_SPEC_ZND_CMD_MGMT_SEND_DESCRIPTOR) && cli->args.data_input) {
+	if ((zsa == XNVME_SPEC_ZNS_ZONE_MANAGEMENT_SEND_CDW13_ZSA_SET_ZONE_DESCRIPTOR_EXTENSION) &&
+	    cli->args.data_input) {
 		xnvme_cli_pinf("Allocating dbuf");
 		dbuf = xnvme_buf_alloc(dev, dbuf_nbytes);
 		if (!dbuf) {
@@ -651,25 +652,25 @@ cmd_mgmt(struct xnvme_cli *cli)
 static int
 cmd_mgmt_open(struct xnvme_cli *cli)
 {
-	return _cmd_mgmt(cli, XNVME_SPEC_ZND_CMD_MGMT_SEND_OPEN);
+	return _cmd_mgmt(cli, XNVME_SPEC_ZNS_ZONE_MANAGEMENT_SEND_CDW13_ZSA_OPEN_ZONE);
 }
 
 static int
 cmd_mgmt_finish(struct xnvme_cli *cli)
 {
-	return _cmd_mgmt(cli, XNVME_SPEC_ZND_CMD_MGMT_SEND_FINISH);
+	return _cmd_mgmt(cli, XNVME_SPEC_ZNS_ZONE_MANAGEMENT_SEND_CDW13_ZSA_FINISH_ZONE);
 }
 
 static int
 cmd_mgmt_close(struct xnvme_cli *cli)
 {
-	return _cmd_mgmt(cli, XNVME_SPEC_ZND_CMD_MGMT_SEND_CLOSE);
+	return _cmd_mgmt(cli, XNVME_SPEC_ZNS_ZONE_MANAGEMENT_SEND_CDW13_ZSA_CLOSE_ZONE);
 }
 
 static int
 cmd_mgmt_reset(struct xnvme_cli *cli)
 {
-	return _cmd_mgmt(cli, XNVME_SPEC_ZND_CMD_MGMT_SEND_RESET);
+	return _cmd_mgmt(cli, XNVME_SPEC_ZNS_ZONE_MANAGEMENT_SEND_CDW13_ZSA_RESET_ZONE);
 }
 
 //

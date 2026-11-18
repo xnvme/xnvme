@@ -82,8 +82,9 @@ _zoned_geometry(struct xnvme_dev *dev)
 	struct xnvme_spec_nvm_identify_namespace *nvm = (void *)xnvme_dev_get_ns(dev);
 	uint32_t lbaf = nvm->lbaf[xnvme_bits_get(nvm->flbas,
 						 XNVME_SPEC_NVM_IDENTIFY_NAMESPACE_FLBAS_FIDXL)];
-	struct xnvme_spec_znd_idfy_ns *zns = (void *)xnvme_dev_get_ns_css(dev);
-	struct xnvme_spec_znd_idfy_lbafe *lbafe = &zns->lbafe[xnvme_bits_get(
+	struct xnvme_spec_zns_io_command_set_specific_identify_namespace *zns =
+		(void *)xnvme_dev_get_ns_css(dev);
+	struct xnvme_spec_zns_lba_format_extension *lbafe = &zns->lbafe[xnvme_bits_get(
 		nvm->flbas, XNVME_SPEC_NVM_IDENTIFY_NAMESPACE_FLBAS_FIDXL)];
 	struct xnvme_geo *geo = &dev->geo;
 
@@ -350,7 +351,7 @@ static int
 _dev_idfy_csi_set(struct xnvme_dev *dev, uint8_t csi, struct dev_idfy_buf *idfy_ns,
 		  struct dev_idfy_buf *idfy_ctrlr)
 {
-	struct xnvme_spec_znd_idfy_ns *zns = (void *)idfy_ns;
+	struct xnvme_spec_zns_io_command_set_specific_identify_namespace *zns = (void *)idfy_ns;
 	struct xnvme_spec_fs_idfy_ctrlr *fs_ctrlr = (void *)idfy_ctrlr;
 	struct xnvme_spec_fs_idfy_ns *fs_ns = (void *)idfy_ns;
 	struct xnvme_cmd_ctx ctx;

@@ -44,7 +44,7 @@ _idfy_ctrlr(struct xnvme_dev *dev, void *dbuf)
 static int
 _idfy_ns_iocs(struct xnvme_dev *dev, void *dbuf)
 {
-	struct xnvme_spec_znd_idfy_ns *zns = dbuf;
+	struct xnvme_spec_zns_io_command_set_specific_identify_namespace *zns = dbuf;
 	uint64_t tbytes, nsect, nbytes, val;
 	uint64_t nr_zones = 0;
 	int err;
@@ -113,7 +113,7 @@ _idfy_ns(struct xnvme_dev *dev, void *dbuf)
 static int
 _idfy(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes)
 {
-	struct xnvme_spec_znd_idfy_ctrlr *zctrlr = dbuf;
+	struct xnvme_spec_zns_io_command_set_specific_identify_controller *zctrlr = dbuf;
 	const int buf_len = 0x1000;
 	char buf[buf_len];
 	int is_zoned;

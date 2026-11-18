@@ -563,7 +563,8 @@ xnvme_spec_nvm_idfy_ns_pr(
 	int opts);
 
 /**
- * Prints the given ::xnvme_spec_znd_idfy_ctrlr to the given output stream
+ * Prints the given ::xnvme_spec_zns_io_command_set_specific_identify_controller to the given
+ * output stream
  *
  * Only fields specific to Zoned Namespaces are printed by this function
  *
@@ -574,10 +575,13 @@ xnvme_spec_nvm_idfy_ns_pr(
  * @return On success, the number of characters printed is returned
  */
 int
-xnvme_spec_znd_idfy_ctrlr_fpr(FILE *stream, struct xnvme_spec_znd_idfy_ctrlr *zctrlr, int opts);
+xnvme_spec_znd_idfy_ctrlr_fpr(
+	FILE *stream, struct xnvme_spec_zns_io_command_set_specific_identify_controller *zctrlr,
+	int opts);
 
 /**
- * Prints the given ::xnvme_spec_znd_idfy_ctrlr to the given output stream
+ * Prints the given ::xnvme_spec_zns_io_command_set_specific_identify_controller to the given
+ * output stream
  *
  * Only fields specific to Zoned Namespaces are printed by this function
  *
@@ -587,10 +591,11 @@ xnvme_spec_znd_idfy_ctrlr_fpr(FILE *stream, struct xnvme_spec_znd_idfy_ctrlr *zc
  * @return On success, the number of characters printed is returned
  */
 int
-xnvme_spec_znd_idfy_ctrlr_pr(struct xnvme_spec_znd_idfy_ctrlr *zctrlr, int opts);
+xnvme_spec_znd_idfy_ctrlr_pr(
+	struct xnvme_spec_zns_io_command_set_specific_identify_controller *zctrlr, int opts);
 
 /**
- * Prints the given ::xnvme_spec_znd_idfy_lbafe to the given output stream
+ * Prints the given ::xnvme_spec_zns_lba_format_extension to the given output stream
  *
  * @param stream output stream used for printing
  * @param zonef pointer to structure to print
@@ -599,10 +604,12 @@ xnvme_spec_znd_idfy_ctrlr_pr(struct xnvme_spec_znd_idfy_ctrlr *zctrlr, int opts)
  * @return On success, the number of characters printed is returned
  */
 int
-xnvme_spec_znd_idfy_lbafe_fpr(FILE *stream, struct xnvme_spec_znd_idfy_lbafe *zonef, int opts);
+xnvme_spec_znd_idfy_lbafe_fpr(FILE *stream, struct xnvme_spec_zns_lba_format_extension *zonef,
+			      int opts);
 
 /**
- * Prints the given ::xnvme_spec_znd_idfy_ns to the given output stream
+ * Prints the given ::xnvme_spec_zns_io_command_set_specific_identify_namespace to the given output
+ * stream
  *
  * Only fields specific to Zoned Namespaces are printed by this function
  *
@@ -613,21 +620,24 @@ xnvme_spec_znd_idfy_lbafe_fpr(FILE *stream, struct xnvme_spec_znd_idfy_lbafe *zo
  * @return On success, the number of characters printed is returned
  */
 int
-xnvme_spec_znd_idfy_ns_fpr(FILE *stream, struct xnvme_spec_znd_idfy_ns *zns, int opts);
+xnvme_spec_znd_idfy_ns_fpr(FILE *stream,
+			   struct xnvme_spec_zns_io_command_set_specific_identify_namespace *zns,
+			   int opts);
 
 /**
- * Prints the given ::xnvme_spec_znd_idfy_ns to stdout
+ * Prints the given ::xnvme_spec_zns_io_command_set_specific_identify_namespace to stdout
  *
- * @param zns pointer to ::xnvme_spec_znd_idfy_ns
+ * @param zns pointer to ::xnvme_spec_zns_io_command_set_specific_identify_namespace
  * @param opts printer options, see ::xnvme_pr
  *
  * @return On success, the number of characters printed is returned
  */
 int
-xnvme_spec_znd_idfy_ns_pr(struct xnvme_spec_znd_idfy_ns *zns, int opts);
+xnvme_spec_znd_idfy_ns_pr(struct xnvme_spec_zns_io_command_set_specific_identify_namespace *zns,
+			  int opts);
 
 /**
- * Prints the given ::xnvme_spec_znd_log_changes to the given output stream
+ * Prints the given ::xnvme_spec_zns_log_changed_zone_list to the given output stream
  *
  * @param stream output stream used for printing
  * @param changes pointer to subject to print
@@ -636,11 +646,12 @@ xnvme_spec_znd_idfy_ns_pr(struct xnvme_spec_znd_idfy_ns *zns, int opts);
  * @return On success, the number of characters printed is returned.
  */
 int
-xnvme_spec_znd_log_changes_fpr(FILE *stream, const struct xnvme_spec_znd_log_changes *changes,
+xnvme_spec_znd_log_changes_fpr(FILE *stream,
+			       const struct xnvme_spec_zns_log_changed_zone_list *changes,
 			       int opts);
 
 /**
- * Pretty-printer of ::xnvme_spec_znd_log_changes
+ * Pretty-printer of ::xnvme_spec_zns_log_changed_zone_list
  *
  * @param changes pointer to subject to print
  * @param opts printer options, see ::xnvme_pr
@@ -648,10 +659,11 @@ xnvme_spec_znd_log_changes_fpr(FILE *stream, const struct xnvme_spec_znd_log_cha
  * @return On success, the number of characters printed is returned.
  */
 int
-xnvme_spec_znd_log_changes_pr(const struct xnvme_spec_znd_log_changes *changes, int opts);
+xnvme_spec_znd_log_changes_pr(const struct xnvme_spec_zns_log_changed_zone_list *changes,
+			      int opts);
 
 /**
- * Prints the given ::xnvme_spec_znd_descr to the given stream
+ * Prints the given ::xnvme_spec_zns_zone_descriptor to the given stream
  *
  * @param stream output stream used for printing
  * @param descr the struct to print
@@ -660,10 +672,11 @@ xnvme_spec_znd_log_changes_pr(const struct xnvme_spec_znd_log_changes *changes, 
  * @return On success, the number of characters printed is returned.
  */
 int
-xnvme_spec_znd_descr_fpr(FILE *stream, const struct xnvme_spec_znd_descr *descr, int opts);
+xnvme_spec_znd_descr_fpr(FILE *stream, const struct xnvme_spec_zns_zone_descriptor *descr,
+			 int opts);
 
 /**
- * Prints the given ::xnvme_spec_znd_descr to stdout
+ * Prints the given ::xnvme_spec_zns_zone_descriptor to stdout
  *
  * @param descr the structure to print
  * @param opts printer options, see ::xnvme_pr
@@ -671,10 +684,10 @@ xnvme_spec_znd_descr_fpr(FILE *stream, const struct xnvme_spec_znd_descr *descr,
  * @return On success, the number of characters printed is returned.
  */
 int
-xnvme_spec_znd_descr_pr(const struct xnvme_spec_znd_descr *descr, int opts);
+xnvme_spec_znd_descr_pr(const struct xnvme_spec_zns_zone_descriptor *descr, int opts);
 
 /**
- * Print the given ::xnvme_spec_znd_report_hdr to the given output stream
+ * Print the given ::xnvme_spec_zns_report_zones to the given output stream
  *
  * @param stream output stream used for printing
  * @param hdr the struct to print
@@ -683,10 +696,11 @@ xnvme_spec_znd_descr_pr(const struct xnvme_spec_znd_descr *descr, int opts);
  * @return On success, the number of characters printed is returned.
  */
 int
-xnvme_spec_znd_report_hdr_fpr(FILE *stream, const struct xnvme_spec_znd_report_hdr *hdr, int opts);
+xnvme_spec_znd_report_hdr_fpr(FILE *stream, const struct xnvme_spec_zns_report_zones *hdr,
+			      int opts);
 
 /**
- * Print the given ::xnvme_spec_znd_report_hdr to the stdout
+ * Print the given ::xnvme_spec_zns_report_zones to the stdout
  *
  * @param hdr the struct to print
  * @param opts printer options, see ::xnvme_pr
@@ -694,11 +708,11 @@ xnvme_spec_znd_report_hdr_fpr(FILE *stream, const struct xnvme_spec_znd_report_h
  * @return On success, the number of characters printed is returned.
  */
 int
-xnvme_spec_znd_report_hdr_pr(const struct xnvme_spec_znd_report_hdr *hdr, int opts);
+xnvme_spec_znd_report_hdr_pr(const struct xnvme_spec_zns_report_zones *hdr, int opts);
 
 int
-xnvme_spec_znd_descr_fpr_yaml(FILE *stream, const struct xnvme_spec_znd_descr *descr, int indent,
-			      const char *sep);
+xnvme_spec_znd_descr_fpr_yaml(FILE *stream, const struct xnvme_spec_zns_zone_descriptor *descr,
+			      int indent, const char *sep);
 
 /**
  * Prints the given xnvme_spec_kvs_idfy to the given output stream
@@ -792,14 +806,14 @@ const char *
 xnvme_spec_log_lpi_str(enum xnvme_spec_log_lpi eval);
 
 /**
- * Produces a string representation of the given ::xnvme_spec_znd_log_lid
+ * Produces a string representation of the given value of ::xnvme_spec_base_log_page_identifier
  *
  * @param eval the enum value to produce a string representation of
  * @return On success, a string representation is returned. On error, the string
  * "ENOSYS" is returned.
  */
 const char *
-xnvme_spec_znd_log_lid_str(enum xnvme_spec_znd_log_lid eval);
+xnvme_spec_znd_log_lid_str(int eval);
 
 /**
  * Produces a string representation of the given ::xnvme_spec_nvm_cmd_cpl_sc
@@ -843,34 +857,37 @@ const char *
 xnvme_spec_sgl_descriptor_subtype_str(enum xnvme_spec_sgl_descriptor_subtype eval);
 
 /**
- * Produces a string representation of the given ::xnvme_spec_znd_cmd_mgmt_recv_action
+ * Produces a string representation of the given ::xnvme_spec_zns_zone_management_receive_cdw13_zra
  *
  * @param eval the enum value to produce a string representation of
  * @return On success, a string representation is returned. On error, the string
  * "ENOSYS" is returned.
  */
 const char *
-xnvme_spec_znd_cmd_mgmt_recv_action_str(enum xnvme_spec_znd_cmd_mgmt_recv_action eval);
+xnvme_spec_znd_cmd_mgmt_recv_action_str(
+	enum xnvme_spec_zns_zone_management_receive_cdw13_zra eval);
 
 /**
- * Produces a string representation of the given ::xnvme_spec_znd_cmd_mgmt_recv_action_sf
+ * Produces a string representation of the given value of
+ * ::xnvme_spec_zns_zone_management_receive_cdw13_zras or
+ * XNVME_SPEC_ZNS_ZONE_MANAGEMENT_RECEIVE_CDW13_ZRAS_LIST_ALL_ZONES
  *
  * @param eval the enum value to produce a string representation of
  * @return On success, a string representation is returned. On error, the string
  * "ENOSYS" is returned.
  */
 const char *
-xnvme_spec_znd_cmd_mgmt_recv_action_sf_str(enum xnvme_spec_znd_cmd_mgmt_recv_action_sf eval);
+xnvme_spec_znd_cmd_mgmt_recv_action_sf_str(int eval);
 
 /**
- * Produces a string representation of the given ::xnvme_spec_znd_cmd_mgmt_send_action
+ * Produces a string representation of the given ::xnvme_spec_zns_zone_management_send_cdw13_zsa
  *
  * @param eval the enum value to produce a string representation of
  * @return On success, a string representation is returned. On error, the string
  * "ENOSYS" is returned.
  */
 const char *
-xnvme_spec_znd_cmd_mgmt_send_action_str(enum xnvme_spec_znd_cmd_mgmt_send_action eval);
+xnvme_spec_znd_cmd_mgmt_send_action_str(enum xnvme_spec_zns_zone_management_send_cdw13_zsa eval);
 
 /**
  * Produces a string representation of the given ::xnvme_spec_zns_opcode
@@ -883,44 +900,34 @@ const char *
 xnvme_spec_znd_opc_str(enum xnvme_spec_zns_opcode eval);
 
 /**
- * Produces a string representation of the given ::xnvme_spec_znd_mgmt_send_action_so
+ * Produces a string representation of the given ::xnvme_spec_zns_command_specific_status
  *
  * @param eval the enum value to produce a string representation of
  * @return On success, a string representation is returned. On error, the string
  * "ENOSYS" is returned.
  */
 const char *
-xnvme_spec_znd_mgmt_send_action_so_str(enum xnvme_spec_znd_mgmt_send_action_so eval);
+xnvme_spec_znd_status_code_str(int eval);
 
 /**
- * Produces a string representation of the given ::xnvme_spec_znd_status_code
+ * Produces a string representation of the given ::xnvme_spec_zns_zone_descriptor_zsattr_zs
  *
  * @param eval the enum value to produce a string representation of
  * @return On success, a string representation is returned. On error, the string
  * "ENOSYS" is returned.
  */
 const char *
-xnvme_spec_znd_status_code_str(enum xnvme_spec_znd_status_code eval);
+xnvme_spec_znd_state_str(enum xnvme_spec_zns_zone_descriptor_zsattr_zs eval);
 
 /**
- * Produces a string representation of the given ::xnvme_spec_znd_state
+ * Produces a string representation of the given ::xnvme_spec_zns_zone_descriptor_ztattr_zt
  *
  * @param eval the enum value to produce a string representation of
  * @return On success, a string representation is returned. On error, the string
  * "ENOSYS" is returned.
  */
 const char *
-xnvme_spec_znd_state_str(enum xnvme_spec_znd_state eval);
-
-/**
- * Produces a string representation of the given ::xnvme_spec_znd_type
- *
- * @param eval the enum value to produce a string representation of
- * @return On success, a string representation is returned. On error, the string
- * "ENOSYS" is returned.
- */
-const char *
-xnvme_spec_znd_type_str(enum xnvme_spec_znd_type eval);
+xnvme_spec_znd_type_str(enum xnvme_spec_zns_zone_descriptor_ztattr_zt eval);
 
 int
 xnvme_spec_ctrlr_bar_fpr(FILE *stream, struct xnvme_spec_ctrlr_bar *bar, int opts);

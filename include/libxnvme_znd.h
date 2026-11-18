@@ -24,7 +24,7 @@ extern "C" {
  * @param dev
  * @return
  */
-const struct xnvme_spec_znd_idfy_ns *
+const struct xnvme_spec_zns_io_command_set_specific_identify_namespace *
 xnvme_znd_dev_get_ns(struct xnvme_dev *dev);
 
 /**
@@ -33,7 +33,7 @@ xnvme_znd_dev_get_ns(struct xnvme_dev *dev);
  * @param dev
  * @return
  */
-const struct xnvme_spec_znd_idfy_ctrlr *
+const struct xnvme_spec_zns_io_command_set_specific_identify_controller *
 xnvme_znd_dev_get_ctrlr(struct xnvme_dev *dev);
 
 /**
@@ -41,7 +41,7 @@ xnvme_znd_dev_get_ctrlr(struct xnvme_dev *dev);
  * @param dev
  * @return
  */
-const struct xnvme_spec_znd_idfy_lbafe *
+const struct xnvme_spec_zns_lba_format_extension *
 xnvme_znd_dev_get_lbafe(struct xnvme_dev *dev);
 
 /**
@@ -49,7 +49,7 @@ xnvme_znd_dev_get_lbafe(struct xnvme_dev *dev);
  *
  * @param dev Device handle obtained with xnvme_dev_open_uri()
  * @param slba The Zone Start LBA
- * @param zdescr Pointer to the ::xnvme_spec_znd_descr to fill
+ * @param zdescr Pointer to the ::xnvme_spec_zns_zone_descriptor to fill
  *
  * @return On success, 0 is returned and 'zdescr' filled with matching Zone Descriptor. On error,
  * negative ``errno`` is returned to indicate the error, and the content of given 'zdescr' is
@@ -57,13 +57,14 @@ xnvme_znd_dev_get_lbafe(struct xnvme_dev *dev);
  */
 int
 xnvme_znd_descr_from_dev(struct xnvme_dev *dev, uint64_t slba,
-			 struct xnvme_spec_znd_descr *zdescr);
+			 struct xnvme_spec_zns_zone_descriptor *zdescr);
 
 /**
  * Fills 'zdescr' with the first Zone on the given 'dev' in the given 'state'
  *
  * @param dev The device to receive descriptors from
- * @param state The state the Zone should be in, a value of ::xnvme_spec_znd_state
+ * @param state The state the Zone should be in, a value of
+ * ::xnvme_spec_zns_zone_descriptor_zsattr_zs
  * @param zdescr Pointer to the descriptor the function should fill
  *
  * @return On succes, 0 is returned and 'zdescr' filled with matching Zone
@@ -72,13 +73,15 @@ xnvme_znd_descr_from_dev(struct xnvme_dev *dev, uint64_t slba,
  */
 int
 xnvme_znd_descr_from_dev_in_state(struct xnvme_dev *dev, uint32_t state,
-				  struct xnvme_spec_znd_descr *zdescr);
+				  struct xnvme_spec_zns_zone_descriptor *zdescr);
 
 /**
  * Ask the given device for how many zones in the given state via receive-action
  *
  * @param dev The device to stat
- * @param sfield Which zones to count, a value of ::xnvme_spec_znd_cmd_mgmt_recv_action_sf
+ * @param sfield Which zones to count, a value of
+ * ::xnvme_spec_zns_zone_management_receive_cdw13_zras or
+ * XNVME_SPEC_ZNS_ZONE_MANAGEMENT_RECEIVE_CDW13_ZRAS_LIST_ALL_ZONES
  * @param nzones Pointer to store result in
  *
  * @return On Success, 0 is returned and 'nzones' filled with stat. On error,
@@ -102,7 +105,7 @@ xnvme_znd_stat(struct xnvme_dev *dev, uint32_t sfield, uint64_t *nzones);
  * @return On success, pointer to namespace structure. On error, NULL is
  * returned and `errno` is set to indicate the error
  */
-struct xnvme_spec_znd_log_changes *
+struct xnvme_spec_zns_log_changed_zone_list *
 xnvme_znd_log_changes_from_dev(struct xnvme_dev *dev);
 
 /**
@@ -156,7 +159,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_znd_report) == 64, "Incorrect size")
  */
 int
 xnvme_znd_report_get_descr(const struct xnvme_znd_report *report, uint32_t index,
-			   struct xnvme_spec_znd_descr **descr, void **ext);
+			   struct xnvme_spec_zns_zone_descriptor **descr, void **ext);
 
 /**
  * Retrieves a Zone Report from the namespace associated with the given `dev`,
@@ -183,7 +186,7 @@ xnvme_znd_report_from_dev(struct xnvme_dev *dev, uint64_t slba, size_t limit, ui
  * Scan the 'report' for a zone in the given 'state' and store it in 'zlba'
  *
  * @param report The report to scan
- * @param state The zone-state to scan for, a value of ::xnvme_spec_znd_state
+ * @param state The zone-state to scan for, a value of ::xnvme_spec_zns_zone_descriptor_zsattr_zs
  * @param zlba Pointer to store zlba to
  * @param opts Optional seed random-number generator, when 0 then time(NULL) is
  * used

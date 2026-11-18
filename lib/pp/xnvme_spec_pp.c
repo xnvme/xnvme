@@ -1389,8 +1389,8 @@ xnvme_spec_drecv_sar_pr(const struct xnvme_spec_alloc_resource *sar, int opts)
 }
 
 int
-xnvme_spec_znd_descr_fpr_yaml(FILE *stream, const struct xnvme_spec_znd_descr *descr, int indent,
-			      const char *sep)
+xnvme_spec_znd_descr_fpr_yaml(FILE *stream, const struct xnvme_spec_zns_zone_descriptor *descr,
+			      int indent, const char *sep)
 {
 	int wrtn = 0;
 
@@ -1400,19 +1400,24 @@ xnvme_spec_znd_descr_fpr_yaml(FILE *stream, const struct xnvme_spec_znd_descr *d
 
 	wrtn += fprintf(stream, "%*szcap: %" PRIu64 "%s", indent, "", descr->zcap, sep);
 
-	wrtn += fprintf(stream, "%*szt: %#" PRIx8 "%s", indent, "", descr->zt, sep);
+	wrtn += fprintf(stream, "%*szt: %#" PRIx64 "%s", indent, "",
+			xnvme_bits_get(descr->ztattr, XNVME_SPEC_ZNS_ZONE_DESCRIPTOR_ZTATTR_ZT),
+			sep);
 
 	wrtn += fprintf(stream, "%*szs: %*s%s", indent, "", 17,
-			xnvme_spec_znd_state_str(descr->zs), sep);
+			xnvme_spec_znd_state_str(xnvme_bits_get(
+				descr->zsattr, XNVME_SPEC_ZNS_ZONE_DESCRIPTOR_ZSATTR_ZS)),
+			sep);
 
 	wrtn += fprintf(stream, "%*sza: '0b" XNVME_I8_FMT "'", indent, "",
-			XNVME_I8_TO_STR(descr->za.val));
+			XNVME_I8_TO_STR(descr->za));
 
 	return wrtn;
 }
 
 int
-xnvme_spec_znd_descr_fpr(FILE *stream, const struct xnvme_spec_znd_descr *descr, int opts)
+xnvme_spec_znd_descr_fpr(FILE *stream, const struct xnvme_spec_zns_zone_descriptor *descr,
+			 int opts)
 {
 	int wrtn = 0;
 
@@ -1440,13 +1445,14 @@ xnvme_spec_znd_descr_fpr(FILE *stream, const struct xnvme_spec_znd_descr *descr,
 }
 
 int
-xnvme_spec_znd_descr_pr(const struct xnvme_spec_znd_descr *descr, int opts)
+xnvme_spec_znd_descr_pr(const struct xnvme_spec_zns_zone_descriptor *descr, int opts)
 {
 	return xnvme_spec_znd_descr_fpr(stdout, descr, opts);
 }
 
 int
-xnvme_spec_znd_log_changes_fpr(FILE *stream, const struct xnvme_spec_znd_log_changes *changes,
+xnvme_spec_znd_log_changes_fpr(FILE *stream,
+			       const struct xnvme_spec_zns_log_changed_zone_list *changes,
 			       int opts)
 {
 	int wrtn = 0;
@@ -1468,34 +1474,35 @@ xnvme_spec_znd_log_changes_fpr(FILE *stream, const struct xnvme_spec_znd_log_cha
 	}
 
 	wrtn += fprintf(stream, "\n");
-	wrtn += fprintf(stream, "  nidents: %" PRIu16 "\n", changes->nidents);
+	wrtn += fprintf(stream, "  nidents: %" PRIu16 "\n", changes->nzid);
 
-	if (changes->nidents) {
+	if (changes->nzid) {
 		return wrtn;
 	}
 
 	wrtn += fprintf(stream, "  idents:");
-	if (!changes->nidents) {
+	if (!changes->nzid) {
 		wrtn += fprintf(stream, " ~\n");
 		return wrtn;
 	}
 
 	wrtn += fprintf(stream, "\n");
-	for (uint16_t idx = 0; idx < changes->nidents; ++idx) {
-		wrtn += fprintf(stream, "    - 0x%016" PRIx64 "\n", changes->idents[idx]);
+	for (uint16_t idx = 0; idx < changes->nzid; ++idx) {
+		wrtn += fprintf(stream, "    - 0x%016" PRIx64 "\n", changes->zone_identifier[idx]);
 	}
 
 	return wrtn;
 }
 
 int
-xnvme_spec_znd_log_changes_pr(const struct xnvme_spec_znd_log_changes *changes, int opts)
+xnvme_spec_znd_log_changes_pr(const struct xnvme_spec_zns_log_changed_zone_list *changes, int opts)
 {
 	return xnvme_spec_znd_log_changes_fpr(stdout, changes, opts);
 }
 
 int
-xnvme_spec_znd_report_hdr_fpr(FILE *stream, const struct xnvme_spec_znd_report_hdr *hdr, int opts)
+xnvme_spec_znd_report_hdr_fpr(FILE *stream, const struct xnvme_spec_zns_report_zones *hdr,
+			      int opts)
 {
 	int wrtn = 0;
 
@@ -1516,20 +1523,22 @@ xnvme_spec_znd_report_hdr_fpr(FILE *stream, const struct xnvme_spec_znd_report_h
 	}
 
 	wrtn += fprintf(stream, "\n");
-	wrtn += fprintf(stream, "  nzones: %" PRIu64 "\n", hdr->nzones);
+	wrtn += fprintf(stream, "  nzones: %" PRIu64 "\n", hdr->nz);
 	wrtn += fprintf(stream, "\n");
 
 	return wrtn;
 }
 
 int
-xnvme_spec_znd_report_hdr_pr(const struct xnvme_spec_znd_report_hdr *hdr, int opts)
+xnvme_spec_znd_report_hdr_pr(const struct xnvme_spec_zns_report_zones *hdr, int opts)
 {
 	return xnvme_spec_znd_report_hdr_fpr(stdout, hdr, opts);
 }
 
 int
-xnvme_spec_znd_idfy_ctrlr_fpr(FILE *stream, struct xnvme_spec_znd_idfy_ctrlr *zctrlr, int opts)
+xnvme_spec_znd_idfy_ctrlr_fpr(
+	FILE *stream, struct xnvme_spec_zns_io_command_set_specific_identify_controller *zctrlr,
+	int opts)
 {
 	int wrtn = 0;
 
@@ -1556,13 +1565,15 @@ xnvme_spec_znd_idfy_ctrlr_fpr(FILE *stream, struct xnvme_spec_znd_idfy_ctrlr *zc
 }
 
 int
-xnvme_spec_znd_idfy_ctrlr_pr(struct xnvme_spec_znd_idfy_ctrlr *zctrlr, int opts)
+xnvme_spec_znd_idfy_ctrlr_pr(
+	struct xnvme_spec_zns_io_command_set_specific_identify_controller *zctrlr, int opts)
 {
 	return xnvme_spec_znd_idfy_ctrlr_fpr(stdout, zctrlr, opts);
 }
 
 int
-xnvme_spec_znd_idfy_lbafe_fpr(FILE *stream, struct xnvme_spec_znd_idfy_lbafe *zonef, int opts)
+xnvme_spec_znd_idfy_lbafe_fpr(FILE *stream, struct xnvme_spec_zns_lba_format_extension *zonef,
+			      int opts)
 {
 	int wrtn = 0;
 
@@ -1588,7 +1599,9 @@ xnvme_spec_znd_idfy_lbafe_fpr(FILE *stream, struct xnvme_spec_znd_idfy_lbafe *zo
 }
 
 int
-xnvme_spec_znd_idfy_ns_fpr(FILE *stream, struct xnvme_spec_znd_idfy_ns *zns, int opts)
+xnvme_spec_znd_idfy_ns_fpr(FILE *stream,
+			   struct xnvme_spec_zns_io_command_set_specific_identify_namespace *zns,
+			   int opts)
 {
 	int wrtn = 0;
 
@@ -1609,13 +1622,25 @@ xnvme_spec_znd_idfy_ns_fpr(FILE *stream, struct xnvme_spec_znd_idfy_ns *zns, int
 	}
 
 	wrtn += fprintf(stream, "\n");
-	wrtn += fprintf(stream, "  zoc: { vzcap: %" PRIu16 ", zae: %" PRIu16 " }\n",
-			zns->zoc.bits.vzcap, zns->zoc.bits.zae);
+	wrtn += fprintf(
+		stream, "  zoc: { vzcap: %" PRIu64 ", zae: %" PRIu64 " }\n",
+		xnvme_bits_get(zns->zoc,
+			       XNVME_SPEC_ZNS_IO_COMMAND_SET_SPECIFIC_IDENTIFY_NAMESPACE_ZOC_VZC),
+		xnvme_bits_get(zns->zoc,
+			       XNVME_SPEC_ZNS_IO_COMMAND_SET_SPECIFIC_IDENTIFY_NAMESPACE_ZOC_ZAE));
 
 	wrtn += fprintf(stream, "  ozcs:\n");
-	wrtn += fprintf(stream, "    val: 0x%" PRIx16 "\n", zns->ozcs.val);
-	wrtn += fprintf(stream, "    razb: %" PRIu16 "\n", zns->ozcs.bits.razb);
-	wrtn += fprintf(stream, "    zrwasup: %" PRIu16 "\n", zns->ozcs.bits.zrwasup);
+	wrtn += fprintf(stream, "    val: 0x%" PRIx16 "\n", zns->ozcs);
+	wrtn += fprintf(
+		stream, "    razb: %" PRIu64 "\n",
+		xnvme_bits_get(
+			zns->ozcs,
+			XNVME_SPEC_ZNS_IO_COMMAND_SET_SPECIFIC_IDENTIFY_NAMESPACE_OZCS_RAZB));
+	wrtn += fprintf(
+		stream, "    zrwasup: %" PRIu64 "\n",
+		xnvme_bits_get(
+			zns->ozcs,
+			XNVME_SPEC_ZNS_IO_COMMAND_SET_SPECIFIC_IDENTIFY_NAMESPACE_OZCS_ZRWASUP));
 
 	wrtn += fprintf(stream, "  mar: %" PRIu32 "\n", zns->mar);
 	wrtn += fprintf(stream, "  mor: %" PRIu32 "\n", zns->mor);
@@ -1631,18 +1656,23 @@ xnvme_spec_znd_idfy_ns_fpr(FILE *stream, struct xnvme_spec_znd_idfy_ns *zns, int
 	}
 
 	wrtn += fprintf(stream, "  numzrwa: %" PRIu32 "\n", zns->numzrwa);
-	wrtn += fprintf(stream, "  zrwas: %" PRIu16 "\n", zns->zrwas);
+	wrtn += fprintf(stream, "  zrwas: %" PRIu16 "\n", zns->zrwasz);
 	wrtn += fprintf(stream, "  zrwafg: %" PRIu16 "\n", zns->zrwafg);
 
 	wrtn += fprintf(stream, "  zrwacap:\n");
-	wrtn += fprintf(stream, "    val: 0x%" PRIx8 "\n", zns->zrwacap.val);
-	wrtn += fprintf(stream, "    expflushsup: %" PRIu8 "\n", zns->zrwacap.bits.expflushsup);
+	wrtn += fprintf(stream, "    val: 0x%" PRIx8 "\n", zns->zrwacap);
+	wrtn += fprintf(
+		stream, "    expflushsup: %" PRIu64 "\n",
+		xnvme_bits_get(
+			zns->zrwacap,
+			XNVME_SPEC_ZNS_IO_COMMAND_SET_SPECIFIC_IDENTIFY_NAMESPACE_ZRWACAP_EXPFLUSHSUP));
 
 	return wrtn;
 }
 
 int
-xnvme_spec_znd_idfy_ns_pr(struct xnvme_spec_znd_idfy_ns *zns, int opts)
+xnvme_spec_znd_idfy_ns_pr(struct xnvme_spec_zns_io_command_set_specific_identify_namespace *zns,
+			  int opts)
 {
 	return xnvme_spec_znd_idfy_ns_fpr(stdout, zns, opts);
 }
