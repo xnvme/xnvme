@@ -15,6 +15,9 @@ repos:
     entry: toolbox/pcf_clang_format.py
     args: ["--style-file", "toolbox/clang-format-h"]
     files: \.h$
+    # The spec headers are as toolbox/xnvme_spec_headers.py writes them;
+    # clang-format does not settle on their long trailing comments
+    exclude: ^include/libxnvme_spec_(base|boot|cp|kv|mi|nvm|pcie|rdma|slm|tcp|zns)\.h$
 
   - id: clang-format
     name: C-format-source
