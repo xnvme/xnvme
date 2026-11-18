@@ -186,7 +186,7 @@ xnvme_ident_pr(const struct xnvme_ident *ident, int opts);
 /* Printers of libxnvme_spec.h */
 
 /**
- * Prints the given :;xnvme_spec_log_health_entry to the given output stream
+ * Prints the given :;xnvme_spec_base_log_smart_health_information to the given output stream
  *
  * @param stream output stream used for printing
  * @param log pointer to the structure to print
@@ -194,20 +194,22 @@ xnvme_ident_pr(const struct xnvme_ident *ident, int opts);
  * @return On success, the number of characters printed is returned.
  */
 int
-xnvme_spec_log_health_fpr(FILE *stream, const struct xnvme_spec_log_health_entry *log, int opts);
+xnvme_spec_log_health_fpr(FILE *stream,
+			  const struct xnvme_spec_base_log_smart_health_information *log,
+			  int opts);
 
 /**
- * Prints the given :;xnvme_spec_log_health_entry to stdout
+ * Prints the given :;xnvme_spec_base_log_smart_health_information to stdout
  *
  * @param log
  * @param opts
  * @return On success, the number of characters printed is returned.
  */
 int
-xnvme_spec_log_health_pr(const struct xnvme_spec_log_health_entry *log, int opts);
+xnvme_spec_log_health_pr(const struct xnvme_spec_base_log_smart_health_information *log, int opts);
 
 /**
- * Prints the given :;xnvme_spec_log_sanitize_entry to the given output stream
+ * Prints the given :;xnvme_spec_base_log_sanitize_status to the given output stream
  *
  * @param stream output stream used for printing
  * @param log pointer to the structure to print
@@ -215,21 +217,21 @@ xnvme_spec_log_health_pr(const struct xnvme_spec_log_health_entry *log, int opts
  * @return On success, the number of characters printed is returned.
  */
 int
-xnvme_spec_log_sanitize_fpr(FILE *stream, const struct xnvme_spec_log_sanitize_entry *log,
+xnvme_spec_log_sanitize_fpr(FILE *stream, const struct xnvme_spec_base_log_sanitize_status *log,
 			    int opts);
 
 /**
- * Prints the given :;xnvme_spec_log_sanitize_entry to stdout
+ * Prints the given :;xnvme_spec_base_log_sanitize_status to stdout
  *
  * @param log pointer to the structure to print
  * @param opts printer options, see ::xnvme_pr
  * @return On success, the number of characters printed is returned.
  */
 int
-xnvme_spec_log_sanitize_pr(const struct xnvme_spec_log_sanitize_entry *log, int opts);
+xnvme_spec_log_sanitize_pr(const struct xnvme_spec_base_log_sanitize_status *log, int opts);
 
 /**
- * Prints the given :;xnvme_spec_log_erri_entry to stdout
+ * Prints the given :;xnvme_spec_base_error_information_log_entry to stdout
  *
  * @param stream output stream used for printing
  * @param log
@@ -238,11 +240,12 @@ xnvme_spec_log_sanitize_pr(const struct xnvme_spec_log_sanitize_entry *log, int 
  * @return On success, the number of characters printed is returned.
  */
 int
-xnvme_spec_log_erri_fpr(FILE *stream, const struct xnvme_spec_log_erri_entry *log, int limit,
+xnvme_spec_log_erri_fpr(FILE *stream,
+			const struct xnvme_spec_base_error_information_log_entry *log, int limit,
 			int opts);
 
 /**
- * Prints the given :;xnvme_spec_log_erri_entry to stdout
+ * Prints the given :;xnvme_spec_base_error_information_log_entry to stdout
  *
  * @param log
  * @param limit
@@ -250,30 +253,31 @@ xnvme_spec_log_erri_fpr(FILE *stream, const struct xnvme_spec_log_erri_entry *lo
  * @return On success, the number of characters printed is returned.
  */
 int
-xnvme_spec_log_erri_pr(const struct xnvme_spec_log_erri_entry *log, int limit, int opts);
+xnvme_spec_log_erri_pr(const struct xnvme_spec_base_error_information_log_entry *log, int limit,
+		       int opts);
 
 /**
- * Prints the given :;xnvme_spec_log_fdp_conf to stdout
+ * Prints the given :;xnvme_spec_base_log_fdp_configurations to stdout
  *
  * @param log
  * @param opts
  * @return On success, the number of characters printed is returned.
  */
 int
-xnvme_spec_log_fdp_conf_pr(const struct xnvme_spec_log_fdp_conf *log, int opts);
+xnvme_spec_log_fdp_conf_pr(const struct xnvme_spec_base_log_fdp_configurations *log, int opts);
 
 /**
- * Prints the given :;xnvme_spec_log_fdp_stats to stdout
+ * Prints the given :;xnvme_spec_base_log_fdp_statistics to stdout
  *
  * @param log
  * @param opts
  * @return On success, the number of characters printed is returned.
  */
 int
-xnvme_spec_log_fdp_stats_pr(const struct xnvme_spec_log_fdp_stats *log, int opts);
+xnvme_spec_log_fdp_stats_pr(const struct xnvme_spec_base_log_fdp_statistics *log, int opts);
 
 /**
- * Prints the given :;xnvme_spec_log_fdp_events_entry to stdout
+ * Prints the given ::xnvme_spec_base_log_fdp_events to stdout
  *
  * @param log
  * @param limit
@@ -281,10 +285,11 @@ xnvme_spec_log_fdp_stats_pr(const struct xnvme_spec_log_fdp_stats *log, int opts
  * @return On success, the number of characters printed is returned.
  */
 int
-xnvme_spec_log_fdp_events_pr(const struct xnvme_spec_log_fdp_events *log, int limit, int opts);
+xnvme_spec_log_fdp_events_pr(const struct xnvme_spec_base_log_fdp_events *log, int limit,
+			     int opts);
 
 /**
- * Prints the given :;xnvme_spec_log_ruhu to stdout
+ * Prints the given :;xnvme_spec_base_log_reclaim_unit_handle_usage to stdout
  *
  * @param log
  * @param limit
@@ -292,10 +297,11 @@ xnvme_spec_log_fdp_events_pr(const struct xnvme_spec_log_fdp_events *log, int li
  * @return On success, the number of characters printed is returned.
  */
 int
-xnvme_spec_log_ruhu_pr(const struct xnvme_spec_log_ruhu *log, int limit, int opts);
+xnvme_spec_log_ruhu_pr(const struct xnvme_spec_base_log_reclaim_unit_handle_usage *log, int limit,
+		       int opts);
 
 /**
- * Prints the given :;xnvme_spec_ruhs to stdout
+ * Prints the given :;xnvme_spec_base_reclaim_unit_handle_status to stdout
  *
  * @param ruhs
  * @param limit
@@ -303,7 +309,8 @@ xnvme_spec_log_ruhu_pr(const struct xnvme_spec_log_ruhu *log, int limit, int opt
  * @return On success, the number of characters printed is returned.
  */
 int
-xnvme_spec_ruhs_pr(const struct xnvme_spec_ruhs *ruhs, int limit, int opts);
+xnvme_spec_ruhs_pr(const struct xnvme_spec_base_reclaim_unit_handle_status *ruhs, int limit,
+		   int opts);
 
 /**
  * Prints the given :;xnvme_spec_nvm_identify_namespace to the given output stream
@@ -787,14 +794,15 @@ const char *
 xnvme_spec_idfy_cns_str(int eval);
 
 /**
- * Produces a string representation of the given ::xnvme_spec_log_lpi
+ * Produces a string representation of the given value of
+ * ::xnvme_spec_base_log_page_identifier
  *
  * @param eval the enum value to produce a string representation of
  * @return On success, a string representation is returned. On error, the string
  * "ENOSYS" is returned.
  */
 const char *
-xnvme_spec_log_lpi_str(enum xnvme_spec_log_lpi eval);
+xnvme_spec_log_lpi_str(int eval);
 
 /**
  * Produces a string representation of the given value of ::xnvme_spec_base_log_page_identifier

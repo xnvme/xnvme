@@ -26,7 +26,8 @@ bytes2double(const uint8_t bytes[], int n)
 }
 
 int
-xnvme_spec_log_health_fpr(FILE *stream, const struct xnvme_spec_log_health_entry *log, int opts)
+xnvme_spec_log_health_fpr(FILE *stream,
+			  const struct xnvme_spec_base_log_smart_health_information *log, int opts)
 {
 	int wrtn = 0;
 
@@ -48,49 +49,43 @@ xnvme_spec_log_health_fpr(FILE *stream, const struct xnvme_spec_log_health_entry
 	}
 
 	wrtn += fprintf(stream, "\n");
-	wrtn += fprintf(stream, "  crit_warn: %" PRIu8 "\n", log->crit_warn);
-	wrtn += fprintf(stream, "  comp_temp: %d\n", log->comp_temp - 273u);
-	wrtn += fprintf(stream, "  avail_spare: %" PRIu8 "\n", log->avail_spare);
-	wrtn += fprintf(stream, "  avail_spare_thresh: %" PRIu8 "\n", log->avail_spare_thresh);
-	wrtn += fprintf(stream, "  pct_used: %" PRIu8 "\n", log->pct_used);
-	wrtn += fprintf(stream, "  eg_crit_warn_sum: %" PRIu8 "\n", log->eg_crit_warn_sum);
-	wrtn += fprintf(stream, "  data_units_read: %.0Lf\n",
-			bytes2double(log->data_units_read, 16));
-	wrtn += fprintf(stream, "  data_units_written: %.0Lf\n",
-			bytes2double(log->data_units_written, 16));
-	wrtn += fprintf(stream, "  host_read_cmds: %.0Lf\n",
-			bytes2double(log->host_read_cmds, 16));
-	wrtn += fprintf(stream, "  host_write_cmds: %.0Lf\n",
-			bytes2double(log->host_write_cmds, 16));
-	wrtn += fprintf(stream, "  ctrlr_busy_time: %.0Lf\n",
-			bytes2double(log->ctrlr_busy_time, 16));
-	wrtn += fprintf(stream, "  pwr_cycles: %.0Lf\n", bytes2double(log->pwr_cycles, 16));
-	wrtn += fprintf(stream, "  pwr_on_hours: %.0Lf\n", bytes2double(log->pwr_on_hours, 16));
-	wrtn += fprintf(stream, "  unsafe_shutdowns: %.0Lf\n",
-			bytes2double(log->unsafe_shutdowns, 16));
-	wrtn += fprintf(stream, "  nr_err_logs: %.0Lf\n", bytes2double(log->nr_err_logs, 16));
-	wrtn += fprintf(stream, "  warn_comp_temp_time: %" PRIu32 "\n", log->warn_comp_temp_time);
-	wrtn += fprintf(stream, "  crit_comp_temp_time: %" PRIu32 "\n", log->crit_comp_temp_time);
+	wrtn += fprintf(stream, "  crit_warn: %" PRIu8 "\n", log->cw);
+	wrtn += fprintf(stream, "  comp_temp: %d\n", log->ctemp - 273u);
+	wrtn += fprintf(stream, "  avail_spare: %" PRIu8 "\n", log->avsp);
+	wrtn += fprintf(stream, "  avail_spare_thresh: %" PRIu8 "\n", log->avspt);
+	wrtn += fprintf(stream, "  pct_used: %" PRIu8 "\n", log->pused);
+	wrtn += fprintf(stream, "  eg_crit_warn_sum: %" PRIu8 "\n", log->egcws);
+	wrtn += fprintf(stream, "  data_units_read: %.0Lf\n", bytes2double(log->dur, 16));
+	wrtn += fprintf(stream, "  data_units_written: %.0Lf\n", bytes2double(log->duw, 16));
+	wrtn += fprintf(stream, "  host_read_cmds: %.0Lf\n", bytes2double(log->hrc, 16));
+	wrtn += fprintf(stream, "  host_write_cmds: %.0Lf\n", bytes2double(log->hwc, 16));
+	wrtn += fprintf(stream, "  ctrlr_busy_time: %.0Lf\n", bytes2double(log->cbt, 16));
+	wrtn += fprintf(stream, "  pwr_cycles: %.0Lf\n", bytes2double(log->pwrc, 16));
+	wrtn += fprintf(stream, "  pwr_on_hours: %.0Lf\n", bytes2double(log->poh, 16));
+	wrtn += fprintf(stream, "  unsafe_shutdowns: %.0Lf\n", bytes2double(log->upl, 16));
+	wrtn += fprintf(stream, "  nr_err_logs: %.0Lf\n", bytes2double(log->neile, 16));
+	wrtn += fprintf(stream, "  warn_comp_temp_time: %" PRIu32 "\n", log->wctt);
+	wrtn += fprintf(stream, "  crit_comp_temp_time: %" PRIu32 "\n", log->cctt);
 	for (int i = 0; i < 8; ++i) {
 		wrtn += fprintf(stream, "  temp_sens%u: %d\n", i + 1,
-				log->temp_sens[i] ? log->temp_sens[i] - 273u : 0);
+				log->tsen[i] ? log->tsen[i] - 273u : 0);
 	}
-	wrtn += fprintf(stream, "  tmt1tc: %" PRIu32 "\n", log->tmt1tc);
-	wrtn += fprintf(stream, "  tmt2tc: %" PRIu32 "\n", log->tmt2tc);
-	wrtn += fprintf(stream, "  tttmt1: %" PRIu32 "\n", log->tttmt1);
-	wrtn += fprintf(stream, "  tttmt2: %" PRIu32 "\n", log->tttmt2);
+	wrtn += fprintf(stream, "  tmt1tc: %" PRIu32 "\n", log->tmttc[0]);
+	wrtn += fprintf(stream, "  tmt2tc: %" PRIu32 "\n", log->tmttc[1]);
+	wrtn += fprintf(stream, "  tttmt1: %" PRIu32 "\n", log->tttmt[0]);
+	wrtn += fprintf(stream, "  tttmt2: %" PRIu32 "\n", log->tttmt[1]);
 
 	return wrtn;
 }
 
 int
-xnvme_spec_log_health_pr(const struct xnvme_spec_log_health_entry *log, int opts)
+xnvme_spec_log_health_pr(const struct xnvme_spec_base_log_smart_health_information *log, int opts)
 {
 	return xnvme_spec_log_health_fpr(stdout, log, opts);
 }
 
 int
-xnvme_spec_log_sanitize_fpr(FILE *stream, const struct xnvme_spec_log_sanitize_entry *log,
+xnvme_spec_log_sanitize_fpr(FILE *stream, const struct xnvme_spec_base_log_sanitize_status *log,
 			    int opts)
 {
 	int wrtn = 0;
@@ -113,7 +108,7 @@ xnvme_spec_log_sanitize_fpr(FILE *stream, const struct xnvme_spec_log_sanitize_e
 
 	wrtn += fprintf(stream, "\n");
 	wrtn += fprintf(stream, "  sanitize progress: %" PRIu16 "\n", log->sprog);
-	wrtn += fprintf(stream, "  sanitize status: %" PRIu16 "\n", log->sstat.val);
+	wrtn += fprintf(stream, "  sanitize status: %" PRIu16 "\n", log->sstat);
 	wrtn += fprintf(stream, "  sanitize command dw10: %" PRIu32 "\n", log->scdw10);
 	wrtn += fprintf(stream, "  est. time for overwrite: %" PRIu32 "\n", log->eto);
 	wrtn += fprintf(stream, "  est. time for block erase: %" PRIu32 "\n", log->etbe);
@@ -135,34 +130,36 @@ xnvme_spec_log_sanitize_fpr(FILE *stream, const struct xnvme_spec_log_sanitize_e
 }
 
 int
-xnvme_spec_log_sanitize_pr(const struct xnvme_spec_log_sanitize_entry *log, int opts)
+xnvme_spec_log_sanitize_pr(const struct xnvme_spec_base_log_sanitize_status *log, int opts)
 {
 	return xnvme_spec_log_sanitize_fpr(stdout, log, opts);
 }
 
 static inline int
-log_erri_entry_fpr_yaml(FILE *stream, const struct xnvme_spec_log_erri_entry *entry, int indent,
-			const char *sep)
+log_erri_entry_fpr_yaml(FILE *stream,
+			const struct xnvme_spec_base_error_information_log_entry *entry,
+			int indent, const char *sep)
 {
 	int wrtn = 0;
 
 	wrtn += fprintf(stream, "%*secnt: %" PRIu64 "%s", indent, "", entry->ecnt, sep);
 	wrtn += fprintf(stream, "%*ssqid: %" PRIu16 "%s", indent, "", entry->sqid, sep);
 	wrtn += fprintf(stream, "%*scid: %" PRIu16 "%s", indent, "", entry->cid, sep);
-	wrtn += fprintf(stream, "%*sstatus: %#" PRIx16 "%s", indent, "", entry->status, sep);
-	wrtn += fprintf(stream, "%*seloc: %#" PRIx16 "%s", indent, "", entry->eloc, sep);
+	wrtn += fprintf(stream, "%*sstatus: %#" PRIx16 "%s", indent, "", entry->sts, sep);
+	wrtn += fprintf(stream, "%*seloc: %#" PRIx16 "%s", indent, "", entry->pel, sep);
 	wrtn += fprintf(stream, "%*slba: %#" PRIx64 "%s", indent, "", entry->lba, sep);
 	wrtn += fprintf(stream, "%*snsid: %" PRIu32 "%s", indent, "", entry->nsid, sep);
-	wrtn += fprintf(stream, "%*sven_si: %#" PRIx8 "%s", indent, "", entry->ven_si, sep);
+	wrtn += fprintf(stream, "%*sven_si: %#" PRIx8 "%s", indent, "", entry->vsia, sep);
 	wrtn += fprintf(stream, "%*strtype: %#" PRIx8 "%s", indent, "", entry->trtype, sep);
-	wrtn += fprintf(stream, "%*scmd_si: %#" PRIx64 "%s", indent, "", entry->cmd_si, sep);
-	wrtn += fprintf(stream, "%*strtype_si: %#" PRIx16, indent, "", entry->trtype_si);
+	wrtn += fprintf(stream, "%*scmd_si: %#" PRIx64 "%s", indent, "", entry->csinfo, sep);
+	wrtn += fprintf(stream, "%*strtype_si: %#" PRIx16, indent, "", entry->ttsi);
 
 	return wrtn;
 }
 
 int
-xnvme_spec_log_erri_entry_fpr(FILE *stream, const struct xnvme_spec_log_erri_entry *entry,
+xnvme_spec_log_erri_entry_fpr(FILE *stream,
+			      const struct xnvme_spec_base_error_information_log_entry *entry,
 			      int opts)
 {
 	int wrtn = 0;
@@ -192,13 +189,15 @@ xnvme_spec_log_erri_entry_fpr(FILE *stream, const struct xnvme_spec_log_erri_ent
 }
 
 int
-xnvme_spec_log_erri_entry_pr(const struct xnvme_spec_log_erri_entry *entry, int opts)
+xnvme_spec_log_erri_entry_pr(const struct xnvme_spec_base_error_information_log_entry *entry,
+			     int opts)
 {
 	return xnvme_spec_log_erri_entry_fpr(stdout, entry, opts);
 }
 
 int
-xnvme_spec_log_erri_fpr(FILE *stream, const struct xnvme_spec_log_erri_entry *log, int limit,
+xnvme_spec_log_erri_fpr(FILE *stream,
+			const struct xnvme_spec_base_error_information_log_entry *log, int limit,
 			int opts)
 {
 	int wrtn = 0;
@@ -237,14 +236,17 @@ xnvme_spec_log_erri_fpr(FILE *stream, const struct xnvme_spec_log_erri_entry *lo
 }
 
 int
-xnvme_spec_log_erri_pr(const struct xnvme_spec_log_erri_entry *log, int limit, int opts)
+xnvme_spec_log_erri_pr(const struct xnvme_spec_base_error_information_log_entry *log, int limit,
+		       int opts)
 {
 	return xnvme_spec_log_erri_fpr(stdout, log, limit, opts);
 }
 
 int
-xnvme_spec_log_fdp_conf_fpr(FILE *stream, const struct xnvme_spec_log_fdp_conf *log, int opts)
+xnvme_spec_log_fdp_conf_fpr(FILE *stream, const struct xnvme_spec_base_log_fdp_configurations *log,
+			    int opts)
 {
+	const struct xnvme_spec_base_fdp_configuration_descriptor *desc;
 	int wrtn = 0;
 
 	switch (opts) {
@@ -265,45 +267,62 @@ xnvme_spec_log_fdp_conf_fpr(FILE *stream, const struct xnvme_spec_log_fdp_conf *
 	}
 
 	wrtn += fprintf(stream, "\n");
-	wrtn += fprintf(stream, "  ncfg: %" PRIu16 "\n", log->ncfg);
-	wrtn += fprintf(stream, "  version: %" PRIu8 "\n", log->version);
-	wrtn += fprintf(stream, "  size: %" PRIu32 "\n", log->size);
+	wrtn += fprintf(stream, "  ncfg: %" PRIu16 "\n", log->numfdpc);
+	wrtn += fprintf(stream, "  version: %" PRIu8 "\n", log->ver);
+	wrtn += fprintf(stream, "  size: %" PRIu32 "\n", log->sze);
 
-	for (int i = 0; i <= log->ncfg; ++i) {
+	desc = (const void *)(log + 1);
+	for (int i = 0; i <= log->numfdpc; ++i) {
+		const struct xnvme_spec_base_reclaim_unit_handle_descriptor *ruh_desc =
+			(const void *)(desc + 1);
+
 		wrtn += fprintf(stream, "  config_desc: %d\n", i);
-		wrtn += fprintf(stream, "  ds: %" PRIu16 "\n", log->conf_desc[i].ds);
+		wrtn += fprintf(stream, "  ds: %" PRIu16 "\n", desc->dsze);
 		wrtn += fprintf(stream, "  fdp attributes: {");
-		wrtn += fprintf(stream, "    rgif: %" PRIu8, log->conf_desc[i].fdpa.rgif);
-		wrtn += fprintf(stream, "    fdpvwc: %" PRIu8, log->conf_desc[i].fdpa.fdpvwc);
-		wrtn += fprintf(stream, "    fdpcv: %" PRIu8, log->conf_desc[i].fdpa.fdpcv);
-		wrtn += fprintf(stream, "    val: %#" PRIx8, log->conf_desc[i].fdpa.val);
+		wrtn += fprintf(
+			stream, "    rgif: %" PRIu64,
+			xnvme_bits_get(desc->fdpa,
+				       XNVME_SPEC_BASE_FDP_CONFIGURATION_DESCRIPTOR_FDPA_RGIF));
+		wrtn += fprintf(
+			stream, "    fdpvwc: %" PRIu64,
+			xnvme_bits_get(desc->fdpa,
+				       XNVME_SPEC_BASE_FDP_CONFIGURATION_DESCRIPTOR_FDPA_FDPVWC));
+		wrtn += fprintf(
+			stream, "    fdpcv: %" PRIu64,
+			xnvme_bits_get(desc->fdpa,
+				       XNVME_SPEC_BASE_FDP_CONFIGURATION_DESCRIPTOR_FDPA_FDPCV));
+		wrtn += fprintf(stream, "    val: %#" PRIx8, desc->fdpa);
 		wrtn += fprintf(stream, "  }\n");
-		wrtn += fprintf(stream, "  vss: %" PRIu8 "\n", log->conf_desc[i].vss);
-		wrtn += fprintf(stream, "  nrg: %" PRIu32 "\n", log->conf_desc[i].nrg);
-		wrtn += fprintf(stream, "  nruh: %" PRIu16 "\n", log->conf_desc[i].nruh);
-		wrtn += fprintf(stream, "  maxpids: %" PRIu16 "\n", log->conf_desc[i].maxpids);
-		wrtn += fprintf(stream, "  nns: %" PRIu32 "\n", log->conf_desc[i].nns);
-		wrtn += fprintf(stream, "  runs: %" PRIu64 "\n", log->conf_desc[i].runs);
-		wrtn += fprintf(stream, "  erutl: %" PRIu32 "\n", log->conf_desc[i].erutl);
+		wrtn += fprintf(stream, "  vss: %" PRIu8 "\n", desc->vss);
+		wrtn += fprintf(stream, "  nrg: %" PRIu32 "\n", desc->nrg);
+		wrtn += fprintf(stream, "  nruh: %" PRIu16 "\n", desc->nruh);
+		wrtn += fprintf(stream, "  maxpids: %" PRIu16 "\n", desc->maxpids);
+		wrtn += fprintf(stream, "  nns: %" PRIu32 "\n", desc->nns);
+		wrtn += fprintf(stream, "  runs: %" PRIu64 "\n", desc->runs);
+		wrtn += fprintf(stream, "  erutl: %" PRIu32 "\n", desc->erutl);
 
-		for (int j = 0; j < log->conf_desc[i].nruh; j++) {
+		for (int j = 0; j < desc->nruh; j++) {
 			wrtn += fprintf(stream, "   - ruht[%d]: %" PRIu8 "\n", j,
-					log->conf_desc[i].ruh_desc[j].ruht);
+					ruh_desc[j].ruht);
 		}
+
+		desc = (const void *)((const uint8_t *)desc + desc->dsze);
 	}
 
 	return wrtn;
 }
 
 int
-xnvme_spec_log_fdp_conf_pr(const struct xnvme_spec_log_fdp_conf *log, int opts)
+xnvme_spec_log_fdp_conf_pr(const struct xnvme_spec_base_log_fdp_configurations *log, int opts)
 {
 	return xnvme_spec_log_fdp_conf_fpr(stdout, log, opts);
 }
 
 int
-xnvme_spec_log_fdp_stats_fpr(FILE *stream, const struct xnvme_spec_log_fdp_stats *log, int opts)
+xnvme_spec_log_fdp_stats_fpr(FILE *stream, const struct xnvme_spec_base_log_fdp_statistics *log,
+			     int opts)
 {
+	uint64_t halves[2];
 	int wrtn = 0;
 
 	switch (opts) {
@@ -325,42 +344,43 @@ xnvme_spec_log_fdp_stats_fpr(FILE *stream, const struct xnvme_spec_log_fdp_stats
 
 	wrtn += fprintf(stream, "\n");
 	// TODO: present these better
-	wrtn += fprintf(stream, "  hbmw: [%" PRIu64 ", %" PRIu64 "]\n", log->hbmw[0],
-			log->hbmw[1]);
-	wrtn += fprintf(stream, "  mbmw: [%" PRIu64 ", %" PRIu64 "]\n", log->mbmw[0],
-			log->mbmw[1]);
-	wrtn += fprintf(stream, "  mbe: [%" PRIu64 ", %" PRIu64 "]\n", log->mbe[0], log->mbe[1]);
+	u128_halves(log->hbmw, halves);
+	wrtn += fprintf(stream, "  hbmw: [%" PRIu64 ", %" PRIu64 "]\n", halves[0], halves[1]);
+	u128_halves(log->mbmw, halves);
+	wrtn += fprintf(stream, "  mbmw: [%" PRIu64 ", %" PRIu64 "]\n", halves[0], halves[1]);
+	u128_halves(log->mbe, halves);
+	wrtn += fprintf(stream, "  mbe: [%" PRIu64 ", %" PRIu64 "]\n", halves[0], halves[1]);
 
 	return wrtn;
 }
 
 int
-xnvme_spec_log_fdp_stats_pr(const struct xnvme_spec_log_fdp_stats *log, int opts)
+xnvme_spec_log_fdp_stats_pr(const struct xnvme_spec_base_log_fdp_statistics *log, int opts)
 {
 	return xnvme_spec_log_fdp_stats_fpr(stdout, log, opts);
 }
 
 static inline int
-log_fdp_event_fpr_yaml(FILE *stream, const struct xnvme_spec_fdp_event *event, int indent,
+log_fdp_event_fpr_yaml(FILE *stream, const struct xnvme_spec_base_fdp_event *event, int indent,
 		       const char *sep)
 {
 	int wrtn = 0;
 
-	wrtn += fprintf(stream, "%*stype: %" PRIu8 "%s", indent, "", event->type, sep);
-	wrtn += fprintf(stream, "%*sfdpef: %#" PRIx8 "%s", indent, "", event->fdpef.val, sep);
+	wrtn += fprintf(stream, "%*stype: %" PRIu8 "%s", indent, "", event->etyp, sep);
+	wrtn += fprintf(stream, "%*sfdpef: %#" PRIx8 "%s", indent, "", event->fdpef, sep);
 	wrtn += fprintf(stream, "%*spid: %" PRIu16 "%s", indent, "", event->pid, sep);
-	wrtn += fprintf(stream, "%*stimestamp: %" PRIu64 "%s", indent, "", event->timestamp, sep);
+	wrtn += fprintf(stream, "%*stimestamp: %" PRIu64 "%s", indent, "", event->etmsp, sep);
 	wrtn += fprintf(stream, "%*snsid: %" PRIu32 "%s", indent, "", event->nsid, sep);
 	// TODO: Event type specific field
-	wrtn += fprintf(stream, "%*srgid: %" PRIu16 "%s", indent, "", event->rgid, sep);
+	wrtn += fprintf(stream, "%*srgid: %" PRIu16 "%s", indent, "", event->rgicd, sep);
 	wrtn += fprintf(stream, "%*sruhid: %" PRIu16 "%s", indent, "", event->ruhid, sep);
 
 	return wrtn;
 }
 
 int
-xnvme_spec_log_fdp_events_fpr(FILE *stream, const struct xnvme_spec_log_fdp_events *log, int limit,
-			      int opts)
+xnvme_spec_log_fdp_events_fpr(FILE *stream, const struct xnvme_spec_base_log_fdp_events *log,
+			      int limit, int opts)
 {
 	int wrtn = 0;
 
@@ -381,11 +401,12 @@ xnvme_spec_log_fdp_events_fpr(FILE *stream, const struct xnvme_spec_log_fdp_even
 		return wrtn;
 	}
 
-	wrtn += fprintf(stream, "  nevents: %" PRIu32 "\n", log->nevents);
+	wrtn += fprintf(stream, "  nevents: %" PRIu32 "\n", log->numfdpe);
 
 	for (int i = 0; i < limit; ++i) {
-		struct xnvme_spec_fdp_event event;
-		event = log->event[i];
+		struct xnvme_spec_base_fdp_event event;
+
+		memcpy(&event, (const uint8_t *)(log + 1) + i * sizeof(event), sizeof(event));
 		wrtn += fprintf(stream, "  - {");
 		wrtn += log_fdp_event_fpr_yaml(stream, &event, 0, ", ");
 		wrtn += fprintf(stream, "}\n");
@@ -395,14 +416,17 @@ xnvme_spec_log_fdp_events_fpr(FILE *stream, const struct xnvme_spec_log_fdp_even
 }
 
 int
-xnvme_spec_log_fdp_events_pr(const struct xnvme_spec_log_fdp_events *log, int limit, int opts)
+xnvme_spec_log_fdp_events_pr(const struct xnvme_spec_base_log_fdp_events *log, int limit, int opts)
 {
 	return xnvme_spec_log_fdp_events_fpr(stdout, log, limit, opts);
 }
 
 int
-xnvme_spec_log_ruhu_fpr(FILE *stream, const struct xnvme_spec_log_ruhu *log, int limit, int opts)
+xnvme_spec_log_ruhu_fpr(FILE *stream,
+			const struct xnvme_spec_base_log_reclaim_unit_handle_usage *log, int limit,
+			int opts)
 {
+	const struct xnvme_spec_base_reclaim_unit_handle_usage_descriptor *desc;
 	int wrtn = 0;
 
 	switch (opts) {
@@ -422,25 +446,28 @@ xnvme_spec_log_ruhu_fpr(FILE *stream, const struct xnvme_spec_log_ruhu *log, int
 		return wrtn;
 	}
 
+	desc = (const void *)(log + 1);
 	wrtn += fprintf(stream, "  nruh: %" PRIu16 "\n", log->nruh);
 
 	for (int i = 0; i < limit; ++i) {
-		wrtn += fprintf(stream, "  - ruhu_desc[%d]:  %#" PRIx8 "\n", i,
-				log->ruhu_desc[i].ruha);
+		wrtn += fprintf(stream, "  - ruhu_desc[%d]:  %#" PRIx8 "\n", i, desc[i].ruha);
 	}
 
 	return wrtn;
 }
 
 int
-xnvme_spec_log_ruhu_pr(const struct xnvme_spec_log_ruhu *log, int limit, int opts)
+xnvme_spec_log_ruhu_pr(const struct xnvme_spec_base_log_reclaim_unit_handle_usage *log, int limit,
+		       int opts)
 {
 	return xnvme_spec_log_ruhu_fpr(stdout, log, limit, opts);
 }
 
 int
-xnvme_spec_ruhs_fpr(FILE *stream, const struct xnvme_spec_ruhs *ruhs, int limit, int opts)
+xnvme_spec_ruhs_fpr(FILE *stream, const struct xnvme_spec_base_reclaim_unit_handle_status *ruhs,
+		    int limit, int opts)
 {
+	const struct xnvme_spec_nvm_reclaim_unit_handle_status_descriptor *desc;
 	int wrtn = 0;
 
 	switch (opts) {
@@ -460,16 +487,17 @@ xnvme_spec_ruhs_fpr(FILE *stream, const struct xnvme_spec_ruhs *ruhs, int limit,
 		return wrtn;
 	}
 
+	desc = (const void *)(ruhs + 1);
 	limit = limit > ruhs->nruhsd ? ruhs->nruhsd : limit;
 
 	wrtn += fprintf(stream, "  nruhsd: %" PRIu16 "\n", ruhs->nruhsd);
 
 	for (int i = 0; i < limit; ++i) {
 		wrtn += fprintf(stream, "  - ruhs_desc[%d] : {", i);
-		wrtn += fprintf(stream, " pi: %" PRIu16, ruhs->desc[i].pi);
-		wrtn += fprintf(stream, " ruhi: %" PRIu16, ruhs->desc[i].ruhi);
-		wrtn += fprintf(stream, " earutr: %" PRIu32, ruhs->desc[i].earutr);
-		wrtn += fprintf(stream, " ruamw: %" PRIu64 "", ruhs->desc[i].ruamw);
+		wrtn += fprintf(stream, " pi: %" PRIu16, desc[i].pid);
+		wrtn += fprintf(stream, " ruhi: %" PRIu16, desc[i].ruhid);
+		wrtn += fprintf(stream, " earutr: %" PRIu32, desc[i].earutr);
+		wrtn += fprintf(stream, " ruamw: %" PRIu64 "", desc[i].ruamw);
 		wrtn += fprintf(stream, "}\n");
 	}
 
@@ -477,7 +505,8 @@ xnvme_spec_ruhs_fpr(FILE *stream, const struct xnvme_spec_ruhs *ruhs, int limit,
 }
 
 int
-xnvme_spec_ruhs_pr(const struct xnvme_spec_ruhs *ruhs, int limit, int opts)
+xnvme_spec_ruhs_pr(const struct xnvme_spec_base_reclaim_unit_handle_status *ruhs, int limit,
+		   int opts)
 {
 	return xnvme_spec_ruhs_fpr(stdout, ruhs, limit, opts);
 }

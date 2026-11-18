@@ -263,7 +263,7 @@ cmd_errors(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
 	struct xnvme_cmd_ctx ctx = {0};
-	struct xnvme_spec_log_erri_entry *log = NULL;
+	struct xnvme_spec_base_error_information_log_entry *log = NULL;
 	uint32_t log_nentries = 0;
 	uint32_t log_nbytes = 0;
 
@@ -283,7 +283,7 @@ cmd_errors(struct xnvme_cli *cli)
 	}
 
 	struct xnvme_cmd_prep_adm_get_log_page_args args = {
-		.lid = XNVME_SPEC_LOG_ERRI,
+		.lid = XNVME_SPEC_BASE_LOG_PAGE_ERROR_INFORMATION,
 		.numd = log_nbytes / sizeof(uint32_t) - 1,
 	};
 
