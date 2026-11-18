@@ -126,7 +126,7 @@ _windows_async_iocp_poke(struct xnvme_queue *q, uint32_t max)
 			cmd_ctx->cpl.status =
 				xnvme_bits_set(cmd_ctx->cpl.status,
 					       XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SCT,
-					       XNVME_STATUS_CODE_TYPE_VENDOR);
+					       XNVME_SPEC_BASE_STATUS_CODE_TYPE_VENDOR_SPECIFIC);
 		}
 
 		cmd_ctx->async.cb(cmd_ctx, cmd_ctx->async.cb_arg);
@@ -183,7 +183,7 @@ _windows_async_iocp_reap(struct xnvme_queue *q, struct xnvme_cmd_ctx **completio
 			cmd_ctx->cpl.status =
 				xnvme_bits_set(cmd_ctx->cpl.status,
 					       XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SCT,
-					       XNVME_STATUS_CODE_TYPE_VENDOR);
+					       XNVME_SPEC_BASE_STATUS_CODE_TYPE_VENDOR_SPECIFIC);
 		}
 
 		*completions++ = cmd_ctx;

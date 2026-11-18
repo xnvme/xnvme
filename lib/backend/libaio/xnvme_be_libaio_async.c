@@ -149,7 +149,7 @@ _linux_libaio_poke(struct xnvme_queue *q, uint32_t max)
 				-ev->res);
 			ctx->cpl.status = xnvme_bits_set(
 				ctx->cpl.status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SCT,
-				XNVME_STATUS_CODE_TYPE_VENDOR);
+				XNVME_SPEC_BASE_STATUS_CODE_TYPE_VENDOR_SPECIFIC);
 		}
 
 		ctx->async.cb(ctx, ctx->async.cb_arg);
@@ -227,7 +227,7 @@ _linux_libaio_reap(struct xnvme_queue *q, struct xnvme_cmd_ctx **completions, ui
 				-ev->res);
 			ctx->cpl.status = xnvme_bits_set(
 				ctx->cpl.status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SCT,
-				XNVME_STATUS_CODE_TYPE_VENDOR);
+				XNVME_SPEC_BASE_STATUS_CODE_TYPE_VENDOR_SPECIFIC);
 		}
 
 		*completions++ = ctx;
