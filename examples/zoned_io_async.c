@@ -47,7 +47,7 @@ sub_async_read(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
 	const struct xnvme_geo *geo = xnvme_dev_get_geo(dev);
-	struct xnvme_spec_znd_descr zone = {0};
+	struct xnvme_spec_zns_zone_descriptor zone = {0};
 	uint32_t nsid, qd;
 
 	struct cb_args cb_args = {0};
@@ -72,7 +72,8 @@ sub_async_read(struct xnvme_cli *cli)
 			goto exit;
 		}
 	} else {
-		err = xnvme_znd_descr_from_dev_in_state(dev, XNVME_SPEC_ZND_STATE_FULL, &zone);
+		err = xnvme_znd_descr_from_dev_in_state(
+			dev, XNVME_SPEC_ZNS_ZONE_DESCRIPTOR_ZSATTR_ZS_FULL, &zone);
 		if (err) {
 			xnvme_cli_perr("xnvme_znd_descr_from_dev()", -err);
 			goto exit;
@@ -204,7 +205,7 @@ sub_async_write(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
 	const struct xnvme_geo *geo = xnvme_dev_get_geo(dev);
-	struct xnvme_spec_znd_descr zone = {0};
+	struct xnvme_spec_zns_zone_descriptor zone = {0};
 	uint32_t nsid, qd;
 
 	struct cb_args cb_args = {0};
@@ -229,7 +230,8 @@ sub_async_write(struct xnvme_cli *cli)
 			goto exit;
 		}
 	} else {
-		err = xnvme_znd_descr_from_dev_in_state(dev, XNVME_SPEC_ZND_STATE_EMPTY, &zone);
+		err = xnvme_znd_descr_from_dev_in_state(
+			dev, XNVME_SPEC_ZNS_ZONE_DESCRIPTOR_ZSATTR_ZS_EMPTY, &zone);
 		if (err) {
 			xnvme_cli_perr("xnvme_znd_descr_from_dev()", -err);
 			goto exit;
@@ -357,7 +359,7 @@ sub_async_append(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
 	const struct xnvme_geo *geo = xnvme_dev_get_geo(dev);
-	struct xnvme_spec_znd_descr zone = {0};
+	struct xnvme_spec_zns_zone_descriptor zone = {0};
 	uint32_t nsid, qd;
 
 	struct cb_args cb_args = {0};
@@ -382,7 +384,8 @@ sub_async_append(struct xnvme_cli *cli)
 			goto exit;
 		}
 	} else {
-		err = xnvme_znd_descr_from_dev_in_state(dev, XNVME_SPEC_ZND_STATE_EMPTY, &zone);
+		err = xnvme_znd_descr_from_dev_in_state(
+			dev, XNVME_SPEC_ZNS_ZONE_DESCRIPTOR_ZSATTR_ZS_EMPTY, &zone);
 		if (err) {
 			xnvme_cli_perr("xnvme_znd_descr_from_dev()", -err);
 			goto exit;

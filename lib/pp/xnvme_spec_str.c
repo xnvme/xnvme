@@ -194,10 +194,10 @@ xnvme_spec_log_lpi_str(enum xnvme_spec_log_lpi eval)
 }
 
 const char *
-xnvme_spec_znd_log_lid_str(enum xnvme_spec_znd_log_lid eval)
+xnvme_spec_znd_log_lid_str(int eval)
 {
 	switch (eval) {
-	case XNVME_SPEC_LOG_ZND_CHANGES:
+	case XNVME_SPEC_ZNS_LOG_PAGE_CHANGED_ZONE_LIST:
 		return "LOG_ZND_CHANGES";
 	}
 
@@ -277,12 +277,12 @@ xnvme_spec_sgl_descriptor_subtype_str(enum xnvme_spec_sgl_descriptor_subtype eva
 }
 
 const char *
-xnvme_spec_znd_cmd_mgmt_recv_action_str(enum xnvme_spec_znd_cmd_mgmt_recv_action eval)
+xnvme_spec_znd_cmd_mgmt_recv_action_str(enum xnvme_spec_zns_zone_management_receive_cdw13_zra eval)
 {
 	switch (eval) {
-	case XNVME_SPEC_ZND_CMD_MGMT_RECV_ACTION_REPORT:
+	case XNVME_SPEC_ZNS_ZONE_MANAGEMENT_RECEIVE_CDW13_ZRA_REPORT_ZONES:
 		return "ZND_CMD_MGMT_RECV_ACTION_REPORT";
-	case XNVME_SPEC_ZND_CMD_MGMT_RECV_ACTION_REPORT_EXTENDED:
+	case XNVME_SPEC_ZNS_ZONE_MANAGEMENT_RECEIVE_CDW13_ZRA_EXTENDED_REPORT_ZONES:
 		return "ZND_CMD_MGMT_RECV_ACTION_REPORT_EXTENDED";
 	}
 
@@ -290,24 +290,24 @@ xnvme_spec_znd_cmd_mgmt_recv_action_str(enum xnvme_spec_znd_cmd_mgmt_recv_action
 }
 
 const char *
-xnvme_spec_znd_cmd_mgmt_recv_action_sf_str(enum xnvme_spec_znd_cmd_mgmt_recv_action_sf eval)
+xnvme_spec_znd_cmd_mgmt_recv_action_sf_str(int eval)
 {
 	switch (eval) {
-	case XNVME_SPEC_ZND_CMD_MGMT_RECV_SF_ALL:
+	case XNVME_SPEC_ZNS_ZONE_MANAGEMENT_RECEIVE_CDW13_ZRAS_LIST_ALL_ZONES:
 		return "ZND_CMD_MGMT_RECV_SF_ALL";
-	case XNVME_SPEC_ZND_CMD_MGMT_RECV_SF_CLOSED:
+	case XNVME_SPEC_ZNS_ZONE_MANAGEMENT_RECEIVE_CDW13_ZRAS_ZSC:
 		return "ZND_CMD_MGMT_RECV_SF_CLOSED";
-	case XNVME_SPEC_ZND_CMD_MGMT_RECV_SF_EMPTY:
+	case XNVME_SPEC_ZNS_ZONE_MANAGEMENT_RECEIVE_CDW13_ZRAS_ZSE:
 		return "ZND_CMD_MGMT_RECV_SF_EMPTY";
-	case XNVME_SPEC_ZND_CMD_MGMT_RECV_SF_EOPEN:
+	case XNVME_SPEC_ZNS_ZONE_MANAGEMENT_RECEIVE_CDW13_ZRAS_ZSEO:
 		return "ZND_CMD_MGMT_RECV_SF_EOPEN";
-	case XNVME_SPEC_ZND_CMD_MGMT_RECV_SF_FULL:
+	case XNVME_SPEC_ZNS_ZONE_MANAGEMENT_RECEIVE_CDW13_ZRAS_ZSF:
 		return "ZND_CMD_MGMT_RECV_SF_FULL";
-	case XNVME_SPEC_ZND_CMD_MGMT_RECV_SF_IOPEN:
+	case XNVME_SPEC_ZNS_ZONE_MANAGEMENT_RECEIVE_CDW13_ZRAS_ZSIO:
 		return "ZND_CMD_MGMT_RECV_SF_IOPEN";
-	case XNVME_SPEC_ZND_CMD_MGMT_RECV_SF_OFFLINE:
+	case XNVME_SPEC_ZNS_ZONE_MANAGEMENT_RECEIVE_CDW13_ZRAS_ZSO:
 		return "ZND_CMD_MGMT_RECV_SF_OFFLINE";
-	case XNVME_SPEC_ZND_CMD_MGMT_RECV_SF_RONLY:
+	case XNVME_SPEC_ZNS_ZONE_MANAGEMENT_RECEIVE_CDW13_ZRAS_ZSRO:
 		return "ZND_CMD_MGMT_RECV_SF_RONLY";
 	}
 
@@ -315,22 +315,22 @@ xnvme_spec_znd_cmd_mgmt_recv_action_sf_str(enum xnvme_spec_znd_cmd_mgmt_recv_act
 }
 
 const char *
-xnvme_spec_znd_cmd_mgmt_send_action_str(enum xnvme_spec_znd_cmd_mgmt_send_action eval)
+xnvme_spec_znd_cmd_mgmt_send_action_str(enum xnvme_spec_zns_zone_management_send_cdw13_zsa eval)
 {
 	switch (eval) {
-	case XNVME_SPEC_ZND_CMD_MGMT_SEND_CLOSE:
+	case XNVME_SPEC_ZNS_ZONE_MANAGEMENT_SEND_CDW13_ZSA_CLOSE_ZONE:
 		return "ZND_CMD_MGMT_SEND_CLOSE";
-	case XNVME_SPEC_ZND_CMD_MGMT_SEND_FLUSH:
+	case XNVME_SPEC_ZNS_ZONE_MANAGEMENT_SEND_CDW13_ZSA_FLUSH_EXPLICIT_ZRWA_RANGE:
 		return "ZND_CMD_MGMT_SEND_FLUSH";
-	case XNVME_SPEC_ZND_CMD_MGMT_SEND_DESCRIPTOR:
+	case XNVME_SPEC_ZNS_ZONE_MANAGEMENT_SEND_CDW13_ZSA_SET_ZONE_DESCRIPTOR_EXTENSION:
 		return "ZND_CMD_MGMT_SEND_DESCRIPTOR";
-	case XNVME_SPEC_ZND_CMD_MGMT_SEND_FINISH:
+	case XNVME_SPEC_ZNS_ZONE_MANAGEMENT_SEND_CDW13_ZSA_FINISH_ZONE:
 		return "ZND_CMD_MGMT_SEND_FINISH";
-	case XNVME_SPEC_ZND_CMD_MGMT_SEND_OFFLINE:
+	case XNVME_SPEC_ZNS_ZONE_MANAGEMENT_SEND_CDW13_ZSA_OFFLINE_ZONE:
 		return "ZND_CMD_MGMT_SEND_OFFLINE";
-	case XNVME_SPEC_ZND_CMD_MGMT_SEND_OPEN:
+	case XNVME_SPEC_ZNS_ZONE_MANAGEMENT_SEND_CDW13_ZSA_OPEN_ZONE:
 		return "ZND_CMD_MGMT_SEND_OPEN";
-	case XNVME_SPEC_ZND_CMD_MGMT_SEND_RESET:
+	case XNVME_SPEC_ZNS_ZONE_MANAGEMENT_SEND_CDW13_ZSA_RESET_ZONE:
 		return "ZND_CMD_MGMT_SEND_RESET";
 	}
 
@@ -355,41 +355,30 @@ xnvme_spec_znd_opc_str(enum xnvme_spec_zns_opcode eval)
 }
 
 const char *
-xnvme_spec_znd_mgmt_send_action_so_str(enum xnvme_spec_znd_mgmt_send_action_so eval)
+xnvme_spec_znd_status_code_str(int eval)
 {
 	switch (eval) {
-	case XNVME_SPEC_ZND_MGMT_OPEN_WITH_ZRWA:
-		return "XNVME_SPEC_ZND_MGMT_OPEN_WITH_ZRWA";
-	}
-
-	return "ENOSYS";
-}
-
-const char *
-xnvme_spec_znd_status_code_str(enum xnvme_spec_znd_status_code eval)
-{
-	switch (eval) {
-	case XNVME_SPEC_ZND_SC_INVALID_ZONE_OP:
+	case XNVME_SPEC_ZNS_COMMAND_SPECIFIC_STATUS_INVALID_ZONE_OPERATION_REQUEST:
 		return "XNVME_SPEC_ZND_SC_INVALID_ZONE_OP";
-	case XNVME_SPEC_ZND_SC_NOZRWA:
+	case XNVME_SPEC_ZNS_COMMAND_SPECIFIC_STATUS_ZRWA_RESOURCES_UNAVAILABLE:
 		return "XNVME_SPEC_ZND_SC_NOZRWA";
-	case XNVME_SPEC_ZND_SC_BOUNDARY_ERROR:
+	case XNVME_SPEC_ZNS_COMMAND_SPECIFIC_STATUS_ZONE_BOUNDARY_ERROR:
 		return "ZND_SC_BOUNDARY_ERROR";
 	case XNVME_SPEC_ZND_SC_INVALID_FORMAT:
 		return "ZND_SC_INVALID_FORMAT";
-	case XNVME_SPEC_ZND_SC_INVALID_TRANS:
+	case XNVME_SPEC_ZNS_COMMAND_SPECIFIC_STATUS_INVALID_ZONE_STATE_TRANSITION:
 		return "ZND_SC_INVALID_TRANS";
-	case XNVME_SPEC_ZND_SC_INVALID_WRITE:
+	case XNVME_SPEC_ZNS_COMMAND_SPECIFIC_STATUS_ZONE_INVALID_WRITE:
 		return "ZND_SC_INVALID_WRITE";
-	case XNVME_SPEC_ZND_SC_IS_FULL:
+	case XNVME_SPEC_ZNS_COMMAND_SPECIFIC_STATUS_ZONE_IS_FULL:
 		return "ZND_SC_IS_FULL";
-	case XNVME_SPEC_ZND_SC_IS_OFFLINE:
+	case XNVME_SPEC_ZNS_COMMAND_SPECIFIC_STATUS_ZONE_IS_OFFLINE:
 		return "ZND_SC_IS_OFFLINE";
-	case XNVME_SPEC_ZND_SC_IS_READONLY:
+	case XNVME_SPEC_ZNS_COMMAND_SPECIFIC_STATUS_ZONE_IS_READ_ONLY:
 		return "ZND_SC_IS_READONLY";
-	case XNVME_SPEC_ZND_SC_TOO_MANY_ACTIVE:
+	case XNVME_SPEC_ZNS_COMMAND_SPECIFIC_STATUS_TOO_MANY_ACTIVE_ZONES:
 		return "ZND_SC_TOO_MANY_ACTIVE";
-	case XNVME_SPEC_ZND_SC_TOO_MANY_OPEN:
+	case XNVME_SPEC_ZNS_COMMAND_SPECIFIC_STATUS_TOO_MANY_OPEN_ZONES:
 		return "ZND_SC_TOO_MANY_OPEN";
 	}
 
@@ -397,22 +386,22 @@ xnvme_spec_znd_status_code_str(enum xnvme_spec_znd_status_code eval)
 }
 
 const char *
-xnvme_spec_znd_state_str(enum xnvme_spec_znd_state eval)
+xnvme_spec_znd_state_str(enum xnvme_spec_zns_zone_descriptor_zsattr_zs eval)
 {
 	switch (eval) {
-	case XNVME_SPEC_ZND_STATE_CLOSED:
+	case XNVME_SPEC_ZNS_ZONE_DESCRIPTOR_ZSATTR_ZS_CLOSED:
 		return "ZND_STATE_CLOSED";
-	case XNVME_SPEC_ZND_STATE_EMPTY:
+	case XNVME_SPEC_ZNS_ZONE_DESCRIPTOR_ZSATTR_ZS_EMPTY:
 		return "ZND_STATE_EMPTY";
-	case XNVME_SPEC_ZND_STATE_EOPEN:
+	case XNVME_SPEC_ZNS_ZONE_DESCRIPTOR_ZSATTR_ZS_EXPLICITLY_OPENED:
 		return "ZND_STATE_EOPEN";
-	case XNVME_SPEC_ZND_STATE_FULL:
+	case XNVME_SPEC_ZNS_ZONE_DESCRIPTOR_ZSATTR_ZS_FULL:
 		return "ZND_STATE_FULL";
-	case XNVME_SPEC_ZND_STATE_IOPEN:
+	case XNVME_SPEC_ZNS_ZONE_DESCRIPTOR_ZSATTR_ZS_IMPLICITLY_OPENED:
 		return "ZND_STATE_IOPEN";
-	case XNVME_SPEC_ZND_STATE_OFFLINE:
+	case XNVME_SPEC_ZNS_ZONE_DESCRIPTOR_ZSATTR_ZS_OFFLINE:
 		return "ZND_STATE_OFFLINE";
-	case XNVME_SPEC_ZND_STATE_RONLY:
+	case XNVME_SPEC_ZNS_ZONE_DESCRIPTOR_ZSATTR_ZS_READ_ONLY:
 		return "ZND_STATE_RONLY";
 	}
 
@@ -420,10 +409,10 @@ xnvme_spec_znd_state_str(enum xnvme_spec_znd_state eval)
 }
 
 const char *
-xnvme_spec_znd_type_str(enum xnvme_spec_znd_type eval)
+xnvme_spec_znd_type_str(enum xnvme_spec_zns_zone_descriptor_ztattr_zt eval)
 {
 	switch (eval) {
-	case XNVME_SPEC_ZND_TYPE_SEQWR:
+	case XNVME_SPEC_ZNS_ZONE_DESCRIPTOR_ZTATTR_ZT_SEQUENTIAL_WRITE_REQUIRED:
 		return "ZND_TYPE_SEQWR";
 	}
 
