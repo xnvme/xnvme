@@ -372,7 +372,6 @@
 		xnvme_spec_znd_cmd_mgmt_recv_action_sf_str;
 		xnvme_spec_znd_cmd_mgmt_send_action_str;
 		xnvme_spec_znd_opc_str;
-		xnvme_spec_znd_mgmt_send_action_so_str;
 		xnvme_spec_znd_status_code_str;
 		xnvme_spec_znd_state_str;
 		xnvme_spec_znd_type_str;
