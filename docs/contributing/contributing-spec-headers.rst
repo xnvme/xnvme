@@ -95,14 +95,15 @@ Review the headers
 
 For a command, the generator writes the opcode and the masks of the fields of
 the dwords, and no struct: ``union xnvme_spec_sqe`` of ``libxnvme_spec.h``
-holds the dwords of a submission queue entry. The commands of the Management
-Interface are not in a submission queue entry, but the data model records
-their dwords by number alone, so their masks name them Command Dwords as well.
-A structure is a packed struct. The registers of each document are one struct,
-such as ``struct xnvme_spec_base_registers``, with each register at its
-offset. A field whose values the specification names has an enum of the
-values. The module docstring of the generator states the rules for arrays,
-linked figures, unions and big-endian fields.
+holds the dwords of a submission queue entry, and the command preps write
+them. The commands of the Management Interface are not in a submission queue
+entry, but the data model records their dwords by number alone, so their
+masks name them Command Dwords as well. A structure is a packed struct. The
+registers of each document are one struct, such as
+``struct xnvme_spec_base_registers``, with each register at its offset. A
+field whose values the specification names has an enum of the values. The
+module docstring of the generator states the rules for arrays, linked
+figures, unions and big-endian fields.
 
 Every name comes from the specification. A structure is named by its document
 and the key that senfd gives it, and a field by its acronym. Each struct,
