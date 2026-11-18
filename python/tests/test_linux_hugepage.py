@@ -18,7 +18,7 @@ import numpy
 import pytest
 import xnvme
 from conftest import xnvme_parametrize
-from utils import buf_and_view, dev_from_params, xnvme_cmd_ctx_cpl_status
+from utils import buf_and_view, dev_from_params
 
 PAGE_SIZE = 1 << 12
 
@@ -77,7 +77,7 @@ def skip_unless_able(be_opts, nbytes):
 
 
 def check(err, ctx, name):
-    status = xnvme_cmd_ctx_cpl_status(ctypes.pointer(ctx))
+    status = xnvme.xnvme_cmd_ctx_cpl_status(ctypes.pointer(ctx))
     assert not (err or status), f"{name}(): err({err}), status(0x{status:x})"
 
 

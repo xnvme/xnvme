@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 import xnvme
 from conftest import xnvme_parametrize
-from utils import buf_and_view, dev_from_params, xnvme_cmd_ctx_cpl_status
+from utils import buf_and_view, dev_from_params
 
 KEY_SIZE_BYTES = 128 // 8  # 128-bit keys in KV spec
 
@@ -30,7 +30,7 @@ def kvs_store(dev, kbuf, kbuf_nbytes, vbuf, vbuf_nbytes, opts=0):
         vbuf_nbytes,
         opts,
     )
-    if err or xnvme_cmd_ctx_cpl_status(pointer(ctx)):
+    if err or xnvme.xnvme_cmd_ctx_cpl_status(pointer(ctx)):
         raise KVException(
             abs(err),
             ctx.cpl.status >> 1 & 0xFF,
@@ -52,7 +52,7 @@ def kvs_retrieve(dev, kbuf, kbuf_nbytes, vbuf, vbuf_nbytes, opts=0):
         vbuf_nbytes,
         opts,
     )
-    if err or xnvme_cmd_ctx_cpl_status(pointer(ctx)):
+    if err or xnvme.xnvme_cmd_ctx_cpl_status(pointer(ctx)):
         raise KVException(
             abs(err),
             ctx.cpl.status >> 1 & 0xFF,
@@ -71,7 +71,7 @@ def kvs_exist(dev, kbuf, kbuf_nbytes):
         kbuf,
         kbuf_nbytes,
     )
-    if err or xnvme_cmd_ctx_cpl_status(pointer(ctx)):
+    if err or xnvme.xnvme_cmd_ctx_cpl_status(pointer(ctx)):
         raise KVException(
             abs(err),
             ctx.cpl.status >> 1 & 0xFF,
@@ -90,7 +90,7 @@ def kvs_delete(dev, kbuf, kbuf_nbytes):
         kbuf,
         kbuf_nbytes,
     )
-    if err or xnvme_cmd_ctx_cpl_status(pointer(ctx)):
+    if err or xnvme.xnvme_cmd_ctx_cpl_status(pointer(ctx)):
         raise KVException(
             abs(err),
             ctx.cpl.status >> 1 & 0xFF,
@@ -111,7 +111,7 @@ def kvs_list(dev, kbuf, kbuf_nbytes, vbuf, vbuf_nbytes, opts=0):
         vbuf,
         vbuf_nbytes,
     )
-    if err or xnvme_cmd_ctx_cpl_status(pointer(ctx)):
+    if err or xnvme.xnvme_cmd_ctx_cpl_status(pointer(ctx)):
         raise KVException(
             abs(err),
             ctx.cpl.status >> 1 & 0xFF,
