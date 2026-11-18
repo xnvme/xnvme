@@ -100,9 +100,16 @@ The records and functions are in a header for each command set:
 Specification Definitions
 =========================
 
-:ref:`sec-api-c-xnvme_spec` is a **C** representation of the NVMe specification.
-This includes most of the structures described across the base, NVM, ZNS, and
-KV specifications.
+The definitions of the NVMe specifications are generated into a header for
+each specification, see :ref:`sec-contributing-spec-headers`: the commands,
+features, data structures, log pages, registers, identifiers and status codes
+of the Base specification are in :ref:`sec-api-c-xnvme_spec_base`, and those
+of the NVM, Zoned Namespace and Key Value command sets in
+:ref:`sec-api-c-xnvme_spec_nvm`, :ref:`sec-api-c-xnvme_spec_zns` and
+:ref:`sec-api-c-xnvme_spec_kv`. :ref:`sec-api-c-xnvme_spec` holds the
+definitions that no specification has: the Data Pointer as the Linux Kernel
+NVMe driver uses it, and the Protection Information of the 16b and 64b
+Guard formats.
 
 In line with this, :ref:`sec-api-c-xnvme_pi` and :ref:`sec-api-c-xnvme_topology`
 provides functions for NVMe operations which are not
