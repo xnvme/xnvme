@@ -1124,7 +1124,7 @@ show_regs(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
 	struct xnvme_cmd_ctx ctx = {0};
-	struct xnvme_spec_ctrlr_bar bar = {0};
+	struct xnvme_spec_base_registers bar = {0};
 	int err;
 
 	xnvme_dev_get_cmd_ctx(dev, &ctx);
