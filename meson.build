@@ -15,7 +15,7 @@ project(
     'b_staticpic=true',
     'b_ndebug=if-release',
   ],
-  meson_version: '>=0.59'
+  meson_version: '>=0.63'
 )
 
 pconf = import('pkgconfig')
