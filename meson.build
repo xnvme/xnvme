@@ -339,6 +339,10 @@ xnvme_vcs_h = vcs_tag(
 )
 meson.add_dist_script(python3, vcs_tag_py, '--dist')
 
+# The man pages 'make gen-man-pages' produced go into the source archive, so it
+# carries them whether or not they are committed
+meson.add_dist_script(python3, meson.current_source_dir() / 'toolbox' / 'man_dist.py')
+
 # Provide configuration via header-file 'xnvme_config.h'
 add_project_arguments(['-include', 'xnvme_config.h'], language: 'c')
 if cuda_dep.found()
@@ -383,22 +387,28 @@ subdir('include')
 # Library source
 subdir('lib')
 
-# Tests, tools, and code examples
-# NOTE: to update the man-pages, run the Makefile target 'make gen-man-pages'
+# Tests, tools, and code examples, and their man pages where 'make gen-man-pages'
+# produced them, as it does for the source archives of a release
 if get_option('tests')
   subdir('tests')
-  subdir('man/tests')
+  if fs.exists('man/tests/meson.build')
+    subdir('man/tests')
+  endif
 endif
 if get_option('tools')
   subdir('tools')
-  subdir('man/tools')
+  if fs.exists('man/tools/meson.build')
+    subdir('man/tools')
+  endif
   if install_completions
     install_data('toolbox/bash_completion.d/xnvme', install_dir: bash_completions_dir)
   endif
 endif
 if get_option('examples')
   subdir('examples')
-  subdir('man/examples')
+  if fs.exists('man/examples/meson.build')
+    subdir('man/examples')
+  endif
 endif
 
 # sysconfdir is /etc for the prefix /usr, and -Dsystemd_unitdir is taken as given
