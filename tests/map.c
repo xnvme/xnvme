@@ -180,6 +180,109 @@ exit:
 	return err;
 }
 
+static int
+read_lbas(struct xnvme_dev *dev, uint16_t nlb, void *buf)
+{
+	struct xnvme_cmd_ctx ctx = {0};
+	int err;
+
+	xnvme_dev_get_cmd_ctx(dev, &ctx);
+
+	err = xnvme_nvm_read(&ctx, xnvme_dev_get_nsid(dev), 0x0, nlb, buf, NULL);
+	if (!err && xnvme_cmd_ctx_cpl_status(&ctx)) {
+		err = -EIO;
+	}
+
+	return err;
+}
+
+/**
+ * A read of several pages into registered memory lands where one into memory from
+ * xnvme_buf_alloc() does
+ *
+ * The registered memory is filled with a pattern other than the reference's, so a read that did
+ * not land in it, or landed only partly, differs.
+ */
+static int
+test_register_read(struct xnvme_cli *cli)
+{
+	struct xnvme_dev *dev = cli->args.dev;
+	const struct xnvme_geo *geo = xnvme_dev_get_geo(dev);
+	size_t align, reg_nbytes, nbytes = 4 * 4096;
+	uint8_t *ref, *buf;
+	int err;
+
+	if (geo->mdts_nbytes && (geo->mdts_nbytes < nbytes)) {
+		nbytes = geo->mdts_nbytes;
+	}
+	nbytes -= nbytes % geo->lba_nbytes;
+	if (!nbytes) {
+		xnvme_cli_pinf("SKIPPED: mdts_nbytes(%u) is below lba_nbytes(%u)",
+			       geo->mdts_nbytes, geo->lba_nbytes);
+		return 0;
+	}
+
+	err = xnvme_buf_get_alignment(dev, &align);
+	if (err) {
+		xnvme_cli_perr("xnvme_buf_get_alignment()", err);
+		return err;
+	}
+	reg_nbytes = (nbytes + align - 1) & ~(align - 1);
+	xnvme_cli_pinf("alignment: %zu, nbytes: %zu, reg_nbytes: %zu", align, nbytes, reg_nbytes);
+
+	ref = xnvme_buf_alloc(dev, nbytes);
+	if (!ref) {
+		xnvme_cli_perr("xnvme_buf_alloc()", -errno);
+		return -errno;
+	}
+	memset(ref, 0x5A, nbytes);
+
+	buf = xnvme_buf_virt_alloc(align, reg_nbytes);
+	if (!buf) {
+		err = -errno;
+		xnvme_cli_perr("xnvme_buf_virt_alloc()", err);
+		goto exit;
+	}
+	memset(buf, 0xA5, reg_nbytes);
+
+	err = xnvme_buf_register(dev, buf, reg_nbytes);
+	if (err) {
+		xnvme_cli_perr("xnvme_buf_register()", err);
+		goto exit;
+	}
+
+	err = read_lbas(dev, (uint16_t)(nbytes / geo->lba_nbytes - 1), ref);
+	if (err) {
+		xnvme_cli_pinf("FAILED: reading into memory from xnvme_buf_alloc(), err: %d", err);
+		goto unregister;
+	}
+	err = read_lbas(dev, (uint16_t)(nbytes / geo->lba_nbytes - 1), buf);
+	if (err) {
+		xnvme_cli_pinf("FAILED: reading into registered memory, err: %d", err);
+		goto unregister;
+	}
+	if (memcmp(ref, buf, nbytes)) {
+		xnvme_cli_pinf("FAILED: the read into registered memory differs");
+		err = -EIO;
+	}
+
+unregister:
+	if (xnvme_buf_unregister(dev, buf)) {
+		xnvme_cli_pinf("FAILED: unregistering");
+		err = err ? err : -EIO;
+	}
+
+exit:
+	xnvme_buf_virt_free(buf);
+	xnvme_buf_free(dev, ref);
+
+	if (!err) {
+		xnvme_cli_pinf("LGTM: %zu bytes read into registered memory", nbytes);
+	}
+
+	return err;
+}
+
 /**
  * Write one LBA carrying the given metadata buffer
  *
@@ -298,6 +401,18 @@ static struct xnvme_cli_sub g_subs[] = {
 		"Register memory from xnvme_buf_alloc() and a range within a registered one",
 		"Register memory from xnvme_buf_alloc() and a range within a registered one",
 		test_register_counted,
+		{
+			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
+
+			XNVME_CLI_SYNC_OPTS,
+		},
+	},
+	{
+		"register_read",
+		"Read several pages into registered memory and compare",
+		"Read several pages into registered memory and compare",
+		test_register_read,
 		{
 			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
 			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
