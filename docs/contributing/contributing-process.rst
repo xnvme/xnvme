@@ -66,8 +66,9 @@ The fixed set
    * - ``source-format-check``
      - pre-commit over the whole tree, the tests of the cijoe scripts and the
        toolbox, and the version files of a bump
-   * - ``source-archive``, ``build``
-     - The source archives, and the builds on Linux, macOS and Windows
+   * - ``man-pages``, ``source-archive``, ``build``
+     - The man pages, the source archives carrying them, and the builds on
+       Linux, macOS and Windows
    * - ``ffi-python``, ``ffi-rust``
      - The Python and Rust bindings
    * - ``verify-makefile``, ``verify-packaging``
