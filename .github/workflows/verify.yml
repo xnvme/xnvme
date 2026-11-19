@@ -146,6 +146,45 @@ jobs:
         python3 base/toolbox/gha_gates.py open <<< "$labels" | tee -a "$GITHUB_OUTPUT"
 
   #
+  # Generate the man pages, which are not committed, for the source archives
+  #
+  # They are generated from the --help of the programs, so this builds xNVMe
+  # as verify-makefile does, in the same container
+  #
+  man-pages:
+    needs: changes-to-docs
+    runs-on: ubuntu-24.04
+    container: ghcr.io/xnvme/xnvme-devenv/host:v0.15.0
+    steps:
+    - name: Grab source
+      uses: actions/checkout@v6
+      with:
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+    - name: Add repos to git-config safe.directory
+      run: |
+        git config --global --add safe.directory $(pwd)
+
+    - name: Install the build dependencies this tree names for the container's Ubuntu
+      run: bash toolbox/pkgs/ubuntu-resolute.sh
+
+    - name: Build xNVMe
+      run: make common
+
+    - name: Generate the man pages
+      run: make gen-man-pages
+
+    - name: Upload the man pages
+      uses: actions/upload-artifact@v6.0.0
+      with:
+        name: xnvme-man-pages
+        path: |
+          man/examples
+          man/tests
+          man/tools
+        if-no-files-found: error
+
+  #
   # Produce a source-archive (with and without subprojects)
   #
   # with-subprojects
@@ -165,7 +204,7 @@ jobs:
   #   devices need uFuse.
   #
   source-archive:
-    needs: changes-to-docs
+    needs: [changes-to-docs, man-pages]
     runs-on: ubuntu-24.04
     container: ghcr.io/xnvme/xnvme/distro-deps-alpine-latest:main
     strategy:
@@ -186,6 +225,12 @@ jobs:
         ls -lha
         git status
 
+    - name: Retrieve the man pages
+      uses: actions/download-artifact@v7.0.0
+      with:
+        name: xnvme-man-pages
+        path: man
+
     - name: Generate Source Archive
       run: |
         if [ "${{ matrix.variant }}" = "with-subprojects" ]; then
@@ -199,6 +244,11 @@ jobs:
         ver=$(python3 toolbox/xnvme_ver.py --path meson.build)
         mv builddir/meson-dist/xnvme-$ver.tar.gz builddir/meson-dist/xnvme-src.tar.gz
         mv builddir/meson-dist/xnvme-$ver.tar.gz.sha256sum builddir/meson-dist/xnvme-src.tar.gz.sha256sum
+
+    - name: Check the source archive carries the man pages
+      run: |
+        tar tzf builddir/meson-dist/xnvme-src.tar.gz | grep -q '/man/tools/xnvme\.1$'
+        tar tzf builddir/meson-dist/xnvme-src.tar.gz | grep -q '/man/tools/meson\.build$'
 
     - name: Upload source archive
       uses: actions/upload-artifact@v6.0.0
@@ -513,8 +563,8 @@ jobs:
   # labels the pull-request carried.
   #
   ci-result:
-    needs: [changes-to-docs, gates, source-archive, source-format-check, ffi-python, ffi-rust, matrices, docgen-shallow, build,
-      verify-makefile, verify-nvme-pcie-emulated, verify-nvme-pcie-hardware, verify-nvme-rdma-emulated, verify-nvme-tcp-emulated,
+    needs: [changes-to-docs, gates, man-pages, source-archive, source-format-check, ffi-python, ffi-rust, matrices, docgen-shallow,
+      build, verify-makefile, verify-nvme-pcie-emulated, verify-nvme-pcie-hardware, verify-nvme-rdma-emulated, verify-nvme-tcp-emulated,
       verify-packaging, verify-gpu-emulated, perf, docgen-full]
     runs-on: ubuntu-24.04
     if: always() && github.event.pull_request.draft != true

@@ -28,16 +28,18 @@ meson setup build -Dwith-spdk=disabled -Dwith-libvfn=disabled
 # subdirectories of it and files the directory itself as invalid (0x0002).
 export QA_RPATHS=0x0002
 meson install -C build --destdir %{buildroot}
+# The source archives of a release carry man pages and a checkout has none, so
+# the files list names those installed
+find %{buildroot}%{_mandir} -type f 2>/dev/null | sed 's|^%{buildroot}||' > man.files
 
 %post -p /sbin/ldconfig
 %postun -p /sbin/ldconfig
 
-%files
+%files -f man.files
 %attr(0644,root,root) %{_includedir}/*
 %dir %attr(0755,root,root) %{_libdir}/pkgconfig
 %attr(0644,root,root) %{_libdir}/pkgconfig/*
 %attr(0755,root,root) %{_libdir}/*.*
-%attr(0644,root,root) %{_mandir}/man1/*
 %attr(0755,root,root) %{_bindir}/*
 %dir %attr(0755,root,root) %{_libexecdir}/xnvme
 %attr(0755,root,root) %{_libexecdir}/xnvme/*
