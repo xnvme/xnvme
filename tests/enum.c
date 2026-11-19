@@ -142,7 +142,7 @@ test_enum_open(struct xnvme_cli *cli)
 				goto exit;
 			}
 			if (cli->args.verbose) {
-				xnvme_dev_pr(dev[i], XNVME_PR_DEF);
+				xnvme_dev_pr(dev[hidx], XNVME_PR_DEF);
 			}
 		}
 
