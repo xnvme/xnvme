@@ -290,16 +290,12 @@ xnvme_be_upcie_iova_range_close(struct xnvme_be_upcie_iova_range *range)
 /**
  * Terminate the uPCIe runtime-environment
  *
- * The state is globally accessible via g_upcie_rte, this function terminates it, unless it is
- * not initialized, then it exits early.
+ * The state is globally accessible via g_upcie_rte. What is released is what the flags say is
+ * held, so this also takes down what a bring-up that failed part-way took.
  */
 static void
 _rte_term(void)
 {
-	if (!g_upcie_rte.is_initialized) {
-		return;
-	}
-
 	xnvme_be_upcie_buf_regs_term();
 
 	if (g_upcie_rte.connection.alive) {
