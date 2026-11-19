@@ -204,6 +204,22 @@ def get_backend_configurations():
             "mem": ["posix", "hugepage"],
             "label": ["bdev", "ramdisk"],
         },
+        {
+            "be": ["rdma"],
+            "async": ["rdma"],
+            "sync": ["rdma"],
+            "admin": ["rdma"],
+            "mem": ["rdma"],
+            "label": ["rdma"],
+        },
+        {
+            "be": ["rdma"],
+            "async": ["rdma"],
+            "sync": ["rdma"],
+            "admin": ["rdma"],
+            "mem": ["rdma"],
+            "label": ["fabrics"],
+        },
     ]
 
     combos["freebsd"] = [
