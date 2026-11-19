@@ -539,12 +539,10 @@ xnvme_be_spdk_ctrlr_init(struct xnvme_dev *dev)
 				"or a narrow-DMA-mask setup (look for 'IOVA "
 				"exceeding limits of current DMA mask' in the "
 				"SPDK output), set iova_mode to 'pa'.\n"
-				"       Three ways, pick whichever fits the call "
+				"       Two ways, pick whichever fits the call "
 				"path:\n"
 				"         opts: xnvme_opts.iova_mode = \"pa\" "
 				"before xnvme_dev_open()\n"
-				"         cli:  pass --iova-mode pa on the "
-				"xnvme command line\n"
 				"         env:  export "
 				"XNVME_SPDK_IOVA_MODE=pa\n",
 				err);
