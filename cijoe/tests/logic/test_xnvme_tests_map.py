@@ -62,6 +62,14 @@ def test_register_counted(cijoe, device, be_opts, cli_args):
     assert not err
 
 
+@xnvme_parametrize(labels=["dev"], opts=["be"])
+def test_register_read(cijoe, device, be_opts, cli_args):
+    skip_unless_registers_host_memory(cijoe, device, be_opts)
+
+    err, _ = cijoe.run(f"xnvme test map register_read {cli_args}")
+    assert not err
+
+
 @xnvme_parametrize(labels=["pcie"], opts=["be"])
 def test_mem_map_iova_pa(cijoe, device, be_opts, cli_args):
     """SPDK behind an IOMMU in iova_mode=pa refuses memory not in hugetlb pages"""
