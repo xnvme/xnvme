@@ -38,8 +38,10 @@ zoned_reject(const struct qublk_dev *dev, const char *reason)
 int
 qublk_zoned_init(struct qublk_dev *dev, int passes_nvme)
 {
-	const struct xnvme_spec_znd_idfy_ns *zns = xnvme_znd_dev_get_ns(dev->xdev);
-	const struct xnvme_spec_znd_idfy_ctrlr *zctrlr = xnvme_znd_dev_get_ctrlr(dev->xdev);
+	const struct xnvme_spec_zns_io_command_set_specific_identify_namespace *zns =
+		xnvme_znd_dev_get_ns(dev->xdev);
+	const struct xnvme_spec_zns_io_command_set_specific_identify_controller *zctrlr =
+		xnvme_znd_dev_get_ctrlr(dev->xdev);
 	uint64_t zone_sectors = dev->geo->nsect << (dev->lba_shift - XNVME_UNIVERSAL_SECT_SH);
 	uint64_t dev_sectors = dev->geo->tbytes >> XNVME_UNIVERSAL_SECT_SH;
 	uint64_t append_nbytes;
@@ -85,7 +87,7 @@ qublk_zoned_init(struct qublk_dev *dev, int passes_nvme)
 	}
 
 	if (dev->geo->mdts_nbytes &&
-	    (uint64_t)dev->max_io_buf + sizeof(struct xnvme_spec_znd_report_hdr) >
+	    (uint64_t)dev->max_io_buf + sizeof(struct xnvme_spec_zns_report_zones) >
 		    dev->geo->mdts_nbytes) {
 		uint32_t page = (uint32_t)sysconf(_SC_PAGESIZE);
 
@@ -101,15 +103,16 @@ qublk_zoned_init(struct qublk_dev *dev, int passes_nvme)
 	}
 
 	// max_io_buf is final: warn when a report of every zone cannot fit one request
-	if (dev->nr_zones > dev->max_io_buf / sizeof(struct xnvme_spec_znd_descr)) {
+	if (dev->nr_zones > dev->max_io_buf / sizeof(struct xnvme_spec_zns_zone_descriptor)) {
 		uint64_t page = (uint64_t)sysconf(_SC_PAGESIZE);
-		uint64_t want = ((uint64_t)dev->nr_zones * sizeof(struct xnvme_spec_znd_descr) +
-				 page - 1) &
-				~(page - 1);
+		uint64_t want =
+			((uint64_t)dev->nr_zones * sizeof(struct xnvme_spec_zns_zone_descriptor) +
+			 page - 1) &
+			~(page - 1);
 		char advice[96];
 
 		if (!dev->geo->mdts_nbytes ||
-		    want + sizeof(struct xnvme_spec_znd_report_hdr) <= dev->geo->mdts_nbytes) {
+		    want + sizeof(struct xnvme_spec_zns_report_zones) <= dev->geo->mdts_nbytes) {
 			snprintf(advice, sizeof(advice), "raise --max-io-bytes to %" PRIu64, want);
 		} else {
 			snprintf(advice, sizeof(advice), "MDTS %u B is too small",
@@ -120,7 +123,8 @@ qublk_zoned_init(struct qublk_dev *dev, int passes_nvme)
 			"qublk: warning: %s: a report holds %u of %u zones per request; larger "
 			"reports can come back scrambled; %s\n",
 			dev->uri,
-			(uint32_t)(dev->max_io_buf / sizeof(struct xnvme_spec_znd_descr)),
+			(uint32_t)(dev->max_io_buf /
+				   sizeof(struct xnvme_spec_zns_zone_descriptor)),
 			dev->nr_zones, advice);
 	}
 
@@ -194,7 +198,7 @@ qublk_zoned_set_params(const struct qublk_dev *dev, struct ublk_params *params)
 size_t
 qublk_zoned_buf_slack(const struct qublk_dev *dev)
 {
-	return dev->zoned ? sizeof(struct xnvme_spec_znd_report_hdr) : 0;
+	return dev->zoned ? sizeof(struct xnvme_spec_zns_report_zones) : 0;
 }
 
 int
@@ -209,13 +213,13 @@ zone_mgmt_action(uint8_t op)
 {
 	switch (op) {
 	case UBLK_IO_OP_ZONE_OPEN:
-		return XNVME_SPEC_ZND_CMD_MGMT_SEND_OPEN;
+		return XNVME_SPEC_ZNS_ZONE_MANAGEMENT_SEND_CDW13_ZSA_OPEN_ZONE;
 	case UBLK_IO_OP_ZONE_CLOSE:
-		return XNVME_SPEC_ZND_CMD_MGMT_SEND_CLOSE;
+		return XNVME_SPEC_ZNS_ZONE_MANAGEMENT_SEND_CDW13_ZSA_CLOSE_ZONE;
 	case UBLK_IO_OP_ZONE_FINISH:
-		return XNVME_SPEC_ZND_CMD_MGMT_SEND_FINISH;
+		return XNVME_SPEC_ZNS_ZONE_MANAGEMENT_SEND_CDW13_ZSA_FINISH_ZONE;
 	case UBLK_IO_OP_ZONE_RESET:
-		return XNVME_SPEC_ZND_CMD_MGMT_SEND_RESET;
+		return XNVME_SPEC_ZNS_ZONE_MANAGEMENT_SEND_CDW13_ZSA_RESET_ZONE;
 	default:
 		return -1;
 	}
@@ -226,7 +230,7 @@ zone_mgmt_action(uint8_t op)
 static uint32_t
 report_zones_count(const struct qublk_dev *dev, uint32_t nr_zones)
 {
-	uint32_t room = dev->max_io_buf / sizeof(struct xnvme_spec_znd_descr);
+	uint32_t room = dev->max_io_buf / sizeof(struct xnvme_spec_zns_zone_descriptor);
 
 	return nr_zones < room ? (nr_zones ? nr_zones : 1) : room;
 }
@@ -248,15 +252,15 @@ report_zones_complete(struct qublk_queue *q, struct qublk_io *io)
 	struct qublk_dev *dev = q->dev;
 	uint8_t shift = dev->lba_shift - XNVME_UNIVERSAL_SECT_SH;
 	uint32_t n = report_zones_count(dev, io->iod->nr_zones);
-	struct xnvme_spec_znd_report_hdr hdr;
+	struct xnvme_spec_zns_report_zones hdr;
 	uint8_t *buf = io->buf;
 	uint64_t nzones;
 
 	memcpy(&hdr, buf, sizeof(hdr));
-	nzones = XNVME_MIN_U64(hdr.nzones, n);
+	nzones = XNVME_MIN_U64(hdr.nz, n);
 
 	for (uint64_t i = 0; i < nzones; i++) {
-		struct xnvme_spec_znd_descr descr;
+		struct xnvme_spec_zns_zone_descriptor descr;
 		struct blk_zone zone = {0};
 
 		memcpy(&descr, buf + sizeof(hdr) + i * sizeof(descr), sizeof(descr));
@@ -264,10 +268,13 @@ report_zones_complete(struct qublk_queue *q, struct qublk_io *io)
 		zone.start = descr.zslba << shift;
 		zone.len = dev->zone_sectors;
 		zone.capacity = descr.zcap << shift;
-		zone.wp = (descr.zs == XNVME_SPEC_ZND_STATE_FULL) ? zone.start + zone.len
-								  : descr.wp << shift;
-		zone.type = descr.zt;
-		zone.cond = descr.zs;
+		zone.wp =
+			(xnvme_bits_get(descr.zsattr, XNVME_SPEC_ZNS_ZONE_DESCRIPTOR_ZSATTR_ZS) ==
+			 XNVME_SPEC_ZNS_ZONE_DESCRIPTOR_ZSATTR_ZS_FULL)
+				? zone.start + zone.len
+				: descr.wp << shift;
+		zone.type = xnvme_bits_get(descr.ztattr, XNVME_SPEC_ZNS_ZONE_DESCRIPTOR_ZTATTR_ZT);
+		zone.cond = xnvme_bits_get(descr.zsattr, XNVME_SPEC_ZNS_ZONE_DESCRIPTOR_ZSATTR_ZS);
 
 		memcpy(buf + i * sizeof(zone), &zone, sizeof(zone));
 	}
@@ -297,11 +304,22 @@ qublk_zoned_dispatch(struct qublk_queue *q, struct qublk_io *io, struct xnvme_cm
 		uint32_t n = report_zones_count(dev, iod->nr_zones);
 
 		slba = iod->start_sector >> (lba_shift - XNVME_UNIVERSAL_SECT_SH);
-		return xnvme_znd_mgmt_recv(ctx, nsid, slba,
-					   XNVME_SPEC_ZND_CMD_MGMT_RECV_ACTION_REPORT,
-					   XNVME_SPEC_ZND_CMD_MGMT_RECV_SF_ALL, 1, io->buf,
-					   (uint32_t)(sizeof(struct xnvme_spec_znd_report_hdr) +
-						      n * sizeof(struct xnvme_spec_znd_descr)));
+		uint32_t nbytes = (uint32_t)(sizeof(struct xnvme_spec_zns_report_zones) +
+					     n * sizeof(struct xnvme_spec_zns_zone_descriptor));
+
+		rc = xnvme_cmd_prep_zns_zone_management_receive(
+			&ctx->cmd,
+			&(struct xnvme_cmd_prep_zns_zone_management_receive_args){
+				.args_nbytes = sizeof(
+					struct xnvme_cmd_prep_zns_zone_management_receive_args),
+				.nsid = nsid,
+				.slba = slba,
+				.ndw = nbytes / sizeof(uint32_t) - 1,
+				.zraspf = 1,
+				.zras = XNVME_SPEC_ZNS_ZONE_MANAGEMENT_RECEIVE_CDW13_ZRAS_LIST_ALL_ZONES,
+				.zra = XNVME_SPEC_ZNS_ZONE_MANAGEMENT_RECEIVE_CDW13_ZRA_REPORT_ZONES,
+			});
+		return rc ? rc : xnvme_cmd_pass(ctx, io->buf, nbytes, NULL, 0);
 	}
 	case UBLK_IO_OP_ZONE_APPEND:
 	case UBLK_IO_OP_ZONE_OPEN:
@@ -338,16 +356,23 @@ qublk_zoned_dispatch(struct qublk_queue *q, struct qublk_io *io, struct xnvme_cm
 			}
 
 			nlb = (uint16_t)((bytes >> lba_shift) - 1);
-			if (iod->op_flags & UBLK_IO_F_FUA) {
-				ctx->cmd.znd.append.fua = 1;
-			}
 
 			rc = qublk_io_user_copy_in(q, io, (size_t)bytes);
 			if (rc) {
 				return rc;
 			}
 
-			return xnvme_znd_append(ctx, nsid, slba, nlb, io->buf, NULL);
+			rc = xnvme_cmd_prep_zns_zone_append(
+				&ctx->cmd,
+				&(struct xnvme_cmd_prep_zns_zone_append_args){
+					.args_nbytes =
+						sizeof(struct xnvme_cmd_prep_zns_zone_append_args),
+					.nsid = nsid,
+					.zslba = slba,
+					.fua = (iod->op_flags & UBLK_IO_F_FUA) ? 1 : 0,
+					.nlb = nlb,
+				});
+			return rc ? rc : xnvme_cmd_pass(ctx, io->buf, (size_t)bytes, NULL, 0);
 		}
 
 		rc = zone_mgmt_action(op);
@@ -355,15 +380,32 @@ qublk_zoned_dispatch(struct qublk_queue *q, struct qublk_io *io, struct xnvme_cm
 			return -EOPNOTSUPP;
 		}
 
-		return xnvme_znd_mgmt_send(ctx, nsid, slba, false, rc, 0, NULL);
+		rc = xnvme_cmd_prep_zns_zone_management_send(
+			&ctx->cmd,
+			&(struct xnvme_cmd_prep_zns_zone_management_send_args){
+				.args_nbytes = sizeof(
+					struct xnvme_cmd_prep_zns_zone_management_send_args),
+				.nsid = nsid,
+				.slba = slba,
+				.zsa = (uint8_t)rc,
+			});
+		return rc ? rc : xnvme_cmd_pass(ctx, NULL, 0, NULL, 0);
 	case UBLK_IO_OP_ZONE_RESET_ALL:
 		if (!dev->zoned) {
 			return -EOPNOTSUPP;
 		}
 
 		// Select all: the ZSLBA is ignored by the device
-		return xnvme_znd_mgmt_send(ctx, nsid, 0, true, XNVME_SPEC_ZND_CMD_MGMT_SEND_RESET,
-					   0, NULL);
+		rc = xnvme_cmd_prep_zns_zone_management_send(
+			&ctx->cmd,
+			&(struct xnvme_cmd_prep_zns_zone_management_send_args){
+				.args_nbytes = sizeof(
+					struct xnvme_cmd_prep_zns_zone_management_send_args),
+				.nsid = nsid,
+				.selall = 1,
+				.zsa = XNVME_SPEC_ZNS_ZONE_MANAGEMENT_SEND_CDW13_ZSA_RESET_ZONE,
+			});
+		return rc ? rc : xnvme_cmd_pass(ctx, NULL, 0, NULL, 0);
 	default:
 		return -EOPNOTSUPP;
 	}
@@ -377,7 +419,7 @@ qublk_zoned_complete(struct qublk_queue *q, struct qublk_io *io, struct xnvme_cm
 	if (op == UBLK_IO_OP_ZONE_APPEND) {
 		// The device chose the LBA; the driver wants it in 512 B sectors, as
 		// the request's sector (see io_addr() in io.c)
-		io->zone_append_lba = ctx->cpl.result
+		io->zone_append_lba = ((uint64_t)ctx->cpl.dw1 << 32 | ctx->cpl.dw0)
 				      << (q->dev->lba_shift - XNVME_UNIVERSAL_SECT_SH);
 		return (int)((size_t)io->iod->nr_sectors << XNVME_UNIVERSAL_SECT_SH);
 	}

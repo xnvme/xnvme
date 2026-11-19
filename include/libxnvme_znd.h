@@ -24,7 +24,7 @@ extern "C" {
  * @param dev
  * @return
  */
-const struct xnvme_spec_znd_idfy_ns *
+const struct xnvme_spec_zns_io_command_set_specific_identify_namespace *
 xnvme_znd_dev_get_ns(struct xnvme_dev *dev);
 
 /**
@@ -33,7 +33,7 @@ xnvme_znd_dev_get_ns(struct xnvme_dev *dev);
  * @param dev
  * @return
  */
-const struct xnvme_spec_znd_idfy_ctrlr *
+const struct xnvme_spec_zns_io_command_set_specific_identify_controller *
 xnvme_znd_dev_get_ctrlr(struct xnvme_dev *dev);
 
 /**
@@ -41,37 +41,15 @@ xnvme_znd_dev_get_ctrlr(struct xnvme_dev *dev);
  * @param dev
  * @return
  */
-const struct xnvme_spec_znd_idfy_lbafe *
+const struct xnvme_spec_zns_lba_format_extension *
 xnvme_znd_dev_get_lbafe(struct xnvme_dev *dev);
-
-/**
- * Submit, and optionally wait for completion of, a Zone Management Receive
- *
- * @note When `opts | CMD_MODE_SYNC` then `ret` is filled with completion entry
- * upon return
- *
- * @param ctx Pointer to command context (::xnvme_cmd_ctx)
- * @param nsid Namespace Identifier
- * @param slba Start LBA of the Zone to receive for
- * @param zra Zone Receive Action, a value of ::xnvme_spec_znd_cmd_mgmt_recv_action
- * @param zrasf Zone Receive Action Specific Field, a value of
- * ::xnvme_spec_znd_cmd_mgmt_recv_action_sf
- * @param partial partial request
- * @param dbuf pointer to data payload
- * @param dbuf_nbytes pointer to meta payload
- *
- * @return On success, 0 is returned. On error, negative `errno` is returned.
- */
-int
-xnvme_znd_mgmt_recv(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t slba, uint32_t zra,
-		    uint32_t zrasf, uint8_t partial, void *dbuf, uint32_t dbuf_nbytes);
 
 /**
  * Fills 'zdescr' with the Zone on the given 'dev' that starts at 'slba'
  *
- * @param dev Device handle obtained with xnvme_dev_open()
+ * @param dev Device handle obtained with xnvme_dev_open_uri()
  * @param slba The Zone Start LBA
- * @param zdescr Pointer to the ::xnvme_spec_znd_descr to fill
+ * @param zdescr Pointer to the ::xnvme_spec_zns_zone_descriptor to fill
  *
  * @return On success, 0 is returned and 'zdescr' filled with matching Zone Descriptor. On error,
  * negative ``errno`` is returned to indicate the error, and the content of given 'zdescr' is
@@ -79,13 +57,14 @@ xnvme_znd_mgmt_recv(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t slba, uin
  */
 int
 xnvme_znd_descr_from_dev(struct xnvme_dev *dev, uint64_t slba,
-			 struct xnvme_spec_znd_descr *zdescr);
+			 struct xnvme_spec_zns_zone_descriptor *zdescr);
 
 /**
  * Fills 'zdescr' with the first Zone on the given 'dev' in the given 'state'
  *
  * @param dev The device to receive descriptors from
- * @param state The state the Zone should be in, a value of ::xnvme_spec_znd_state
+ * @param state The state the Zone should be in, a value of
+ * ::xnvme_spec_zns_zone_descriptor_zsattr_zs
  * @param zdescr Pointer to the descriptor the function should fill
  *
  * @return On succes, 0 is returned and 'zdescr' filled with matching Zone
@@ -94,13 +73,15 @@ xnvme_znd_descr_from_dev(struct xnvme_dev *dev, uint64_t slba,
  */
 int
 xnvme_znd_descr_from_dev_in_state(struct xnvme_dev *dev, uint32_t state,
-				  struct xnvme_spec_znd_descr *zdescr);
+				  struct xnvme_spec_zns_zone_descriptor *zdescr);
 
 /**
  * Ask the given device for how many zones in the given state via receive-action
  *
  * @param dev The device to stat
- * @param sfield Which zones to count, a value of ::xnvme_spec_znd_cmd_mgmt_recv_action_sf
+ * @param sfield Which zones to count, a value of
+ * ::xnvme_spec_zns_zone_management_receive_cdw13_zras or
+ * XNVME_SPEC_ZNS_ZONE_MANAGEMENT_RECEIVE_CDW13_ZRAS_LIST_ALL_ZONES
  * @param nzones Pointer to store result in
  *
  * @return On Success, 0 is returned and 'nzones' filled with stat. On error,
@@ -119,60 +100,13 @@ xnvme_znd_stat(struct xnvme_dev *dev, uint32_t sfield, uint64_t *nzones);
  * Caller is responsible for de-allocating the returned structure using
  * `xnvme_buf_free`
  *
- * @param dev Device handle obtained with xnvme_dev_open()
+ * @param dev Device handle obtained with xnvme_dev_open_uri()
  *
  * @return On success, pointer to namespace structure. On error, NULL is
  * returned and `errno` is set to indicate the error
  */
-struct xnvme_spec_znd_log_changes *
+struct xnvme_spec_zns_log_changed_zone_list *
 xnvme_znd_log_changes_from_dev(struct xnvme_dev *dev);
-
-/**
- * Submit, and optionally wait for completion of, a Zone Management Send
- *
- * @param ctx Pointer to command context (::xnvme_cmd_ctx)
- * @param nsid Namespace Identifier
- * @param zslba Start LBA of the Zone to manage
- * @param select_all Ignore zslba, command affects all LBAs
- * @param zsa Zone Send Action to perform with the zone at zslba, or with all zones when
- * select_all is true, a value of ::xnvme_spec_znd_cmd_mgmt_send_action
- * @param zsa_so Zone Send Action Specific Option, a value of
- * ::xnvme_spec_znd_mgmt_send_action_so
- * @param dbuf For action=ZND_SEND_DESCRIPTOR provide buffer
- *
- * @return On success, 0 is returned. On error, negative `errno` is returned.
- */
-int
-xnvme_znd_mgmt_send(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t zslba, bool select_all,
-		    uint32_t zsa, uint32_t zsa_so, void *dbuf);
-
-/**
- * Submit, and optionally wait for completion of, a Zone Append
- *
- * @param ctx Pointer to command context (::xnvme_cmd_ctx)
- * @param nsid Namespace Identifier
- * @param zslba First LBA of the Zone to append to
- * @param nlb number of LBAs, this is zero-based value
- * @param dbuf pointer to data payload
- * @param mbuf pointer to meta payload
- *
- * @return On success, 0 is returned. On error, negative `errno` is returned.
- */
-int
-xnvme_znd_append(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t zslba, uint16_t nlb,
-		 const void *dbuf, const void *mbuf);
-
-/**
- * Submit, and optionally wait for completion of, a Zone RWA Commit
- *
- * @param ctx Pointer to command context (::xnvme_cmd_ctx)
- * @param nsid Namespace Identifier
- * @param lba Commit from ZRWA to Zone up-to and including the given 'lba'
- *
- * @return On success, 0 is returned. On error, negative `errno` is returned.
- */
-int
-xnvme_znd_zrwa_flush(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t lba);
 
 /**
  * Encapsulation of Zone Descriptors and Zone Descriptor Extensions
@@ -220,10 +154,12 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_znd_report) == 64, "Incorrect size")
  * @param ext Pointer the extended descriptor will be assigned to
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
+ *
+ * @errno
  */
 int
 xnvme_znd_report_get_descr(const struct xnvme_znd_report *report, uint32_t index,
-			   struct xnvme_spec_znd_descr **descr, void **ext);
+			   struct xnvme_spec_zns_zone_descriptor **descr, void **ext);
 
 /**
  * Retrieves a Zone Report from the namespace associated with the given `dev`,
@@ -233,7 +169,7 @@ xnvme_znd_report_get_descr(const struct xnvme_znd_report *report, uint32_t index
  * Caller is responsible for de-allocating the returned structure using
  * xnvme_buf_virt_free()
  *
- * @param dev Device handle obtained with xnvme_dev_open()
+ * @param dev Device handle obtained with xnvme_dev_open_uri()
  * @param slba LBA of the first zone in the report
  * @param limit when 0 then provide a report for all zones start from slba.
  * Otherwise, provide a report for [slba, slba+limit]
@@ -250,12 +186,14 @@ xnvme_znd_report_from_dev(struct xnvme_dev *dev, uint64_t slba, size_t limit, ui
  * Scan the 'report' for a zone in the given 'state' and store it in 'zlba'
  *
  * @param report The report to scan
- * @param state The zone-state to scan for, a value of ::xnvme_spec_znd_state
+ * @param state The zone-state to scan for, a value of ::xnvme_spec_zns_zone_descriptor_zsattr_zs
  * @param zlba Pointer to store zlba to
  * @param opts Optional seed random-number generator, when 0 then time(NULL) is
  * used
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
+ *
+ * @errno
  */
 int
 xnvme_znd_report_find_arbitrary(const struct xnvme_znd_report *report, uint32_t state,

@@ -606,7 +606,8 @@ xnvme_cli_run(struct xnvme_cli *cli, int argc, char **argv, int opts);
  * @param cli The command-line-interface to parse arguments for
  * @param opts The device-options to fill
  *
- * @return On success, 0 is returned.
+ * @return On success, 0 is returned. On error, negative `errno` is returned: -EINVAL when a
+ * string option does not fit its field of ::xnvme_opts, or --homi-id and --shm_id disagree.
  */
 int
 xnvme_cli_to_opts(const struct xnvme_cli *cli, struct xnvme_opts *opts);
@@ -617,7 +618,7 @@ xnvme_cli_to_opts(const struct xnvme_cli *cli, struct xnvme_opts *opts);
  * A device argument is a URI, optionally followed by a query naming the namespace:
  * "<uri>/?nsid=<nsid>" or "<uri>?nsid=<nsid>", the identifier in decimal or hex. The
  * device-open helpers of xnvme_cli use this, so every tool takes such arguments. It is a
- * convention of the command line only: ::xnvme_dev_open takes the URI without a query.
+ * convention of the command line only: xnvme_dev_open_uri() takes the URI without a query.
  *
  * @param arg The device argument
  * @param uri Set to the URI without the query

@@ -1,11 +1,11 @@
 import os
-from ctypes import byref, pointer
+from ctypes import byref, memmove, pointer
 
 import numpy as np
 import pytest
-import xnvme.ctypes_bindings.api as xnvme
+import xnvme
 from conftest import xnvme_parametrize
-from utils import buf_and_view, dev_from_params, xnvme_cmd_ctx_cpl_status
+from utils import args_of, buf_and_view, dev_from_params, prep_and_pass
 
 KEY_SIZE_BYTES = 128 // 8  # 128-bit keys in KV spec
 
@@ -18,19 +18,19 @@ class KVException(Exception):
         super().__init__(*args, **kwargs)
 
 
-def kvs_store(dev, kbuf, kbuf_nbytes, vbuf, vbuf_nbytes, opts=0):
-    ctx = xnvme.xnvme_cmd_ctx()
+def kv_command(
+    dev, prep, record, kbuf, kbuf_nbytes, vbuf=None, vbuf_nbytes=0, **fields
+):
+    """Prepare and pass the KV command of 'prep' and 'record', keyed by 'kbuf'"""
+
+    ctx = xnvme.XnvmeCmdCtx()
     xnvme.xnvme_dev_get_cmd_ctx(dev, byref(ctx))
-    err = xnvme.xnvme_kvs_store(
-        byref(ctx),
-        xnvme.xnvme_dev_get_nsid(dev),
-        kbuf,
-        kbuf_nbytes,
-        vbuf,
-        vbuf_nbytes,
-        opts,
-    )
-    if err or xnvme_cmd_ctx_cpl_status(pointer(ctx)):
+
+    args = args_of(record, nsid=xnvme.xnvme_dev_get_nsid(dev), kl=kbuf_nbytes, **fields)
+    memmove(args.kv_key, kbuf, min(kbuf_nbytes, KEY_SIZE_BYTES))
+
+    err = prep_and_pass(ctx, prep, args, vbuf, vbuf_nbytes)
+    if err or xnvme.xnvme_cmd_ctx_cpl_status(pointer(ctx)):
         raise KVException(
             abs(err),
             ctx.cpl.status >> 1 & 0xFF,
@@ -38,87 +38,67 @@ def kvs_store(dev, kbuf, kbuf_nbytes, vbuf, vbuf_nbytes, opts=0):
             os.strerror(abs(err)),
         )
     return ctx
+
+
+def kvs_store(dev, kbuf, kbuf_nbytes, vbuf, vbuf_nbytes, opts=0):
+    return kv_command(
+        dev,
+        xnvme.xnvme_cmd_prep_kv_store,
+        xnvme.XnvmeCmdPrepKvStoreArgs,
+        kbuf,
+        kbuf_nbytes,
+        vbuf,
+        vbuf_nbytes,
+        vs=vbuf_nbytes,
+        so=opts,
+    )
 
 
 def kvs_retrieve(dev, kbuf, kbuf_nbytes, vbuf, vbuf_nbytes, opts=0):
-    ctx = xnvme.xnvme_cmd_ctx()
-    xnvme.xnvme_dev_get_cmd_ctx(dev, byref(ctx))
-    err = xnvme.xnvme_kvs_retrieve(
-        byref(ctx),
-        xnvme.xnvme_dev_get_nsid(dev),
+    return kv_command(
+        dev,
+        xnvme.xnvme_cmd_prep_kv_retrieve,
+        xnvme.XnvmeCmdPrepKvRetrieveArgs,
         kbuf,
         kbuf_nbytes,
         vbuf,
         vbuf_nbytes,
-        opts,
+        hbs=vbuf_nbytes,
+        ro=opts & xnvme.XNVME_KVS_RETRIEVE_OPT_RETRIEVE_RAW,
     )
-    if err or xnvme_cmd_ctx_cpl_status(pointer(ctx)):
-        raise KVException(
-            abs(err),
-            ctx.cpl.status >> 1 & 0xFF,
-            ctx.cpl.status >> 9 & 0x7,
-            os.strerror(abs(err)),
-        )
-    return ctx
 
 
 def kvs_exist(dev, kbuf, kbuf_nbytes):
-    ctx = xnvme.xnvme_cmd_ctx()
-    xnvme.xnvme_dev_get_cmd_ctx(dev, byref(ctx))
-    err = xnvme.xnvme_kvs_exist(
-        byref(ctx),
-        xnvme.xnvme_dev_get_nsid(dev),
+    return kv_command(
+        dev,
+        xnvme.xnvme_cmd_prep_kv_exist,
+        xnvme.XnvmeCmdPrepKvExistArgs,
         kbuf,
         kbuf_nbytes,
     )
-    if err or xnvme_cmd_ctx_cpl_status(pointer(ctx)):
-        raise KVException(
-            abs(err),
-            ctx.cpl.status >> 1 & 0xFF,
-            ctx.cpl.status >> 9 & 0x7,
-            os.strerror(abs(err)),
-        )
-    return ctx
 
 
 def kvs_delete(dev, kbuf, kbuf_nbytes):
-    ctx = xnvme.xnvme_cmd_ctx()
-    xnvme.xnvme_dev_get_cmd_ctx(dev, byref(ctx))
-    err = xnvme.xnvme_kvs_delete(
-        byref(ctx),
-        xnvme.xnvme_dev_get_nsid(dev),
+    return kv_command(
+        dev,
+        xnvme.xnvme_cmd_prep_kv_delete,
+        xnvme.XnvmeCmdPrepKvDeleteArgs,
         kbuf,
         kbuf_nbytes,
     )
-    if err or xnvme_cmd_ctx_cpl_status(pointer(ctx)):
-        raise KVException(
-            abs(err),
-            ctx.cpl.status >> 1 & 0xFF,
-            ctx.cpl.status >> 9 & 0x7,
-            os.strerror(abs(err)),
-        )
-    return ctx
 
 
 def kvs_list(dev, kbuf, kbuf_nbytes, vbuf, vbuf_nbytes, opts=0):
-    ctx = xnvme.xnvme_cmd_ctx()
-    xnvme.xnvme_dev_get_cmd_ctx(dev, byref(ctx))
-    err = xnvme.xnvme_kvs_list(
-        byref(ctx),
-        xnvme.xnvme_dev_get_nsid(dev),
+    return kv_command(
+        dev,
+        xnvme.xnvme_cmd_prep_kv_list,
+        xnvme.XnvmeCmdPrepKvListArgs,
         kbuf,
         kbuf_nbytes,
         vbuf,
         vbuf_nbytes,
+        hbs=vbuf_nbytes,
     )
-    if err or xnvme_cmd_ctx_cpl_status(pointer(ctx)):
-        raise KVException(
-            abs(err),
-            ctx.cpl.status >> 1 & 0xFF,
-            ctx.cpl.status >> 9 & 0x7,
-            os.strerror(abs(err)),
-        )
-    return ctx
 
 
 class TestKeyValue:
@@ -174,8 +154,14 @@ class TestKeyValue:
         # Reading should now fail
         with pytest.raises(KVException) as assertion:
             kvs_exist(dev, kbuf, len(key))
-        assert assertion.value.status_code_type == xnvme.XNVME_STATUS_CODE_TYPE_CMDSPEC
-        assert assertion.value.status_code == xnvme.XNVME_SPEC_KV_SC_KEY_NOT_EXISTS
+        assert (
+            assertion.value.status_code_type
+            == xnvme.XNVME_SPEC_BASE_STATUS_CODE_TYPE_COMMAND_SPECIFIC_STATUS
+        )
+        assert (
+            assertion.value.status_code
+            == xnvme.XNVME_SPEC_KV_GENERIC_COMMAND_STATUS_KV_KEY_DOES_NOT_EXIST
+        )
 
         xnvme.xnvme_dev_close(dev)
 
@@ -240,8 +226,14 @@ class TestKeyValue:
                 len(value),
                 opts=xnvme.XNVME_KVS_STORE_OPT_DONT_STORE_IF_KEY_EXISTS,
             )
-        assert assertion.value.status_code_type == xnvme.XNVME_STATUS_CODE_TYPE_CMDSPEC
-        assert assertion.value.status_code == xnvme.XNVME_SPEC_KV_SC_KEY_EXISTS
+        assert (
+            assertion.value.status_code_type
+            == xnvme.XNVME_SPEC_BASE_STATUS_CODE_TYPE_COMMAND_SPECIFIC_STATUS
+        )
+        assert (
+            assertion.value.status_code
+            == xnvme.XNVME_SPEC_KV_GENERIC_COMMAND_STATUS_KEY_EXISTS
+        )
 
         # Deleting the key first should now make it work
         kvs_delete(dev, kbuf, len(key))
@@ -299,8 +291,14 @@ class TestKeyValue:
                 len(value),
                 opts=xnvme.XNVME_KVS_STORE_OPT_DONT_STORE_IF_KEY_NOT_EXISTS,
             )
-        assert assertion.value.status_code_type == xnvme.XNVME_STATUS_CODE_TYPE_CMDSPEC
-        assert assertion.value.status_code == xnvme.XNVME_SPEC_KV_SC_KEY_NOT_EXISTS
+        assert (
+            assertion.value.status_code_type
+            == xnvme.XNVME_SPEC_BASE_STATUS_CODE_TYPE_COMMAND_SPECIFIC_STATUS
+        )
+        assert (
+            assertion.value.status_code
+            == xnvme.XNVME_SPEC_KV_GENERIC_COMMAND_STATUS_KV_KEY_DOES_NOT_EXIST
+        )
 
         xnvme.xnvme_buf_free(dev, vbuf)
         xnvme.xnvme_buf_free(dev, kbuf)
@@ -438,7 +436,10 @@ class TestKeyValue:
         "expected_sc, buffer_size",
         [
             (0, 4096),
-            (xnvme.XNVME_SPEC_KV_SC_INVALID_VAL_SIZE, 4096 + 1),  # QEMU limitation
+            (
+                xnvme.XNVME_SPEC_KV_GENERIC_COMMAND_STATUS_INVALID_VALUE_SIZE,
+                4096 + 1,
+            ),  # QEMU limitation
         ],
     )
     @xnvme_parametrize(labels=["kvs"], opts=["be"])
@@ -482,32 +483,62 @@ class TestKeyValue:
         kvs_store(dev, kbuf, 16, vbuf, buffer_size)
         with pytest.raises(KVException) as assertion:
             kvs_store(dev, kbuf, len(key), vbuf, buffer_size)
-        assert assertion.value.status_code_type == xnvme.XNVME_STATUS_CODE_TYPE_CMDSPEC
-        assert assertion.value.status_code == xnvme.XNVME_SPEC_KV_SC_INVALID_KEY_SIZE
+        assert (
+            assertion.value.status_code_type
+            == xnvme.XNVME_SPEC_BASE_STATUS_CODE_TYPE_COMMAND_SPECIFIC_STATUS
+        )
+        assert (
+            assertion.value.status_code
+            == xnvme.XNVME_SPEC_KV_GENERIC_COMMAND_STATUS_INVALID_KEY_SIZE
+        )
 
         kvs_retrieve(dev, kbuf, 16, vbuf, buffer_size)
         with pytest.raises(KVException) as assertion:
             kvs_retrieve(dev, kbuf, len(key), vbuf, buffer_size)
-        assert assertion.value.status_code_type == xnvme.XNVME_STATUS_CODE_TYPE_GENERIC
-        assert assertion.value.status_code == xnvme.XNVME_STATUS_CODE_INVALID_FIELD
+        assert (
+            assertion.value.status_code_type
+            == xnvme.XNVME_SPEC_BASE_STATUS_CODE_TYPE_GENERIC_COMMAND_STATUS
+        )
+        assert (
+            assertion.value.status_code
+            == xnvme.XNVME_SPEC_BASE_GENERIC_COMMAND_STATUS_INVALID_FIELD_IN_COMMAND
+        )
 
         kvs_exist(dev, kbuf, 16)
         with pytest.raises(KVException) as assertion:
             kvs_exist(dev, kbuf, len(key))
-        assert assertion.value.status_code_type == xnvme.XNVME_STATUS_CODE_TYPE_GENERIC
-        assert assertion.value.status_code == xnvme.XNVME_STATUS_CODE_INVALID_FIELD
+        assert (
+            assertion.value.status_code_type
+            == xnvme.XNVME_SPEC_BASE_STATUS_CODE_TYPE_GENERIC_COMMAND_STATUS
+        )
+        assert (
+            assertion.value.status_code
+            == xnvme.XNVME_SPEC_BASE_GENERIC_COMMAND_STATUS_INVALID_FIELD_IN_COMMAND
+        )
 
         kvs_delete(dev, kbuf, 16)
         with pytest.raises(KVException) as assertion:
             kvs_delete(dev, kbuf, len(key))
-        assert assertion.value.status_code_type == xnvme.XNVME_STATUS_CODE_TYPE_GENERIC
-        assert assertion.value.status_code == xnvme.XNVME_STATUS_CODE_INVALID_FIELD
+        assert (
+            assertion.value.status_code_type
+            == xnvme.XNVME_SPEC_BASE_STATUS_CODE_TYPE_GENERIC_COMMAND_STATUS
+        )
+        assert (
+            assertion.value.status_code
+            == xnvme.XNVME_SPEC_BASE_GENERIC_COMMAND_STATUS_INVALID_FIELD_IN_COMMAND
+        )
 
         kvs_list(dev, kbuf, 16, vbuf, buffer_size)
         with pytest.raises(KVException) as assertion:
             kvs_list(dev, kbuf, len(key), vbuf, buffer_size)
-        assert assertion.value.status_code_type == xnvme.XNVME_STATUS_CODE_TYPE_GENERIC
-        assert assertion.value.status_code == xnvme.XNVME_STATUS_CODE_INVALID_FIELD
+        assert (
+            assertion.value.status_code_type
+            == xnvme.XNVME_SPEC_BASE_STATUS_CODE_TYPE_GENERIC_COMMAND_STATUS
+        )
+        assert (
+            assertion.value.status_code
+            == xnvme.XNVME_SPEC_BASE_GENERIC_COMMAND_STATUS_INVALID_FIELD_IN_COMMAND
+        )
 
         xnvme.xnvme_buf_free(dev, vbuf)
         xnvme.xnvme_buf_free(dev, kbuf)

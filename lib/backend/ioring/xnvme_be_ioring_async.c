@@ -10,6 +10,7 @@
 #define _WIN32_WINNT NTDDI_WIN10_NI
 #endif
 #include <libxnvme.h>
+#include <xnvme_cmd.h>
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
 #ifdef XNVME_BE_IORING_ENABLED
@@ -147,15 +148,17 @@ xnvme_be_ioring_poke(struct xnvme_queue *q, uint32_t max)
 				return -EIO;
 			}
 
-			ctx->cpl.result = cqe.ResultCode;
+			xnvme_cmd_cpl_set_dw0_1(&ctx->cpl, cqe.ResultCode);
 			if (cqe.ResultCode < 0) {
-				ctx->cpl.result = 0;
-				ctx->cpl.status =
-					xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC,
-						       -cqe.ResultCode);
-				ctx->cpl.status =
-					xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT,
-						       XNVME_STATUS_CODE_TYPE_VENDOR);
+				xnvme_cmd_cpl_set_dw0_1(&ctx->cpl, 0);
+				ctx->cpl.status = xnvme_bits_set(
+					ctx->cpl.status,
+					XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SC,
+					-cqe.ResultCode);
+				ctx->cpl.status = xnvme_bits_set(
+					ctx->cpl.status,
+					XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SCT,
+					XNVME_SPEC_BASE_STATUS_CODE_TYPE_VENDOR_SPECIFIC);
 			}
 
 			ctx->async.cb(ctx, ctx->async.cb_arg);
@@ -198,15 +201,17 @@ xnvme_be_ioring_reap(struct xnvme_queue *q, struct xnvme_cmd_ctx **completions, 
 				continue;
 			}
 
-			ctx->cpl.result = cqe.ResultCode;
+			xnvme_cmd_cpl_set_dw0_1(&ctx->cpl, cqe.ResultCode);
 			if (cqe.ResultCode < 0) {
-				ctx->cpl.result = 0;
-				ctx->cpl.status =
-					xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC,
-						       -cqe.ResultCode);
-				ctx->cpl.status =
-					xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT,
-						       XNVME_STATUS_CODE_TYPE_VENDOR);
+				xnvme_cmd_cpl_set_dw0_1(&ctx->cpl, 0);
+				ctx->cpl.status = xnvme_bits_set(
+					ctx->cpl.status,
+					XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SC,
+					-cqe.ResultCode);
+				ctx->cpl.status = xnvme_bits_set(
+					ctx->cpl.status,
+					XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SCT,
+					XNVME_SPEC_BASE_STATUS_CODE_TYPE_VENDOR_SPECIFIC);
 			}
 
 			*completions++ = ctx;
@@ -257,16 +262,16 @@ xnvme_be_ioring_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes
 	request_data_file.Handle.Handle = state->async_handle;
 	request_data_buffer.Buffer.Address = dbuf;
 	///< NOTE: opcode-dispatch (io)
-	switch (ctx->cmd.common.opcode) {
+	switch (xnvme_cmd_sqe_get_opc(&ctx->cmd)) {
 
-	case XNVME_SPEC_NVM_OPC_READ:
+	case XNVME_SPEC_NVM_READ_OPCODE:
 		ssw = queue->base.dev->geo.ssw;
 	/* fall through */
 	case XNVME_SPEC_FS_OPC_READ:
 		err = (build_ioring_readfile_procadd)(queue->ring_handle, request_data_file,
 						      request_data_buffer, dbuf_nbytes,
-						      ctx->cmd.nvm.slba << ssw, (UINT_PTR)ctx,
-						      IOSQE_FLAGS_NONE);
+						      xnvme_cmd_sqe_get_cdw10_11(&ctx->cmd) << ssw,
+						      (UINT_PTR)ctx, IOSQE_FLAGS_NONE);
 
 		if (err < 0) {
 			XNVME_DEBUG("Failed building IO ring read file structure: 0x%lx", err);
@@ -274,13 +279,14 @@ xnvme_be_ioring_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes
 		}
 		break;
 
-	case XNVME_SPEC_NVM_OPC_WRITE:
+	case XNVME_SPEC_NVM_WRITE_OPCODE:
 		ssw = queue->base.dev->geo.ssw;
 	/* fall through */
 	case XNVME_SPEC_FS_OPC_WRITE:
 		err = (build_ioring_writefile_procadd)(queue->ring_handle, request_data_file,
 						       request_data_buffer, dbuf_nbytes,
-						       ctx->cmd.nvm.slba << ssw,
+						       xnvme_cmd_sqe_get_cdw10_11(&ctx->cmd)
+							       << ssw,
 						       FILE_WRITE_FLAGS_NONE, (UINT_PTR)ctx,
 						       IOSQE_FLAGS_NONE);
 
@@ -292,14 +298,14 @@ xnvme_be_ioring_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes
 
 	default:
 		XNVME_DEBUG("FAILED: unsupported opcode: 0x%" PRIx16 " for async",
-			    ctx->cmd.common.opcode);
+			    xnvme_cmd_sqe_get_opc(&ctx->cmd));
 		return -ENOSYS;
 	}
 
 	err = (submit_ioring_procadd)(queue->ring_handle, 0, 0, &submitted_entries);
 	if (err < 0) {
-		XNVME_DEBUG("io_uring_submit(0x%" PRIx16 "), err: %ld", ctx->cmd.common.opcode,
-			    err);
+		XNVME_DEBUG("io_uring_submit(0x%" PRIx16 "), err: %ld",
+			    xnvme_cmd_sqe_get_opc(&ctx->cmd), err);
 		return err;
 	}
 

@@ -12,7 +12,7 @@ enumerate_cb(struct xnvme_dev *dev, void *cb_args)
 	const struct xnvme_ident *ident;
 
 	ident = xnvme_dev_get_ident(dev);
-	if (ident->csi != XNVME_SPEC_CSI_KV) {
+	if (ident->csi != XNVME_SPEC_ADMIN_IDENTIFY_CDW11_CSI_KEY_VALUE_COMMAND_SET) {
 		return XNVME_ENUMERATE_DEV_CLOSE;
 	}
 
@@ -27,6 +27,19 @@ enumerate_cb(struct xnvme_dev *dev, void *cb_args)
 	*ns_count_ref = *ns_count_ref + 1;
 
 	return XNVME_ENUMERATE_DEV_CLOSE;
+}
+
+/**
+ * Copy up to 16 bytes of 'key' into 'kv_key', returning its length, the Key Length of the command
+ */
+static uint8_t
+key_of(uint8_t kv_key[16], const char *key)
+{
+	size_t len = strlen(key);
+
+	memcpy(kv_key, key, XNVME_MIN(len, 16));
+
+	return (uint8_t)len;
 }
 
 static int
@@ -63,8 +76,9 @@ cmd_idfy_ns(struct xnvme_cli *cli)
 	struct xnvme_dev *dev = cli->args.dev;
 	struct xnvme_cmd_ctx ctx = {0};
 	uint32_t nsid = xnvme_dev_get_nsid(cli->args.dev);
-	enum xnvme_spec_csi csi = XNVME_SPEC_CSI_KV;
-	struct xnvme_spec_kvs_idfy *idfy = NULL;
+	enum xnvme_spec_admin_identify_cdw11_csi csi =
+		XNVME_SPEC_ADMIN_IDENTIFY_CDW11_CSI_KEY_VALUE_COMMAND_SET;
+	struct xnvme_spec_kv_io_command_set_specific_identify_namespace *idfy = NULL;
 	int err;
 
 	xnvme_dev_get_cmd_ctx(dev, &ctx);
@@ -73,7 +87,7 @@ cmd_idfy_ns(struct xnvme_cli *cli)
 		nsid = xnvme_dev_get_nsid(cli->args.dev);
 	}
 
-	xnvme_cli_pinf("xnvme_adm_idfy_ns: {nsid: 0x%x, csi: %s}", nsid, xnvme_spec_csi_str(csi));
+	xnvme_cli_pinf("identify: {nsid: 0x%x, csi: %s}", nsid, xnvme_spec_csi_str(csi));
 
 	idfy = xnvme_buf_alloc(dev, sizeof(*idfy));
 	if (!idfy) {
@@ -82,15 +96,25 @@ cmd_idfy_ns(struct xnvme_cli *cli)
 		goto exit;
 	}
 
-	err = xnvme_adm_idfy_ns_csi(&ctx, nsid, XNVME_SPEC_CSI_KV, &idfy->base);
+	struct xnvme_cmd_prep_adm_identify_args args = {
+		.args_nbytes = sizeof(args),
+		.nsid = nsid ? nsid : xnvme_dev_get_nsid(dev),
+		.cns = XNVME_SPEC_ADMIN_IDENTIFY_CDW10_CNS_IO_COMMAND_SET_SPECIFIC_IDENTIFY_NAMESPACE_DATA_STRUCTURE,
+		.csi = XNVME_SPEC_ADMIN_IDENTIFY_CDW11_CSI_KEY_VALUE_COMMAND_SET,
+	};
+
+	err = xnvme_cmd_prep_adm_identify(&ctx.cmd, &args);
+	if (!err) {
+		err = xnvme_cmd_pass_admin(&ctx, idfy, sizeof(*idfy), NULL, 0);
+	}
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		xnvme_cli_perr("xnvme_adm_idfy_ns_csi()", err);
+		xnvme_cli_perr("identify", err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;
 	}
 
-	xnvme_spec_kvs_idfy_ns_pr(&idfy->ns, XNVME_PR_DEF);
+	xnvme_spec_kvs_idfy_ns_pr(idfy, XNVME_PR_DEF);
 
 	if (cli->args.data_output) {
 		xnvme_cli_pinf("Dumping to: '%s'", cli->args.data_output);
@@ -137,11 +161,21 @@ cmd_retrieve(struct xnvme_cli *cli)
 		goto exit;
 	}
 
-	xnvme_cli_pinf("Sending xnvme_kvs_retrieve command");
-	err = xnvme_kvs_retrieve(&ctx, nsid, cli->args.kv_key, strlen(cli->args.kv_key), dbuf,
-				 dbuf_nbytes, 0);
+	struct xnvme_cmd_prep_kv_retrieve_args args = {
+		.args_nbytes = sizeof(args),
+		.nsid = nsid,
+		.hbs = (uint32_t)dbuf_nbytes,
+	};
+
+	args.kl = key_of(args.kv_key, cli->args.kv_key);
+
+	xnvme_cli_pinf("Sending the Retrieve command");
+	err = xnvme_cmd_prep_kv_retrieve(&ctx.cmd, &args);
+	if (!err) {
+		err = xnvme_cmd_pass(&ctx, dbuf, dbuf_nbytes, NULL, 0);
+	}
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		xnvme_cli_perr("xnvme_kvs_retrieve()", err);
+		xnvme_cli_perr("retrieve", err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;
@@ -200,10 +234,21 @@ cmd_store(struct xnvme_cli *cli)
 		goto exit;
 	}
 
-	err = xnvme_kvs_store(&ctx, nsid, cli->args.kv_key, strlen(cli->args.kv_key), dbuf,
-			      dbuf_nbytes, opt);
+	struct xnvme_cmd_prep_kv_store_args args = {
+		.args_nbytes = sizeof(args),
+		.nsid = nsid,
+		.vs = (uint32_t)dbuf_nbytes,
+		.so = opt,
+	};
+
+	args.kl = key_of(args.kv_key, cli->args.kv_key);
+
+	err = xnvme_cmd_prep_kv_store(&ctx.cmd, &args);
+	if (!err) {
+		err = xnvme_cmd_pass(&ctx, dbuf, dbuf_nbytes, NULL, 0);
+	}
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		xnvme_cli_perr("xnvme_kvs_store()", err);
+		xnvme_cli_perr("store", err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;
@@ -230,11 +275,20 @@ cmd_delete(struct xnvme_cli *cli)
 		nsid = xnvme_dev_get_nsid(cli->args.dev);
 	}
 
-	xnvme_cli_pinf("Sending xnvme_kvs_delete command");
+	struct xnvme_cmd_prep_kv_delete_args args = {
+		.args_nbytes = sizeof(args),
+		.nsid = nsid,
+	};
 
-	err = xnvme_kvs_delete(&ctx, nsid, cli->args.kv_key, strlen(cli->args.kv_key));
+	args.kl = key_of(args.kv_key, cli->args.kv_key);
+
+	xnvme_cli_pinf("Sending the Delete command");
+	err = xnvme_cmd_prep_kv_delete(&ctx.cmd, &args);
+	if (!err) {
+		err = xnvme_cmd_pass(&ctx, NULL, 0, NULL, 0);
+	}
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		xnvme_cli_perr("xnvme_kv_delete()", err);
+		xnvme_cli_perr("delete", err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;
@@ -260,10 +314,20 @@ cmd_exist(struct xnvme_cli *cli)
 		nsid = xnvme_dev_get_nsid(cli->args.dev);
 	}
 
-	xnvme_cli_pinf("Sending xnvme_kvs_exist command");
-	err = xnvme_kvs_exist(&ctx, nsid, cli->args.kv_key, strlen(cli->args.kv_key));
+	struct xnvme_cmd_prep_kv_exist_args args = {
+		.args_nbytes = sizeof(args),
+		.nsid = nsid,
+	};
+
+	args.kl = key_of(args.kv_key, cli->args.kv_key);
+
+	xnvme_cli_pinf("Sending the Exist command");
+	err = xnvme_cmd_prep_kv_exist(&ctx.cmd, &args);
+	if (!err) {
+		err = xnvme_cmd_pass(&ctx, NULL, 0, NULL, 0);
+	}
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		xnvme_cli_perr("xnvme_kvs_exist()", err);
+		xnvme_cli_perr("exist", err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;
@@ -306,12 +370,21 @@ cmd_list(struct xnvme_cli *cli)
 		goto exit;
 	}
 
-	XNVME_DEBUG("Sending xnvme_kvs_list command");
+	struct xnvme_cmd_prep_kv_list_args args = {
+		.args_nbytes = sizeof(args),
+		.nsid = nsid,
+		.hbs = (uint32_t)dbuf_nbytes,
+	};
 
-	err = xnvme_kvs_list(&ctx, nsid, cli->args.kv_key, strlen(cli->args.kv_key), dbuf,
-			     dbuf_nbytes);
+	args.kl = key_of(args.kv_key, cli->args.kv_key);
+
+	XNVME_DEBUG("Sending the List command");
+	err = xnvme_cmd_prep_kv_list(&ctx.cmd, &args);
+	if (!err) {
+		err = xnvme_cmd_pass(&ctx, dbuf, dbuf_nbytes, NULL, 0);
+	}
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		xnvme_cli_perr("xnvme_kvs_list()", err);
+		xnvme_cli_perr("list", err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;

@@ -23,9 +23,9 @@ open_close_fn(void *arg)
 	struct worker *w = arg;
 
 	for (uint64_t round = 0; round < w->rounds; ++round) {
-		struct xnvme_dev *dev = xnvme_dev_open(w->cli->args.uri, &w->opts);
+		struct xnvme_dev *dev;
 
-		if (!dev) {
+		if (xnvme_dev_open_uri(w->cli->args.uri, &w->opts, &dev)) {
 			w->nerr += 1;
 			continue;
 		}
@@ -59,7 +59,7 @@ static void *
 idfy_fn(void *arg)
 {
 	struct worker *w = arg;
-	union xnvme_spec_idfy *idfy;
+	struct xnvme_spec_base_identify_controller *idfy;
 
 	idfy = xnvme_buf_alloc(w->dev, sizeof(*idfy));
 	if (!idfy) {
@@ -68,10 +68,16 @@ idfy_fn(void *arg)
 	}
 	for (uint64_t round = 0; round < w->rounds; ++round) {
 		struct xnvme_cmd_ctx ctx = {0};
+		struct xnvme_cmd_prep_adm_identify_args id = {
+			.args_nbytes = sizeof(id),
+			.cns = XNVME_SPEC_ADMIN_IDENTIFY_CDW10_CNS_IDENTIFY_CONTROLLER_DATA_STRUCTURE,
+		};
 
 		xnvme_dev_get_cmd_ctx(w->dev, &ctx);
 
-		if (xnvme_adm_idfy_ctrlr(&ctx, idfy) || xnvme_cmd_ctx_cpl_status(&ctx)) {
+		if (xnvme_cmd_prep_adm_identify(&ctx.cmd, &id) ||
+		    xnvme_cmd_pass_admin(&ctx, idfy, sizeof(*idfy), NULL, 0) ||
+		    xnvme_cmd_ctx_cpl_status(&ctx)) {
 			w->nerr += 1;
 		}
 	}
@@ -165,24 +171,34 @@ test_queues(struct xnvme_cli *cli, void *(*fn)(void *))
 		xnvme_cli_perr("xnvme_cli_to_opts()", err);
 		return err;
 	}
-	dev = xnvme_dev_open(cli->args.uri, &opts);
-	if (!dev) {
-		err = -errno;
-		xnvme_cli_perr("xnvme_dev_open()", err);
+	err = xnvme_dev_open_uri(cli->args.uri, &opts, &dev);
+	if (err) {
+		xnvme_cli_perr("xnvme_dev_open_uri()", err);
 		return err;
 	}
 
 	{
 		struct xnvme_cmd_ctx ctx = {0};
-		struct xnvme_spec_feat feat = {.val = 0};
+		uint32_t feat = 0;
+		struct xnvme_cmd_prep_adm_get_features_args gf = {
+			.args_nbytes = sizeof(gf),
+			.sel = XNVME_SPEC_ADMIN_GET_FEATURES_CDW10_SEL_CURRENT,
+			.fid = XNVME_SPEC_BASE_FEATURE_NUMBER_OF_QUEUES,
+		};
 
 		xnvme_dev_get_cmd_ctx(dev, &ctx);
 
-		err = xnvme_adm_gfeat(&ctx, 0x0, XNVME_SPEC_FEAT_NQUEUES,
-				      XNVME_SPEC_FEAT_SEL_CURRENT, NULL, 0);
+		err = xnvme_cmd_prep_adm_get_features(&ctx.cmd, &gf);
+		if (!err) {
+			err = xnvme_cmd_pass_admin(&ctx, NULL, 0, NULL, 0);
+		}
 		if (!err && !xnvme_cmd_ctx_cpl_status(&ctx)) {
-			feat.val = ctx.cpl.cdw0;
-			nthreads = XNVME_MIN(THREADS, (int)feat.nqueues.nsqa);
+			feat = ctx.cpl.dw0;
+			nthreads = XNVME_MIN(
+				THREADS,
+				(int)xnvme_bits_get(
+					feat,
+					XNVME_SPEC_BASE_FEATURE_NUMBER_OF_QUEUES_CQE_DW0_NSQA));
 		}
 	}
 	if (nthreads < 1) {

@@ -23,6 +23,8 @@ xnvme_file_open(const char *pathname, struct xnvme_opts *opts);
  *
  * @param fh File-handle as obtained by with ::xnvme_file_open
  * @return On success, 0 is returned. On error, negative `errno` is returned.
+ *
+ * @errno
  */
 int
 xnvme_file_close(struct xnvme_dev *fh);
@@ -34,7 +36,7 @@ xnvme_file_close(struct xnvme_dev *fh);
  * ::xnvme_queue_get_cmd_ctx.
  *
  * @note Unlike, the pread() syscall, then this function does not return the number of bytes
- * written. To retrieve that information, then inspect the completion-result: 'ctx->cpl.result'.
+ * written. To retrieve that information, then inspect the completion-result: 'ctx->cpl.dw0'.
  *
  * @param ctx Pointer to command context (::xnvme_cmd_ctx)
  * @param buf Pointer to data-payload
@@ -42,6 +44,8 @@ xnvme_file_close(struct xnvme_dev *fh);
  * @param offset The offset, in bytes, to start reading from
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
+ *
+ * @errno
  */
 int
 xnvme_file_pread(struct xnvme_cmd_ctx *ctx, void *buf, size_t count, uint64_t offset);
@@ -53,7 +57,7 @@ xnvme_file_pread(struct xnvme_cmd_ctx *ctx, void *buf, size_t count, uint64_t of
  * ::xnvme_queue_get_cmd_ctx
  *
  * @note Unlike, the pwrite() syscall, then this function does not return the number of bytes read.
- * To retrieve that information, then inspect the completion-result: 'ctx->cpl.result'.
+ * To retrieve that information, then inspect the completion-result: 'ctx->cpl.dw0'.
  *
  * @param ctx Pointer to command context (::xnvme_cmd_ctx)
  * @param buf Pointer to data-payload
@@ -61,6 +65,8 @@ xnvme_file_pread(struct xnvme_cmd_ctx *ctx, void *buf, size_t count, uint64_t of
  * @param offset The offset, in bytes, to start writing to
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
+ *
+ * @errno
  */
 int
 xnvme_file_pwrite(struct xnvme_cmd_ctx *ctx, void *buf, size_t count, uint64_t offset);
@@ -73,6 +79,8 @@ xnvme_file_pwrite(struct xnvme_cmd_ctx *ctx, void *buf, size_t count, uint64_t o
  * @param fh File-handle as obtained by with ::xnvme_file_open
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
+ *
+ * @errno
  */
 int
 xnvme_file_sync(struct xnvme_dev *fh);

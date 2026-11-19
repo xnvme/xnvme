@@ -47,7 +47,7 @@ sub_async_read(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
 	const struct xnvme_geo *geo = xnvme_dev_get_geo(dev);
-	struct xnvme_spec_znd_descr zone = {0};
+	struct xnvme_spec_zns_zone_descriptor zone = {0};
 	uint32_t nsid, qd;
 
 	struct cb_args cb_args = {0};
@@ -72,7 +72,8 @@ sub_async_read(struct xnvme_cli *cli)
 			goto exit;
 		}
 	} else {
-		err = xnvme_znd_descr_from_dev_in_state(dev, XNVME_SPEC_ZND_STATE_FULL, &zone);
+		err = xnvme_znd_descr_from_dev_in_state(
+			dev, XNVME_SPEC_ZNS_ZONE_DESCRIPTOR_ZSATTR_ZS_FULL, &zone);
 		if (err) {
 			xnvme_cli_perr("xnvme_znd_descr_from_dev()", -err);
 			goto exit;
@@ -112,8 +113,21 @@ sub_async_read(struct xnvme_cli *cli)
 	for (uint64_t curs = 0; (curs < zone.zcap) && !cb_args.ecount;) {
 		struct xnvme_cmd_ctx *ctx = xnvme_queue_get_cmd_ctx(queue);
 
+		struct xnvme_cmd_prep_nvm_read_args args = {
+			.args_nbytes = sizeof(args),
+			.nsid = nsid,
+			.slba = zone.zslba + curs,
+		};
+
+		err = xnvme_cmd_prep_nvm_read(&ctx->cmd, &args);
+		if (err) {
+			xnvme_cli_perr("xnvme_cmd_prep_nvm_read()", err);
+			xnvme_queue_put_cmd_ctx(queue, ctx);
+			goto exit;
+		}
+
 submit:
-		err = xnvme_nvm_read(ctx, nsid, zone.zslba + curs, 0, payload, NULL);
+		err = xnvme_cmd_pass(ctx, payload, geo->lba_nbytes, NULL, 0);
 		switch (err) {
 		case 0:
 			cb_args.submitted += 1;
@@ -191,7 +205,7 @@ sub_async_write(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
 	const struct xnvme_geo *geo = xnvme_dev_get_geo(dev);
-	struct xnvme_spec_znd_descr zone = {0};
+	struct xnvme_spec_zns_zone_descriptor zone = {0};
 	uint32_t nsid, qd;
 
 	struct cb_args cb_args = {0};
@@ -216,7 +230,8 @@ sub_async_write(struct xnvme_cli *cli)
 			goto exit;
 		}
 	} else {
-		err = xnvme_znd_descr_from_dev_in_state(dev, XNVME_SPEC_ZND_STATE_EMPTY, &zone);
+		err = xnvme_znd_descr_from_dev_in_state(
+			dev, XNVME_SPEC_ZNS_ZONE_DESCRIPTOR_ZSATTR_ZS_EMPTY, &zone);
 		if (err) {
 			xnvme_cli_perr("xnvme_znd_descr_from_dev()", -err);
 			goto exit;
@@ -257,8 +272,21 @@ sub_async_write(struct xnvme_cli *cli)
 	for (uint64_t curs = 0; (curs < zone.zcap) && !cb_args.ecount;) {
 		struct xnvme_cmd_ctx *ctx = xnvme_queue_get_cmd_ctx(queue);
 
+		struct xnvme_cmd_prep_nvm_write_args args = {
+			.args_nbytes = sizeof(args),
+			.nsid = nsid,
+			.slba = zone.zslba + curs,
+		};
+
+		err = xnvme_cmd_prep_nvm_write(&ctx->cmd, &args);
+		if (err) {
+			xnvme_cli_perr("xnvme_cmd_prep_nvm_write()", err);
+			xnvme_queue_put_cmd_ctx(queue, ctx);
+			goto exit;
+		}
+
 submit:
-		err = xnvme_nvm_write(ctx, nsid, zone.zslba + curs, 0, payload, NULL);
+		err = xnvme_cmd_pass(ctx, payload, geo->lba_nbytes, NULL, 0);
 		switch (err) {
 		case 0:
 			cb_args.submitted += 1;
@@ -331,7 +359,7 @@ sub_async_append(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
 	const struct xnvme_geo *geo = xnvme_dev_get_geo(dev);
-	struct xnvme_spec_znd_descr zone = {0};
+	struct xnvme_spec_zns_zone_descriptor zone = {0};
 	uint32_t nsid, qd;
 
 	struct cb_args cb_args = {0};
@@ -356,7 +384,8 @@ sub_async_append(struct xnvme_cli *cli)
 			goto exit;
 		}
 	} else {
-		err = xnvme_znd_descr_from_dev_in_state(dev, XNVME_SPEC_ZND_STATE_EMPTY, &zone);
+		err = xnvme_znd_descr_from_dev_in_state(
+			dev, XNVME_SPEC_ZNS_ZONE_DESCRIPTOR_ZSATTR_ZS_EMPTY, &zone);
 		if (err) {
 			xnvme_cli_perr("xnvme_znd_descr_from_dev()", -err);
 			goto exit;
@@ -397,8 +426,21 @@ sub_async_append(struct xnvme_cli *cli)
 	for (uint64_t curs = 0; (curs < zone.zcap) && !cb_args.ecount;) {
 		struct xnvme_cmd_ctx *ctx = xnvme_queue_get_cmd_ctx(queue);
 
+		struct xnvme_cmd_prep_zns_zone_append_args args = {
+			.args_nbytes = sizeof(args),
+			.nsid = nsid,
+			.zslba = zone.zslba,
+		};
+
+		err = xnvme_cmd_prep_zns_zone_append(&ctx->cmd, &args);
+		if (err) {
+			xnvme_cli_perr("xnvme_cmd_prep_zns_zone_append()", err);
+			xnvme_queue_put_cmd_ctx(queue, ctx);
+			goto exit;
+		}
+
 submit:
-		err = xnvme_znd_append(ctx, nsid, zone.zslba, 0, payload, NULL);
+		err = xnvme_cmd_pass(ctx, payload, geo->lba_nbytes, NULL, 0);
 		switch (err) {
 		case 0:
 			cb_args.submitted += 1;

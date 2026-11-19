@@ -37,6 +37,12 @@ tests = {
   'bits.c': [
     ['get-set', ['get-set']],
   ],
+  'cmd_prep.c': [
+    ['fields', ['fields']],
+    ['conditions', ['conditions']],
+    ['ranges', ['ranges']],
+    ['sizes', ['sizes']],
+  ],
   'buf.c': [
     ['alloc', ['buf_alloc_free', '1GB', '--count', '31']],
     ['virt_alloc', ['buf_virt_alloc_free', '1GB', '--count', '31']],
@@ -46,16 +52,13 @@ tests = {
     ['optional', ['optional']],
     ['numeric', ['numeric', '--nqueues', '4', '--dev-id', '7', '--max-io-bytes', '131072']],
     ['numeric, not given', ['numeric']],
+    ['opts', ['opts', '1GB', '--be', 'ramdisk', '--core_mask', '0x3', '--iova_mode', 'pa',
+              '--adrfam', 'IPv6', '--subnqn', 'nqn.2014-08.org.nvmexpress.discovery',
+              '--hostnqn', 'nqn.2014-08.org.nvmexpress:uuid:00000000-0000-0000-0000-000000000000']],
   ],
   'compare.c': [
     ['no args', ['compare', '1GB']],
     ['slba=0 nlb=7', ['compare', '1GB', '--slba', '0', '--nlb', '7']],
-  ],
-  'compat.c': [
-    ['deprecated', ['deprecated']],
-    ['deprecated-znd', ['deprecated-znd']],
-    ['deprecated-queue', ['deprecated-queue', '1GB']],
-    ['null-args', ['null-args']],
   ],
   'copy.c': [
     ['no args', ['copy', '1GB']],
@@ -119,6 +122,8 @@ tests = {
     ['idfy-masks', ['idfy-masks']],
     ['status-masks', ['status-masks']],
     ['sqe-dwords', ['sqe-dwords']],
+    ['fs-masks', ['fs-masks']],
+    ['pif-reftag', ['pif-reftag']],
   ],
   'threads.c': [
     ['reopen', ['reopen', '1GB', '--count', '5']],
@@ -198,6 +203,15 @@ if conf_data.get('XNVME_BE_THRPOOL_ENABLED') and conf_data.get('XNVME_BE_RAMDISK
   endforeach
 endif
 
+# A string option longer than its field of xnvme_opts is refused, not cut short
+test(
+  'tests - cli, opts, --be too long',
+  tests_exe['cli'],
+  args: ['opts', '1GB', '--be', 'ramdisk_ramdisk_ramdisk_ramdisk_'],
+  should_fail: true,
+  suite: 'cli',
+)
+
 test(
   'tests - no sub-header includes libxnvme.h',
   python3,
@@ -209,3 +223,12 @@ test(
   python3,
   args: [files('pp_header.py'), meson.project_source_root() / 'include'],
 )
+
+nm = find_program('nm', required: false)
+if nm.found()
+  test(
+    'tests - the parts of libxnvme depend on each other one way',
+    python3,
+    args: [files('lib_parts.py'), nm.full_path(), xnvme_core_part, xnvme_cli_part, xnvme_pp_part],
+  )
+endif

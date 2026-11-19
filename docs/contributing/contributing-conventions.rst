@@ -62,12 +62,11 @@ C: API
     output argument rather than returning one, as
     ``xnvme_opts_set_defaults(&opts)`` does: a structure by value is
     simple in C, but not over FFI
-  - A function replaced for any of these keeps working, as a ``static
-    inline`` in ``libxnvme_compat.h`` calling its replacement, and in a
-    debug build warning that it is deprecated, until a later release
-    removes it; a renamed type keeps its old name there as a ``#define``,
-    unless the rename turns a ``struct`` into a ``union``, which no alias
-    can bridge
+  - A function or type replaced for any of these is removed in the same
+    change. xNVMe keeps no compatibility layer: its one purpose would be to
+    spare projects such as fio's xNVMe engine and SPDK's ``bdev_xnvme`` from
+    changes, and a header cannot do that once the types they use change, so
+    those projects get a port instead
   - Who owns the memory decides the signature. Memory the caller owns is
     filled through an output argument, with 0 or negative ``errno``
     returned, as ``xnvme_dev_get_cmd_ctx(dev, &ctx)`` does. Memory the
@@ -81,7 +80,7 @@ C: API
   a call made while another thread uses the same device, queue or buffer for
   I/O is not covered
 
-  - ``xnvme_dev_open()``, ``xnvme_dev_close()``, ``xnvme_enumerate()``,
+  - ``xnvme_dev_open_uri()``, ``xnvme_dev_close()``, ``xnvme_enumerate()``,
     ``xnvme_queue_init()``, ``xnvme_queue_term()``, ``xnvme_buf_alloc()``,
     ``xnvme_buf_realloc()``, ``xnvme_buf_free()``, their ``xnvme_buf_phys_*()``
     variants, ``xnvme_buf_vtophys()``, ``xnvme_buf_register()``,
@@ -116,28 +115,29 @@ C: API
 C: Fields of bits
 -----------------
 
-A field of bits in a structure of the specification, such as ``flbas`` of
-the Identify Namespace data, is an integer of the width the specification
-gives it, not a C bit-field, whose layout is the compiler's choice. The
-integer is named as the specification names the field, such as ``status``
-of the Completion Queue Entry, not by a placeholder such as ``val``.
+The definitions of the NVMe specifications are generated into
+``libxnvme_spec_<doc>.h``, see :ref:`sec-contributing-spec-headers`, and the
+generator names their fields and masks. What follows holds for the
+definitions written by hand, in ``libxnvme_spec.h`` and
+``libxnvme_spec_fs.h``.
 
-Where the specification names only the fields within an integer, each
-narrower than a byte and reached through a mask, the integer is named
-``bits``, such as ``bits`` of the Extended LBA Format. A structure holding
-more than one such integer names each after the fields it holds, such as
-``mxps_nops`` of the power state descriptor, and a byte with a name in common
-use keeps it, such as ``flags`` of a command, as the Linux NVMe driver names
-it. The integer is not wrapped in a structure of its own, unless it is the
-element of an array, which needs a type for its masks to belong to, as
-``struct xnvme_spec_elbaf`` is.
+A field of bits in a structure is an integer of the width the definition
+gives it, not a C bit-field, whose layout is the compiler's choice. The
+integer is named after the field, such as ``caps`` of the file-system
+Identify Controller data, not by a placeholder such as ``val``.
+
+Where only the fields within an integer have names, each narrower than a
+byte and reached through a mask, the integer is named ``bits``. A structure
+holding more than one such integer names each after the fields it holds. The
+integer is not wrapped in a structure of its own, unless it is the element
+of an array, which needs a type for its masks to belong to.
 
 * Each of its fields is named by a mask, a ``#define`` of the bits in their
   place, read and written with ``xnvme_bits_get()`` and ``xnvme_bits_set()``
 * The mask is named ``XNVME_SPEC_<STRUCT>_<FIELD>_<NAME>``: the structure
   without its ``xnvme_spec_`` prefix, the integer, and the name the
-  specification gives the bits, such as
-  ``XNVME_SPEC_IDFY_NS_FLBAS_FORMAT`` for bits 3:0 of ``flbas``
+  bits are given, such as ``XNVME_SPEC_FS_IDFY_CTRLR_CAPS_DIRECT`` for bit 0
+  of ``caps``
 * The masks follow the structure they belong to, in the order of its
   integers, and of the bits within each
 * Each mask has a doc comment saying what the bits are, then where they

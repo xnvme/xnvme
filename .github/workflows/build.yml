@@ -109,6 +109,8 @@ jobs:
         pkg-config xnvme --variable=libdir
         pkg-config xnvme --variable=pcfiledir
         pkg-config xnvme --variable=prefix
+        # A plugin installs into libexecdir, where xnvme looks for its programs
+        test "$(pkg-config xnvme --variable=libexecdir)" = "$(xnvme --exec-path)"
         ls -lh $(pkg-config xnvme --variable=libdir) | grep xnvme
 
     - name: Check Python, pip, pipx, platform, sysconfig and setup PATH for pipx
@@ -147,11 +149,11 @@ jobs:
       run: |
         cijoe -r
 
-    - name: Python-bindings (ctypes), install and test
+    - name: Python-bindings, install and test
       if: (!contains('focal', matrix.ver))
       run: |
         python3 -m pipx inject xnvme-cijoe "${{ steps.source.outputs.directory }}/xnvme-py-sdist.tar.gz" --force
-        pytest --pyargs xnvme.ctypes_bindings
+        pytest --pyargs xnvme.tests
 
     #
     # Ramdisk testing
@@ -271,6 +273,8 @@ jobs:
         pkg-config xnvme --variable=libdir
         pkg-config xnvme --variable=pcfiledir
         pkg-config xnvme --variable=prefix
+        # A plugin installs into libexecdir, where xnvme looks for its programs
+        test "$(pkg-config xnvme --variable=libexecdir)" = "$(xnvme --exec-path)"
         ls -lh $(pkg-config xnvme --variable=libdir) | grep xnvme
 
     - name: Check Python, pip, platform, and sysconfig
@@ -295,10 +299,10 @@ jobs:
       run: |
         cijoe -r
 
-    - name: Python-bindings (ctypes), install and test
+    - name: Python-bindings, install and test
       run: |
         pipx inject xnvme-cijoe "${{ steps.source.outputs.directory }}/xnvme-py-sdist.tar.gz" --force
-        pytest --pyargs xnvme.ctypes_bindings
+        pytest --pyargs xnvme.tests
 
     #
     # Ramdisk testing

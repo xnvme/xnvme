@@ -19,7 +19,7 @@
 
 // [kernel]
 __global__ static void
-xnvme_cuda_io_kernel(struct xnvme_cuda_queue *qp, union xnvme_spec_sqe *cmds, size_t batch_size,
+xnvme_cuda_io_kernel(struct xnvme_cuda_queue *qp, union xnvme_cmd_sqe *cmds, size_t batch_size,
 		     int *errors)
 {
 	size_t tid = threadIdx.x;
@@ -34,7 +34,7 @@ main(int argc, char **argv)
 {
 	struct xnvme_opts opts = {};
 	struct xnvme_dev *dev = NULL;
-	union xnvme_spec_sqe *h_cmds = NULL, *d_cmds = NULL;
+	union xnvme_cmd_sqe *h_cmds = NULL, *d_cmds = NULL;
 	struct xnvme_cuda_queue *gpu_queue = NULL;
 	uint64_t phys;
 	uint32_t nsid;
@@ -53,11 +53,10 @@ main(int argc, char **argv)
 		return argc < 2;
 	}
 
-	opts.be = "upcie-cuda";
-	dev = xnvme_dev_open(argv[1], &opts);
-	if (!dev) {
-		err = -errno;
-		xnvme_cli_perr("xnvme_dev_open()", err);
+	snprintf(opts.be, sizeof(opts.be), "%s", "upcie-cuda");
+	err = xnvme_dev_open_uri(argv[1], &opts, &dev);
+	if (err) {
+		xnvme_cli_perr("xnvme_dev_open_uri()", err);
 		return err;
 	}
 
@@ -80,7 +79,7 @@ main(int argc, char **argv)
 	}
 
 	/* Prepare one command per thread with physical PRP addresses */
-	h_cmds = (union xnvme_spec_sqe *)calloc(qdepth, sizeof(*h_cmds));
+	h_cmds = (union xnvme_cmd_sqe *)calloc(qdepth, sizeof(*h_cmds));
 	if (!h_cmds) {
 		err = -errno;
 		xnvme_cli_perr("calloc(h_cmds)", err);
@@ -90,11 +89,16 @@ main(int argc, char **argv)
 	for (size_t i = 0; i < qdepth; i++) {
 		xnvme_buf_vtophys(dev, buf + i * lba_nbytes, &phys);
 
-		h_cmds[i].common.opcode = XNVME_SPEC_NVM_OPC_READ;
-		h_cmds[i].nvm.slba = i;
+		h_cmds[i].common.cdw0 = xnvme_bits_set(
+			h_cmds[i].common.cdw0, XNVME_SPEC_BASE_COMMON_COMMAND_FORMAT_CDW0_OPC,
+			XNVME_SPEC_NVM_READ_OPCODE);
+		h_cmds[i].common.cdw10 = (uint32_t)i;
+		h_cmds[i].common.cdw11 = (uint32_t)((uint64_t)i >> 32);
 		h_cmds[i].common.nsid = nsid;
-		h_cmds[i].common.dptr.prp.prp1 = phys;
-		h_cmds[i].nvm.nlb = 0; /* nlb is zero-based; 0 means 1 LBA */
+		h_cmds[i].common.dptr.prp1_prp2.prp1 = phys;
+		/* nlb is zero-based; 0 means 1 LBA */
+		h_cmds[i].common.cdw12 =
+			xnvme_bits_set(h_cmds[i].common.cdw12, XNVME_SPEC_NVM_READ_CDW12_NLB, 0);
 	}
 
 	/* Copy commands to device memory before passing to the kernel */

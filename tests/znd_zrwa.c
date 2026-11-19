@@ -9,8 +9,8 @@ static int
 test_support(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
-	struct xnvme_spec_znd_idfy_ctrlr *ctrlr;
-	struct xnvme_spec_znd_idfy_ns *ns;
+	struct xnvme_spec_zns_io_command_set_specific_identify_controller *ctrlr;
+	struct xnvme_spec_zns_io_command_set_specific_identify_namespace *ns;
 	int err = 0;
 
 	ctrlr = (void *)xnvme_dev_get_ctrlr_css(dev);
@@ -28,7 +28,9 @@ test_support(struct xnvme_cli *cli)
 	xnvme_spec_znd_idfy_ctrlr_pr(ctrlr, XNVME_PR_DEF);
 	xnvme_spec_znd_idfy_ns_pr(ns, XNVME_PR_DEF);
 
-	if (!ns->ozcs.bits.zrwasup) {
+	if (!xnvme_bits_get(
+		    ns->ozcs,
+		    XNVME_SPEC_ZNS_IO_COMMAND_SET_SPECIFIC_IDENTIFY_NAMESPACE_OZCS_ZRWASUP)) {
 		err = -ENOSYS;
 		xnvme_cli_perr("!ns->oczs.bits.zrwasup", -err);
 	}
@@ -42,8 +44,8 @@ static int
 test_idfy(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
-	struct xnvme_spec_znd_idfy_ctrlr *ctrlr;
-	struct xnvme_spec_znd_idfy_ns *ns;
+	struct xnvme_spec_zns_io_command_set_specific_identify_controller *ctrlr;
+	struct xnvme_spec_zns_io_command_set_specific_identify_namespace *ns;
 	int err = 0;
 
 	ctrlr = (void *)xnvme_dev_get_ctrlr_css(dev);
@@ -78,7 +80,7 @@ _eopen_with_zrwa(struct xnvme_cli *cli, bool zrwaa)
 	struct xnvme_dev *dev = cli->args.dev;
 	struct xnvme_cmd_ctx ctx = {0};
 	uint32_t nsid = xnvme_dev_get_nsid(dev);
-	struct xnvme_spec_znd_descr zone = {0}, after = {0};
+	struct xnvme_spec_zns_zone_descriptor zone = {0}, after = {0};
 	int err;
 
 	xnvme_dev_get_cmd_ctx(dev, &ctx);
@@ -90,7 +92,8 @@ _eopen_with_zrwa(struct xnvme_cli *cli, bool zrwaa)
 			goto exit;
 		}
 	} else {
-		err = xnvme_znd_descr_from_dev_in_state(dev, XNVME_SPEC_ZND_STATE_EMPTY, &zone);
+		err = xnvme_znd_descr_from_dev_in_state(
+			dev, XNVME_SPEC_ZNS_ZONE_DESCRIPTOR_ZSATTR_ZS_EMPTY, &zone);
 		if (err) {
 			xnvme_cli_perr("xnvme_znd_descr_from_dev()", -err);
 			goto exit;
@@ -99,8 +102,18 @@ _eopen_with_zrwa(struct xnvme_cli *cli, bool zrwaa)
 	xnvme_cli_pinf("Using the following zone:");
 	xnvme_spec_znd_descr_pr(&zone, XNVME_PR_DEF);
 
-	err = xnvme_znd_mgmt_send(&ctx, nsid, zone.zslba, false, XNVME_SPEC_ZND_CMD_MGMT_SEND_OPEN,
-				  zrwaa, NULL);
+	struct xnvme_cmd_prep_zns_zone_management_send_args zms = {
+		.args_nbytes = sizeof(zms),
+		.nsid = nsid,
+		.slba = zone.zslba,
+		.zsa = XNVME_SPEC_ZNS_ZONE_MANAGEMENT_SEND_CDW13_ZSA_OPEN_ZONE,
+		.zsaso = zrwaa,
+	};
+
+	err = xnvme_cmd_prep_zns_zone_management_send(&ctx.cmd, &zms);
+	if (!err) {
+		err = xnvme_cmd_pass(&ctx, NULL, 0, NULL, 0);
+	}
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		xnvme_cli_pinf("xnvme_cmd_zone_mgmt(EOPEN)");
 		err = err ? err : -EIO;
@@ -115,13 +128,18 @@ _eopen_with_zrwa(struct xnvme_cli *cli, bool zrwaa)
 
 	xnvme_cli_pinf("Zone after EOPEN:");
 	xnvme_spec_znd_descr_pr(&after, XNVME_PR_DEF);
-	if (after.za.zrwav != zrwaa) {
+	if (xnvme_bits_get(after.za, XNVME_SPEC_ZNS_ZONE_DESCRIPTOR_ZA_ZRWAV) != zrwaa) {
 		err = -EIO;
-		xnvme_cli_pinf("INVALID: after->za.zrwav: %d != zrwav: %d", after.za.zrwav, zrwaa);
+		xnvme_cli_pinf("INVALID: ZRWAV of after->za: %" PRIu64 " != zrwav: %d",
+			       xnvme_bits_get(after.za, XNVME_SPEC_ZNS_ZONE_DESCRIPTOR_ZA_ZRWAV),
+			       zrwaa);
 	}
-	if (after.zs != XNVME_SPEC_ZND_STATE_EOPEN) {
+	if (xnvme_bits_get(after.zsattr, XNVME_SPEC_ZNS_ZONE_DESCRIPTOR_ZSATTR_ZS) !=
+	    XNVME_SPEC_ZNS_ZONE_DESCRIPTOR_ZSATTR_ZS_EXPLICITLY_OPENED) {
 		err = -EIO;
-		xnvme_cli_pinf("INVALID: after->zs: %d", after.zs);
+		xnvme_cli_pinf(
+			"INVALID: after->zsattr: %" PRIu64,
+			xnvme_bits_get(after.zsattr, XNVME_SPEC_ZNS_ZONE_DESCRIPTOR_ZSATTR_ZS));
 	}
 
 	if (!err) {
@@ -149,9 +167,10 @@ test_flush(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
 	const struct xnvme_geo *geo = xnvme_dev_get_geo(dev);
-	struct xnvme_spec_znd_idfy_ns *zns = (void *)xnvme_dev_get_ns_css(dev);
+	struct xnvme_spec_zns_io_command_set_specific_identify_namespace *zns =
+		(void *)xnvme_dev_get_ns_css(dev);
 	uint32_t nsid = xnvme_dev_get_nsid(cli->args.dev);
-	struct xnvme_spec_znd_descr zone = {0};
+	struct xnvme_spec_zns_zone_descriptor zone = {0};
 
 	// For the write-payload
 	void *dbuf = NULL;
@@ -176,7 +195,8 @@ test_flush(struct xnvme_cli *cli)
 			goto exit;
 		}
 	} else {
-		err = xnvme_znd_descr_from_dev_in_state(dev, XNVME_SPEC_ZND_STATE_EMPTY, &zone);
+		err = xnvme_znd_descr_from_dev_in_state(
+			dev, XNVME_SPEC_ZNS_ZONE_DESCRIPTOR_ZSATTR_ZS_EMPTY, &zone);
 		if (err) {
 			xnvme_cli_perr("xnvme_znd_descr_from_dev()", -err);
 			goto exit;
@@ -204,11 +224,20 @@ test_flush(struct xnvme_cli *cli)
 
 		xnvme_dev_get_cmd_ctx(dev, &ctx);
 
-		err = xnvme_znd_mgmt_send(&ctx, nsid, zone.zslba, false,
-					  XNVME_SPEC_ZND_CMD_MGMT_SEND_OPEN,
-					  XNVME_SPEC_ZND_MGMT_OPEN_WITH_ZRWA, NULL);
+		struct xnvme_cmd_prep_zns_zone_management_send_args zms = {
+			.args_nbytes = sizeof(zms),
+			.nsid = nsid,
+			.slba = zone.zslba,
+			.zsa = XNVME_SPEC_ZNS_ZONE_MANAGEMENT_SEND_CDW13_ZSA_OPEN_ZONE,
+			.zsaso = 1,
+		};
+
+		err = xnvme_cmd_prep_zns_zone_management_send(&ctx.cmd, &zms);
+		if (!err) {
+			err = xnvme_cmd_pass(&ctx, NULL, 0, NULL, 0);
+		}
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-			xnvme_cli_perr("xnvme_znd_mgmt_send()", err);
+			xnvme_cli_perr("zone_management_send", err);
 			xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 			err = err ? err : -EIO;
 			goto exit;
@@ -227,9 +256,20 @@ test_flush(struct xnvme_cli *cli)
 
 			xnvme_dev_get_cmd_ctx(dev, &ctx);
 
-			err = xnvme_nvm_write(&ctx, nsid, slba, 0, dbuf, NULL);
+			struct xnvme_cmd_prep_nvm_write_args wr = {
+				.args_nbytes = sizeof(wr),
+				.nsid = nsid,
+				.slba = slba,
+			};
+
+			err = xnvme_cmd_prep_nvm_write(&ctx.cmd, &wr);
+			if (!err) {
+				err = xnvme_cmd_pass(
+					&ctx, dbuf, (size_t)xnvme_dev_get_geo(ctx.dev)->lba_nbytes,
+					NULL, 0);
+			}
 			if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-				xnvme_cli_perr("xnvme_nvm_write()", err);
+				xnvme_cli_perr("write", err);
 				xnvme_cli_pinf("slba: 0x%016lx", slba);
 				xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 				err = err ? err : -EIO;
@@ -244,9 +284,19 @@ test_flush(struct xnvme_cli *cli)
 
 			xnvme_dev_get_cmd_ctx(dev, &ctx);
 
-			err = xnvme_znd_zrwa_flush(&ctx, nsid, lba);
+			struct xnvme_cmd_prep_zns_zone_management_send_args flush = {
+				.args_nbytes = sizeof(flush),
+				.nsid = nsid,
+				.slba = lba,
+				.zsa = XNVME_SPEC_ZNS_ZONE_MANAGEMENT_SEND_CDW13_ZSA_FLUSH_EXPLICIT_ZRWA_RANGE,
+			};
+
+			err = xnvme_cmd_prep_zns_zone_management_send(&ctx.cmd, &flush);
+			if (!err) {
+				err = xnvme_cmd_pass(&ctx, NULL, 0, NULL, 0);
+			}
 			if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-				xnvme_cli_perr("xnvme_znd_zrwa_flush()", err);
+				xnvme_cli_perr("zone_management_send(FLUSH)", err);
 				xnvme_cli_pinf("ai: %zu, lba: 0x%016lx", ai, lba);
 				xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 				err = err ? err : -EIO;
@@ -268,9 +318,10 @@ test_flush_implicit(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
 	const struct xnvme_geo *geo = xnvme_dev_get_geo(dev);
-	struct xnvme_spec_znd_idfy_ns *zns = (void *)xnvme_dev_get_ns_css(dev);
+	struct xnvme_spec_zns_io_command_set_specific_identify_namespace *zns =
+		(void *)xnvme_dev_get_ns_css(dev);
 	uint32_t nsid = xnvme_dev_get_nsid(cli->args.dev);
-	struct xnvme_spec_znd_descr zone = {0};
+	struct xnvme_spec_zns_zone_descriptor zone = {0};
 
 	// For the write-payload
 	void *dbuf = NULL;
@@ -296,7 +347,8 @@ test_flush_implicit(struct xnvme_cli *cli)
 			goto exit;
 		}
 	} else {
-		err = xnvme_znd_descr_from_dev_in_state(dev, XNVME_SPEC_ZND_STATE_EMPTY, &zone);
+		err = xnvme_znd_descr_from_dev_in_state(
+			dev, XNVME_SPEC_ZNS_ZONE_DESCRIPTOR_ZSATTR_ZS_EMPTY, &zone);
 		if (err) {
 			xnvme_cli_perr("xnvme_znd_descr_from_dev()", -err);
 			goto exit;
@@ -324,11 +376,20 @@ test_flush_implicit(struct xnvme_cli *cli)
 
 		xnvme_dev_get_cmd_ctx(dev, &ctx);
 
-		err = xnvme_znd_mgmt_send(&ctx, nsid, zone.zslba, false,
-					  XNVME_SPEC_ZND_CMD_MGMT_SEND_OPEN,
-					  XNVME_SPEC_ZND_MGMT_OPEN_WITH_ZRWA, NULL);
+		struct xnvme_cmd_prep_zns_zone_management_send_args zms = {
+			.args_nbytes = sizeof(zms),
+			.nsid = nsid,
+			.slba = zone.zslba,
+			.zsa = XNVME_SPEC_ZNS_ZONE_MANAGEMENT_SEND_CDW13_ZSA_OPEN_ZONE,
+			.zsaso = 1,
+		};
+
+		err = xnvme_cmd_prep_zns_zone_management_send(&ctx.cmd, &zms);
+		if (!err) {
+			err = xnvme_cmd_pass(&ctx, NULL, 0, NULL, 0);
+		}
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-			xnvme_cli_perr("xnvme_znd_mgmt_send()", err);
+			xnvme_cli_perr("zone_management_send", err);
 			xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 			err = err ? err : -EIO;
 			goto exit;
@@ -347,9 +408,20 @@ test_flush_implicit(struct xnvme_cli *cli)
 
 			xnvme_dev_get_cmd_ctx(dev, &ctx);
 
-			err = xnvme_nvm_write(&ctx, nsid, slba, 0, dbuf, NULL);
+			struct xnvme_cmd_prep_nvm_write_args wr = {
+				.args_nbytes = sizeof(wr),
+				.nsid = nsid,
+				.slba = slba,
+			};
+
+			err = xnvme_cmd_prep_nvm_write(&ctx.cmd, &wr);
+			if (!err) {
+				err = xnvme_cmd_pass(
+					&ctx, dbuf, (size_t)xnvme_dev_get_geo(ctx.dev)->lba_nbytes,
+					NULL, 0);
+			}
 			if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-				xnvme_cli_perr("xnvme_nvm_write()", err);
+				xnvme_cli_perr("write", err);
 				xnvme_cli_pinf("slba: 0x%016lx", slba);
 				xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 				err = err ? err : -EIO;

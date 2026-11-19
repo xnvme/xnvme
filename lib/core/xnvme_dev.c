@@ -79,12 +79,13 @@ _linux_queue_attr(struct xnvme_dev *dev, const char *attr, uint32_t *val)
 static int
 _zoned_geometry(struct xnvme_dev *dev)
 {
-	struct xnvme_spec_idfy_ns *nvm = (void *)xnvme_dev_get_ns(dev);
-	struct xnvme_spec_lbaf *lbaf =
-		&nvm->lbaf[xnvme_bits_get(nvm->flbas, XNVME_SPEC_IDFY_NS_FLBAS_FORMAT)];
-	struct xnvme_spec_znd_idfy_ns *zns = (void *)xnvme_dev_get_ns_css(dev);
-	struct xnvme_spec_znd_idfy_lbafe *lbafe =
-		&zns->lbafe[xnvme_bits_get(nvm->flbas, XNVME_SPEC_IDFY_NS_FLBAS_FORMAT)];
+	struct xnvme_spec_nvm_identify_namespace *nvm = (void *)xnvme_dev_get_ns(dev);
+	uint32_t lbaf = nvm->lbaf[xnvme_bits_get(nvm->flbas,
+						 XNVME_SPEC_NVM_IDENTIFY_NAMESPACE_FLBAS_FIDXL)];
+	struct xnvme_spec_zns_io_command_set_specific_identify_namespace *zns =
+		(void *)xnvme_dev_get_ns_css(dev);
+	struct xnvme_spec_zns_lba_format_extension *lbafe = &zns->lbafe[xnvme_bits_get(
+		nvm->flbas, XNVME_SPEC_NVM_IDENTIFY_NAMESPACE_FLBAS_FIDXL)];
 	struct xnvme_geo *geo = &dev->geo;
 
 	if (!zns->lbafe[0].zsze) {
@@ -99,12 +100,13 @@ _zoned_geometry(struct xnvme_dev *dev)
 	geo->nzone = nvm->nsze / lbafe->zsze;
 	geo->nsect = lbafe->zsze;
 
-	geo->nbytes = 2 << (lbaf->ds - 1);
-	geo->nbytes_oob = lbaf->ms;
+	geo->nbytes = 2 << (xnvme_bits_get(lbaf, XNVME_SPEC_NVM_LBA_FORMAT_LBADS) - 1);
+	geo->nbytes_oob = xnvme_bits_get(lbaf, XNVME_SPEC_NVM_LBA_FORMAT_MS);
 
 	geo->lba_nbytes = geo->nbytes;
 	geo->lba_extended =
-		xnvme_bits_get(nvm->flbas, XNVME_SPEC_IDFY_NS_FLBAS_EXTENDED) && lbaf->ms;
+		xnvme_bits_get(nvm->flbas, XNVME_SPEC_NVM_IDENTIFY_NAMESPACE_FLBAS_MTELBA) &&
+		xnvme_bits_get(lbaf, XNVME_SPEC_NVM_LBA_FORMAT_MS);
 	if (geo->lba_extended) {
 		geo->lba_nbytes += geo->nbytes_oob;
 	}
@@ -115,13 +117,14 @@ _zoned_geometry(struct xnvme_dev *dev)
 static inline int
 _conventional_geometry(struct xnvme_dev *dev)
 {
-	const struct xnvme_spec_idfy_ctrlr *ctrlr = (void *)xnvme_dev_get_ctrlr(dev);
-	const struct xnvme_spec_idfy_ns *nvm = (void *)xnvme_dev_get_ns(dev);
-	const struct xnvme_spec_lbaf *lbaf =
-		&nvm->lbaf[xnvme_bits_get(nvm->flbas, XNVME_SPEC_IDFY_NS_FLBAS_FORMAT)];
-	struct xnvme_spec_nvm_idfy_ns *nns = (void *)xnvme_dev_get_ns_css(dev);
-	struct xnvme_spec_elbaf *elbaf =
-		&nns->elbaf[xnvme_bits_get(nvm->flbas, XNVME_SPEC_IDFY_NS_FLBAS_FORMAT)];
+	const struct xnvme_spec_base_identify_controller *ctrlr = (void *)xnvme_dev_get_ctrlr(dev);
+	const struct xnvme_spec_nvm_identify_namespace *nvm = (void *)xnvme_dev_get_ns(dev);
+	uint32_t lbaf = nvm->lbaf[xnvme_bits_get(nvm->flbas,
+						 XNVME_SPEC_NVM_IDENTIFY_NAMESPACE_FLBAS_FIDXL)];
+	struct xnvme_spec_nvm_nvm_command_set_io_command_set_specific_identify_namespace_data_structure
+		*nns = (void *)xnvme_dev_get_ns_css(dev);
+	uint32_t elbaf = nns->elbaf[xnvme_bits_get(nvm->flbas,
+						   XNVME_SPEC_NVM_IDENTIFY_NAMESPACE_FLBAS_FIDXL)];
 	struct xnvme_geo *geo = &dev->geo;
 
 	geo->type = XNVME_GEO_CONVENTIONAL;
@@ -131,26 +134,28 @@ _conventional_geometry(struct xnvme_dev *dev)
 	geo->nzone = 1;
 
 	geo->nsect = dev->id.ns.nsze;
-	geo->nbytes = 2 << (lbaf->ds - 1);
-	geo->nbytes_oob = lbaf->ms;
+	geo->nbytes = 2 << (xnvme_bits_get(lbaf, XNVME_SPEC_NVM_LBA_FORMAT_LBADS) - 1);
+	geo->nbytes_oob = xnvme_bits_get(lbaf, XNVME_SPEC_NVM_LBA_FORMAT_MS);
 
 	geo->lba_nbytes = geo->nbytes;
 	geo->lba_extended =
-		xnvme_bits_get(nvm->flbas, XNVME_SPEC_IDFY_NS_FLBAS_EXTENDED) && lbaf->ms;
+		xnvme_bits_get(nvm->flbas, XNVME_SPEC_NVM_IDENTIFY_NAMESPACE_FLBAS_MTELBA) &&
+		xnvme_bits_get(lbaf, XNVME_SPEC_NVM_LBA_FORMAT_MS);
 	if (geo->lba_extended) {
 		geo->lba_nbytes += geo->nbytes_oob;
 	}
 
-	geo->pi_type = xnvme_bits_get(nvm->dps, XNVME_SPEC_IDFY_NS_DPS_PIT);
+	geo->pi_type = xnvme_bits_get(nvm->dps, XNVME_SPEC_NVM_IDENTIFY_NAMESPACE_DPS_PIT);
 
 	if (geo->pi_type) {
-		geo->pi_format = XNVME_SPEC_NVM_NS_16B_GUARD;
-		geo->pi_loc = xnvme_bits_get(nvm->dps, XNVME_SPEC_IDFY_NS_DPS_MD_START);
+		geo->pi_format =
+			XNVME_SPEC_NVM_EXTENDED_LBA_FORMAT_PIF_16B_GUARD_PROTECTION_INFORMATION;
+		geo->pi_loc = xnvme_bits_get(nvm->dps, XNVME_SPEC_NVM_IDENTIFY_NAMESPACE_DPS_PIP);
 	}
 
-	if (xnvme_bits_get(ctrlr->ctratt, XNVME_SPEC_IDFY_CTRLR_CTRATT_EXTENDED_LBA_FORMATS) &&
+	if (xnvme_bits_get(ctrlr->ctratt, XNVME_SPEC_BASE_IDENTIFY_CONTROLLER_CTRATT_ELBAS) &&
 	    geo->pi_type) {
-		geo->pi_format = xnvme_bits_get(elbaf->bits, XNVME_SPEC_ELBAF_BITS_PIF);
+		geo->pi_format = xnvme_bits_get(elbaf, XNVME_SPEC_NVM_EXTENDED_LBA_FORMAT_PIF);
 	}
 
 	return 0;
@@ -209,6 +214,37 @@ _controller_geometry(struct xnvme_dev *dev)
 }
 
 /**
+ * The 4096 bytes of identify data that an Identify command returns for any CNS
+ */
+struct dev_idfy_buf {
+	uint8_t data[4096];
+};
+
+/**
+ * Send an Identify command with the given CNS, NSID and CSI to the device of 'ctx', into 'dbuf'
+ */
+static int
+_dev_idfy_cmd(struct xnvme_dev *dev, struct xnvme_cmd_ctx *ctx, uint8_t cns, uint32_t nsid,
+	      uint8_t csi, struct dev_idfy_buf *dbuf)
+{
+	struct xnvme_cmd_prep_adm_identify_args args = {
+		.args_nbytes = sizeof(args),
+		.nsid = nsid,
+		.cns = cns,
+		.csi = csi,
+	};
+	int err;
+
+	xnvme_dev_get_cmd_ctx(dev, ctx);
+	err = xnvme_cmd_prep_adm_identify(&ctx->cmd, &args);
+	if (err) {
+		return err;
+	}
+
+	return xnvme_cmd_pass_admin(ctx, dbuf, sizeof(*dbuf), NULL, 0);
+}
+
+/**
  * Helper function mapping the outcome of an identify command to an errno
  *
  * The controller has not answered when the completion carries an NVMe status, or when the
@@ -247,10 +283,10 @@ _dev_idfy_cmd_err(struct xnvme_cmd_ctx *ctx, int err)
  * command or a buffer operation, is returned as is.
  */
 static int
-_dev_idfy_ns_desc_csi(struct xnvme_dev *dev, union xnvme_spec_idfy *idfy, uint8_t *csi)
+_dev_idfy_ns_desc_csi(struct xnvme_dev *dev, struct dev_idfy_buf *idfy, uint8_t *csi)
 {
 	struct xnvme_cmd_ctx ctx;
-	uint8_t list[sizeof(union xnvme_spec_idfy)];
+	uint8_t list[sizeof(struct dev_idfy_buf)];
 	size_t ofz = 0;
 	int err;
 
@@ -261,9 +297,11 @@ _dev_idfy_ns_desc_csi(struct xnvme_dev *dev, union xnvme_spec_idfy *idfy, uint8_
 	}
 
 	xnvme_dev_get_cmd_ctx(dev, &ctx);
-	ctx.cmd.common.opcode = XNVME_SPEC_ADM_OPC_IDFY;
+	xnvme_cmd_sqe_set_opc(&ctx.cmd, XNVME_SPEC_ADMIN_IDENTIFY_OPCODE);
 	ctx.cmd.common.nsid = dev->ident.nsid;
-	ctx.cmd.idfy.cns = XNVME_SPEC_IDFY_NS_DESC;
+	ctx.cmd.common.cdw10 = xnvme_bits_set(
+		ctx.cmd.common.cdw10, XNVME_SPEC_ADMIN_IDENTIFY_CDW10_CNS,
+		XNVME_SPEC_ADMIN_IDENTIFY_CDW10_CNS_NAMESPACE_IDENTIFICATION_DESCRIPTOR_LIST);
 
 	err = xnvme_cmd_pass_admin(&ctx, idfy, sizeof(*idfy), NULL, 0x0);
 	err = _dev_idfy_cmd_err(&ctx, err);
@@ -283,13 +321,16 @@ _dev_idfy_ns_desc_csi(struct xnvme_dev *dev, union xnvme_spec_idfy *idfy, uint8_
 	// Base 2.3 5.2.13.2.3 a NIDL of zero ends the list, and descriptors of other types are
 	// skipped
 	while (ofz + 4 <= sizeof(list)) {
-		const struct xnvme_spec_ns_desc *desc = (const void *)&list[ofz];
+		const struct xnvme_spec_base_namespace_identification_descriptor *desc =
+			(const void *)&list[ofz];
 
 		if ((!desc->nidl) || (ofz + 4 + desc->nidl > sizeof(list))) {
 			break;
 		}
-		if ((desc->nidt == XNVME_SPEC_NS_DESC_NIDT_CSI) && (desc->nidl == 1)) {
-			*csi = desc->nid[0];
+		if ((desc->nidt ==
+		     XNVME_SPEC_BASE_NAMESPACE_IDENTIFICATION_DESCRIPTOR_NIDT_COMMAND_SET_IDENTIFIER) &&
+		    (desc->nidl == 1)) {
+			*csi = list[ofz + 4];
 			return 0;
 		}
 
@@ -307,10 +348,10 @@ _dev_idfy_ns_desc_csi(struct xnvme_dev *dev, union xnvme_spec_idfy *idfy, uint8_
  * other negative errno, from the command or a buffer operation, is returned as is.
  */
 static int
-_dev_idfy_csi_set(struct xnvme_dev *dev, uint8_t csi, union xnvme_spec_idfy *idfy_ns,
-		  union xnvme_spec_idfy *idfy_ctrlr)
+_dev_idfy_csi_set(struct xnvme_dev *dev, uint8_t csi, struct dev_idfy_buf *idfy_ns,
+		  struct dev_idfy_buf *idfy_ctrlr)
 {
-	struct xnvme_spec_znd_idfy_ns *zns = (void *)idfy_ns;
+	struct xnvme_spec_zns_io_command_set_specific_identify_namespace *zns = (void *)idfy_ns;
 	struct xnvme_spec_fs_idfy_ctrlr *fs_ctrlr = (void *)idfy_ctrlr;
 	struct xnvme_spec_fs_idfy_ns *fs_ns = (void *)idfy_ns;
 	struct xnvme_cmd_ctx ctx;
@@ -322,11 +363,13 @@ _dev_idfy_csi_set(struct xnvme_dev *dev, uint8_t csi, union xnvme_spec_idfy *idf
 		return err;
 	}
 
-	xnvme_dev_get_cmd_ctx(dev, &ctx);
-	err = xnvme_adm_idfy_ctrlr_csi(&ctx, csi, idfy_ctrlr);
+	err = _dev_idfy_cmd(
+		dev, &ctx,
+		XNVME_SPEC_ADMIN_IDENTIFY_CDW10_CNS_IO_COMMAND_SET_SPECIFIC_IDENTIFY_CONTROLLER_DATA_STRUCTURE,
+		0, csi, idfy_ctrlr);
 	err = _dev_idfy_cmd_err(&ctx, err);
 	if (err) {
-		XNVME_DEBUG("INFO: !xnvme_adm_idfy_ctrlr_csi(0x%x), err: %d", csi, err);
+		XNVME_DEBUG("INFO: !_dev_idfy_cmd(CTRLR_IOCS, csi: 0x%x), err: %d", csi, err);
 		return err;
 	}
 	if ((csi == XNVME_SPEC_CSI_FS) && !(fs_ctrlr->ac == 0xAC && fs_ctrlr->dc == 0xDC)) {
@@ -340,14 +383,17 @@ _dev_idfy_csi_set(struct xnvme_dev *dev, uint8_t csi, union xnvme_spec_idfy *idf
 		return err;
 	}
 
-	xnvme_dev_get_cmd_ctx(dev, &ctx);
-	err = xnvme_adm_idfy_ns_csi(&ctx, dev->ident.nsid, csi, idfy_ns);
+	err = _dev_idfy_cmd(
+		dev, &ctx,
+		XNVME_SPEC_ADMIN_IDENTIFY_CDW10_CNS_IO_COMMAND_SET_SPECIFIC_IDENTIFY_NAMESPACE_DATA_STRUCTURE,
+		dev->ident.nsid, csi, idfy_ns);
 	err = _dev_idfy_cmd_err(&ctx, err);
 	if (err) {
-		XNVME_DEBUG("INFO: !xnvme_adm_idfy_ns_csi(0x%x), err: %d", csi, err);
+		XNVME_DEBUG("INFO: !_dev_idfy_cmd(NS_IOCS, csi: 0x%x), err: %d", csi, err);
 		return err;
 	}
-	if ((csi == XNVME_SPEC_CSI_ZONED) && !zns->lbafe[0].zsze) {
+	if ((csi == XNVME_SPEC_ADMIN_IDENTIFY_CDW11_CSI_ZONED_NAMESPACE_COMMAND_SET) &&
+	    !zns->lbafe[0].zsze) {
 		XNVME_DEBUG("INFO: invalid values in idfy-ns(CSI_ZONED)");
 		return -EINVAL;
 	}
@@ -385,10 +431,9 @@ _dev_idfy_csi_set(struct xnvme_dev *dev, uint8_t csi, union xnvme_spec_idfy *idf
  * other negative errno, from a command or a buffer operation, is returned as is.
  */
 static int
-_dev_idfy_csi(struct xnvme_dev *dev, union xnvme_spec_idfy *idfy_ns,
-	      union xnvme_spec_idfy *idfy_ctrlr)
+_dev_idfy_csi(struct xnvme_dev *dev, struct dev_idfy_buf *idfy_ns, struct dev_idfy_buf *idfy_ctrlr)
 {
-	uint8_t csi = XNVME_SPEC_CSI_NVM;
+	uint8_t csi = XNVME_SPEC_ADMIN_IDENTIFY_CDW11_CSI_NVM_COMMAND_SET;
 	int err;
 
 	err = _dev_idfy_ns_desc_csi(dev, idfy_ns, &csi);
@@ -398,8 +443,10 @@ _dev_idfy_csi(struct xnvme_dev *dev, union xnvme_spec_idfy *idfy_ns,
 
 	dev->ident.csi = csi;
 
-	if ((csi != XNVME_SPEC_CSI_NVM) && (csi != XNVME_SPEC_CSI_ZONED) &&
-	    (csi != XNVME_SPEC_CSI_FS) && (csi != XNVME_SPEC_CSI_KV)) {
+	if ((csi != XNVME_SPEC_ADMIN_IDENTIFY_CDW11_CSI_NVM_COMMAND_SET) &&
+	    (csi != XNVME_SPEC_ADMIN_IDENTIFY_CDW11_CSI_ZONED_NAMESPACE_COMMAND_SET) &&
+	    (csi != XNVME_SPEC_CSI_FS) &&
+	    (csi != XNVME_SPEC_ADMIN_IDENTIFY_CDW11_CSI_KEY_VALUE_COMMAND_SET)) {
 		XNVME_DEBUG("INFO: unknown csi: 0x%x", csi);
 		return 0;
 	}
@@ -409,7 +456,7 @@ _dev_idfy_csi(struct xnvme_dev *dev, union xnvme_spec_idfy *idfy_ns,
 		return err;
 	}
 	// For NVM the set specific identify data is optional, so an unanswered identify is ignored
-	if (err && (csi != XNVME_SPEC_CSI_NVM)) {
+	if (err && (csi != XNVME_SPEC_ADMIN_IDENTIFY_CDW11_CSI_NVM_COMMAND_SET)) {
 		XNVME_DEBUG("FAILED: no idfy for declared csi: 0x%x", csi);
 		return -EIO;
 	}
@@ -421,7 +468,7 @@ static int
 _dev_idfy(struct xnvme_dev *dev)
 {
 	struct xnvme_cmd_ctx ctx = {0};
-	union xnvme_spec_idfy *idfy_ctrlr = NULL, *idfy_ns = NULL;
+	struct dev_idfy_buf *idfy_ctrlr = NULL, *idfy_ns = NULL;
 	int err;
 
 	dev->attempted_dev_idfy = true;
@@ -450,11 +497,12 @@ _dev_idfy(struct xnvme_dev *dev)
 		goto exit;
 	}
 
-	xnvme_dev_get_cmd_ctx(dev, &ctx);
-	err = xnvme_adm_idfy_ctrlr(&ctx, idfy_ctrlr);
+	err = _dev_idfy_cmd(dev, &ctx,
+			    XNVME_SPEC_ADMIN_IDENTIFY_CDW10_CNS_IDENTIFY_CONTROLLER_DATA_STRUCTURE,
+			    0, 0, idfy_ctrlr);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		err = err ? err : -EIO;
-		XNVME_DEBUG("FAILED: xnvme_adm_idfy_ctrlr(), err: %d", err);
+		XNVME_DEBUG("FAILED: _dev_idfy_cmd(CTRLR), err: %d", err);
 		goto exit;
 	}
 
@@ -483,11 +531,13 @@ _dev_idfy(struct xnvme_dev *dev)
 		goto exit;
 	}
 
-	xnvme_dev_get_cmd_ctx(dev, &ctx);
-	err = xnvme_adm_idfy_ns(&ctx, dev->ident.nsid, idfy_ns);
+	err = _dev_idfy_cmd(
+		dev, &ctx,
+		XNVME_SPEC_ADMIN_IDENTIFY_CDW10_CNS_NVM_COMMAND_SET_IDENTIFY_NAMESPACE_DATA_STRUCTURE,
+		dev->ident.nsid, 0, idfy_ns);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		err = err ? err : -EIO;
-		XNVME_DEBUG("FAILED: xnvme_adm_idfy_ns(), err: %d", err);
+		XNVME_DEBUG("FAILED: _dev_idfy_cmd(NS), err: %d", err);
 		goto exit;
 	}
 
@@ -543,21 +593,21 @@ xnvme_dev_derive_geo(struct xnvme_dev *dev)
 		}
 
 		switch (dev->ident.csi) {
-		case XNVME_SPEC_CSI_ZONED:
+		case XNVME_SPEC_ADMIN_IDENTIFY_CDW11_CSI_ZONED_NAMESPACE_COMMAND_SET:
 			if (_zoned_geometry(dev)) {
 				XNVME_DEBUG("FAILED: _zoned_geometry");
 				return -EINVAL;
 			}
 			break;
 
-		case XNVME_SPEC_CSI_NVM:
+		case XNVME_SPEC_ADMIN_IDENTIFY_CDW11_CSI_NVM_COMMAND_SET:
 			if (_conventional_geometry(dev)) {
 				XNVME_DEBUG("FAILED: _conventional_geometry");
 				return -EINVAL;
 			}
 			break;
 
-		case XNVME_SPEC_CSI_KV:
+		case XNVME_SPEC_ADMIN_IDENTIFY_CDW11_CSI_KEY_VALUE_COMMAND_SET:
 			if (_kvs_geometry(dev)) {
 				XNVME_DEBUG("FAILED: _kvs_geometry");
 				return -EINVAL;
@@ -697,7 +747,7 @@ xnvme_dev_get_geo(const struct xnvme_dev *dev)
 	return &dev->geo;
 }
 
-const struct xnvme_spec_idfy_ctrlr *
+const struct xnvme_spec_base_identify_controller *
 xnvme_dev_get_ctrlr(const struct xnvme_dev *dev)
 {
 	if ((!dev->attempted_dev_idfy) && _dev_idfy((struct xnvme_dev *)dev)) {
@@ -706,7 +756,7 @@ xnvme_dev_get_ctrlr(const struct xnvme_dev *dev)
 	return &dev->id.ctrlr;
 }
 
-const struct xnvme_spec_idfy_ctrlr *
+const struct xnvme_spec_base_identify_controller *
 xnvme_dev_get_ctrlr_css(const struct xnvme_dev *dev)
 {
 	if ((!dev->attempted_dev_idfy) && _dev_idfy((struct xnvme_dev *)dev)) {
@@ -715,7 +765,7 @@ xnvme_dev_get_ctrlr_css(const struct xnvme_dev *dev)
 	return &dev->idcss.ctrlr;
 }
 
-const struct xnvme_spec_idfy_ns *
+const struct xnvme_spec_nvm_identify_namespace *
 xnvme_dev_get_ns(const struct xnvme_dev *dev)
 {
 	if ((!dev->attempted_dev_idfy) && _dev_idfy((struct xnvme_dev *)dev)) {
@@ -724,7 +774,7 @@ xnvme_dev_get_ns(const struct xnvme_dev *dev)
 	return &dev->id.ns;
 }
 
-const struct xnvme_spec_idfy_ns *
+const struct xnvme_spec_nvm_identify_namespace *
 xnvme_dev_get_ns_css(const struct xnvme_dev *dev)
 {
 	if ((!dev->attempted_dev_idfy) && _dev_idfy((struct xnvme_dev *)dev)) {
@@ -778,19 +828,21 @@ xnvme_dev_get_be_state(const struct xnvme_dev *dev)
 	return dev->be.state;
 }
 
-struct xnvme_dev *
-xnvme_dev_open(const char *dev_uri, struct xnvme_opts *opts)
+int
+xnvme_dev_open_uri(const char *dev_uri, struct xnvme_opts *opts, struct xnvme_dev **dev)
 {
 	struct xnvme_opts opts_default = {0};
-	struct xnvme_dev *dev = NULL;
 	int err;
 
-	xnvme_opts_set_defaults(&opts_default);
-
-	if (!dev_uri) { ///< Ensure a dev_uri is given
-		errno = EINVAL;
-		return NULL;
+	if (!dev) {
+		return -EINVAL;
 	}
+	*dev = NULL;
+	if (!dev_uri) {
+		return -EINVAL;
+	}
+
+	xnvme_opts_set_defaults(&opts_default);
 
 	if (!opts) { ///< Set defaults when none are given
 		opts = &opts_default;
@@ -802,32 +854,33 @@ xnvme_dev_open(const char *dev_uri, struct xnvme_opts *opts)
 		opts->create_mode = opts_default.create_mode;
 	}
 
-	err = xnvme_dev_alloc(&dev);
+	err = xnvme_dev_alloc(dev);
 	if (err) {
 		XNVME_DEBUG("FAILED: failed xnvme_dev_alloc()");
-		errno = -err;
-		return NULL;
+		return err;
 	}
 
-	err = xnvme_ident_from_uri(dev_uri, &dev->ident);
+	err = xnvme_ident_from_uri(dev_uri, &(*dev)->ident);
 	if (err) {
 		XNVME_DEBUG("FAILED: xnvme_ident_from_uri(), err: %d", err);
-		errno = -err;
-		free(dev);
-		return NULL;
+		goto failed;
 	}
 
 	xnvme_lock();
-	err = g_xnvme_platform->dev_open(dev, opts);
+	err = g_xnvme_platform->dev_open(*dev, opts);
 	xnvme_unlock();
 	if (err) {
 		XNVME_DEBUG("FAILED: failed opening uri: %s", dev_uri);
-		errno = -err;
-		free(dev);
-		return NULL;
+		goto failed;
 	}
 
-	return dev;
+	return 0;
+
+failed:
+	free(*dev);
+	*dev = NULL;
+
+	return err;
 }
 
 void

@@ -235,7 +235,7 @@ xnvme_be_macos_dev_open(struct xnvme_dev *dev)
 		state->plugin_interface = plugin_interface;
 		dev->ident.nsid = _get_nvme_ns(ioservice_device);
 		dev->ident.dtype = XNVME_DEV_TYPE_BLOCK_DEVICE;
-		dev->ident.csi = XNVME_SPEC_CSI_NVM;
+		dev->ident.csi = XNVME_SPEC_ADMIN_IDENTIFY_CDW11_CSI_NVM_COMMAND_SET;
 	} else {
 		XNVME_DEBUG("non-nvme disks are currently unsupported.");
 		return -ENOTSUP;

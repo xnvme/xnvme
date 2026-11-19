@@ -7,6 +7,7 @@
 #ifdef XNVME_BE_SPDK_ENABLED
 #include <errno.h>
 #include <spdk/env.h>
+#include <xnvme_cmd.h>
 #include <xnvme_dev.h>
 #include <xnvme_queue.h>
 #include <xnvme_spec.h>
@@ -19,7 +20,7 @@ cmd_sync_cb(void *cb_arg, const struct spdk_nvme_cpl *cpl)
 	struct xnvme_cmd_ctx *ctx = cb_arg;
 	uint8_t *completed = &ctx->be_rsvd[0];
 
-	ctx->cpl = *(const struct xnvme_spec_cqe *)cpl;
+	ctx->cpl = *(const struct xnvme_spec_base_completion_queue_entry *)cpl;
 	*completed = 1;
 }
 
@@ -31,13 +32,9 @@ cmd_admin_submit(struct spdk_nvme_ctrlr *ctrlr, struct xnvme_cmd_ctx *ctx, void 
 	ctx->cmd.common.mptr = (uint64_t)mbuf ? (uint64_t)mbuf : ctx->cmd.common.mptr;
 
 	if (mbuf_nbytes && mbuf) {
-		ctx->cmd.common.ndm = mbuf_nbytes / 4;
+		// NDM of the vendor specific command format, Base 2.4, Figure 94
+		ctx->cmd.common.cdw11 = mbuf_nbytes / 4;
 	}
-
-#ifdef XNVME_TRACE_ENABLED
-	XNVME_DEBUG("Dumping ADMIN command");
-	xnvme_spec_sqe_pr(cmd, 0x0);
-#endif
 
 	return spdk_nvme_ctrlr_cmd_admin_raw(ctrlr, (struct spdk_nvme_cmd *)&ctx->cmd, dbuf,
 					     dbuf_nbytes, cb_fn, cb_arg);
@@ -79,12 +76,12 @@ xnvme_be_spdk_sync_cmd_pseudo(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf
 {
 	struct xnvme_be_spdk_state *state = &xnvme_be_state(ctx->dev)->spdk_state;
 
-	switch (ctx->cmd.common.opcode) {
+	switch (xnvme_cmd_sqe_get_opc(&ctx->cmd)) {
 	case XNVME_SPEC_PSEUDO_OPC_SHOW_REGS:
-		if (dbuf_nbytes != sizeof(struct xnvme_spec_ctrlr_bar)) {
-			XNVME_DEBUG(
-				"FAILED: dbuf_nbytes(%zu) != sizeof(struct xnvme_spec_ctrlr_bar)",
-				dbuf_nbytes);
+		if (dbuf_nbytes != sizeof(struct xnvme_spec_base_registers)) {
+			XNVME_DEBUG("FAILED: dbuf_nbytes(%zu) != sizeof(struct "
+				    "xnvme_spec_base_registers)",
+				    dbuf_nbytes);
 			return -EINVAL;
 		}
 		memcpy(dbuf, (void *)spdk_nvme_ctrlr_get_registers(state->ctrlr), dbuf_nbytes);
@@ -97,7 +94,7 @@ xnvme_be_spdk_sync_cmd_pseudo(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf
 		return spdk_nvme_ctrlr_reset_subsystem(state->ctrlr);
 
 	default:
-		XNVME_DEBUG("FAILED: unsupported opcode: %d", ctx->cmd.common.opcode);
+		XNVME_DEBUG("FAILED: unsupported opcode: %d", xnvme_cmd_sqe_get_opc(&ctx->cmd));
 		return -ENOSYS;
 	}
 }

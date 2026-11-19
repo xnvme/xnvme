@@ -53,9 +53,9 @@ main(int argc, char **argv)
 		return argc < 2;
 	}
 
-	dev = xnvme_dev_open(argv[1], &opts);
-	if (!dev) {
-		xnvme_cli_perr("xnvme_dev_open()", errno);
+	err = xnvme_dev_open_uri(argv[1], &opts, &dev);
+	if (err) {
+		xnvme_cli_perr("xnvme_dev_open_uri()", err);
 		return 1;
 	}
 	nsid = xnvme_dev_get_nsid(dev);
@@ -73,7 +73,7 @@ main(int argc, char **argv)
 	// However, it would typically be a pointer to a struct
 	xnvme_queue_set_cb(queue, cb_fn, NULL);
 
-	buf_nbytes = xnvme_dev_get_geo(dev)->nbytes;
+	buf_nbytes = xnvme_dev_get_geo(dev)->lba_nbytes;
 
 	xnvme_cli_pinf("Allocate a payload-buffer of nbytes: %zu", buf_nbytes);
 	buf = xnvme_buf_alloc(dev, buf_nbytes);
@@ -92,9 +92,23 @@ main(int argc, char **argv)
 	{
 		struct xnvme_cmd_ctx *ctx = xnvme_queue_get_cmd_ctx(queue);
 
+		// Prepare a read of one logical block; NLB is zero-based
+		struct xnvme_cmd_prep_nvm_read_args args = {
+			.args_nbytes = sizeof(args),
+			.nsid = nsid,
+			.slba = 0x0,
+			.nlb = 0,
+		};
+
+		err = xnvme_cmd_prep_nvm_read(&ctx->cmd, &args);
+		if (err) {
+			xnvme_cli_perr("xnvme_cmd_prep_nvm_read()", err);
+			xnvme_queue_put_cmd_ctx(queue, ctx);
+			goto exit;
+		}
+
 submit:
-		// Submit a read command
-		err = xnvme_nvm_read(ctx, nsid, 0x0, 0, buf, NULL);
+		err = xnvme_cmd_pass(ctx, buf, buf_nbytes, NULL, 0);
 		switch (err) {
 		case 0:
 			xnvme_cli_pinf("Submission succeeded");
@@ -108,7 +122,7 @@ submit:
 
 		// Submission failed: unexpected error, put the command-context back in the queue
 		default:
-			xnvme_cli_perr("xnvme_nvm_read()", err);
+			xnvme_cli_perr("xnvme_cmd_pass()", err);
 			xnvme_queue_put_cmd_ctx(queue, ctx);
 			goto exit;
 		}

@@ -7,6 +7,9 @@ completed, retrieving the completions either by callback, with
 xnvme_queue_poke(), or by reaping them with xnvme_queue_reap(), and prints the
 rate as YAML. On the ramdisk, whose async interface 'nil' completes a command
 without doing it, what is measured is the binding and the completion path.
+
+With '--bindings', the module named 'xnvme' in that directory is used instead
+of the one installed.
 """
 import argparse
 import ctypes
@@ -33,6 +36,9 @@ def parse_args(argv=None):
     parser.add_argument("--qdepth", type=int, default=16)
     parser.add_argument("--ios", type=int, default=100000)
     parser.add_argument("--iosize", type=int, default=4096, help="bytes per read")
+    parser.add_argument(
+        "--bindings", help="directory of a module 'xnvme' to use instead"
+    )
 
     args = parser.parse_args(argv)
     if args.ios < 1:
@@ -41,40 +47,44 @@ def parse_args(argv=None):
     return args
 
 
-def load():
+def load(bindings):
     """The binding to use, and where it was loaded from"""
 
-    import xnvme.ctypes_bindings as binding
+    if bindings:
+        sys.path.insert(0, bindings)
+    import xnvme as binding
 
-    binding.guard_unloadable()
     return binding, binding.__file__
 
 
-def set_str(struct, field, value, keep):
-    """Set the 'const char *' 'field' of 'struct', keeping 'value' alive"""
+def set_str(struct, field, value):
+    """Copy 'value', and a NUL, into the char array 'field' of 'struct'"""
 
     ftype = dict((f[0], f[1]) for f in type(struct)._fields_)[field]
-    cstr = ctypes.c_char_p(value.encode())
-    keep.append(cstr)
-    setattr(struct, field, ctypes.cast(cstr, ftype))
+    data = value.encode() + b"\0"
+    if len(data) > ctypes.sizeof(ftype):
+        raise SystemExit(f"FAILED: '{value}' does not fit the field '{field}'")
+    offset = getattr(type(struct), field).offset
+    ctypes.memmove(ctypes.addressof(struct) + offset, data, len(data))
 
 
 def run(x, args):
     """Read as 'args' say through the binding 'x', returning the rate"""
 
     keep = []
-    opts = x.xnvme_opts()
+    opts = x.XnvmeOpts()
     if x.xnvme_opts_set_defaults(ctypes.byref(opts)):
         raise SystemExit("FAILED: xnvme_opts_set_defaults()")
     opts.nsid = args.dev_nsid
     if args.be:
-        set_str(opts, "be", args.be, keep)
+        set_str(opts, "be", args.be)
     if args.async_:
-        set_str(opts, "async", args.async_, keep)
+        set_str(opts, "async", args.async_)
 
-    dev = x.xnvme_dev_open(args.uri.encode(), ctypes.byref(opts))
-    if not dev:
-        raise SystemExit(f"FAILED: xnvme_dev_open({args.uri})")
+    dev = ctypes.POINTER(x.XnvmeDev)()
+    err = x.xnvme_dev_open_uri(args.uri.encode(), ctypes.byref(opts), ctypes.byref(dev))
+    if err:
+        raise SystemExit(f"FAILED: xnvme_dev_open_uri({args.uri}), err({err})")
 
     lba_nbytes = x.xnvme_dev_get_geo(dev).contents.lba_nbytes
     if args.iosize % lba_nbytes:
@@ -86,7 +96,7 @@ def run(x, args):
         raise SystemExit("FAILED: xnvme_buf_alloc()")
 
     reaping = args.completion == "reap"
-    queue = ctypes.POINTER(x.xnvme_queue)()
+    queue = ctypes.POINTER(x.XnvmeQueue)()
     qopts = int(x.XNVME_QUEUE_REAP) if reaping else 0
     err = x.xnvme_queue_init(dev, args.qdepth, qopts, ctypes.byref(queue))
     if err:
@@ -94,7 +104,12 @@ def run(x, args):
 
     get_ctx = x.xnvme_queue_get_cmd_ctx
     put_ctx = x.xnvme_queue_put_cmd_ctx
-    read = x.xnvme_nvm_read
+    prep = x.xnvme_cmd_prep_nvm_read
+    cmd_pass = x.xnvme_cmd_pass
+    rec = x.XnvmeCmdPrepNvmReadArgs
+    read_args = ctypes.byref(
+        rec(args_nbytes=ctypes.sizeof(rec), nsid=nsid, slba=0x0, nlb=nlb)
+    )
     state = {"done": 0, "outstanding": 0, "errors": 0}
 
     # All but the phase tag, which a successful completion may have set
@@ -102,7 +117,7 @@ def run(x, args):
 
     if reaping:
         reap = x.xnvme_queue_reap
-        completed = (ctypes.POINTER(x.xnvme_cmd_ctx) * args.qdepth)()
+        completed = (ctypes.POINTER(x.XnvmeCmdCtx) * args.qdepth)()
         ncompleted = ctypes.c_uint32()
         ncompleted_ref = ctypes.byref(ncompleted)
 
@@ -128,7 +143,7 @@ def run(x, args):
             state["done"] += 1
             state["outstanding"] -= 1
 
-        callback = x.xnvme_queue_cb(on_completion)
+        callback = x.XnvmeQueueCb(on_completion)
         keep.append(callback)
         err = x.xnvme_queue_set_cb(queue, callback, None)
         if err:
@@ -144,9 +159,13 @@ def run(x, args):
     begin = time.perf_counter()
     while state["done"] < args.ios:
         while state["outstanding"] < args.qdepth and submitted < args.ios:
-            err = read(get_ctx(queue), nsid, 0x0, nlb, buf, None)
+            ctx = get_ctx(queue)
+            err = prep(ctypes.byref(ctx.contents.cmd), read_args)
             if err:
-                raise SystemExit(f"FAILED: xnvme_nvm_read(), err({err})")
+                raise SystemExit(f"FAILED: xnvme_cmd_prep_nvm_read(), err({err})")
+            err = cmd_pass(ctx, buf, args.iosize, None, 0)
+            if err:
+                raise SystemExit(f"FAILED: xnvme_cmd_pass(), err({err})")
             submitted += 1
             state["outstanding"] += 1
         complete()
@@ -171,7 +190,7 @@ def run(x, args):
 def main(args):
     """Read, and print the rate as YAML"""
 
-    x, name = load()
+    x, name = load(args.bindings)
     result = run(x, args)
 
     print("xpy_perf:")

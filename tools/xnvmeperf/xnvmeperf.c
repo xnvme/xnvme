@@ -167,10 +167,13 @@ submit_io(struct xnvmeperf_job *job, struct xnvme_cmd_ctx *ctx)
 		ctx->async.cb_arg = &job->brefs[slot];
 	}
 
-	ctx->cmd.common.opcode = job->opcode;
+	ctx->cmd.common.cdw0 = xnvme_bits_set(
+		ctx->cmd.common.cdw0, XNVME_SPEC_BASE_COMMON_COMMAND_FORMAT_CDW0_OPC, job->opcode);
 	ctx->cmd.common.nsid = job->nsid;
-	ctx->cmd.nvm.nlb = job->nlb - 1;
-	ctx->cmd.nvm.slba = slba;
+	ctx->cmd.common.cdw12 = xnvme_bits_set(ctx->cmd.common.cdw12,
+					       XNVME_SPEC_NVM_WRITE_CDW12_NLB, job->nlb - 1);
+	ctx->cmd.common.cdw10 = (uint32_t)(slba);
+	ctx->cmd.common.cdw11 = (uint32_t)((slba) >> 32);
 
 	err = xnvme_cmd_pass(ctx, buf, (job->nbytes * job->nlb), job->mbuf, job->mbuf_nbytes);
 	if (!err) {
@@ -191,10 +194,10 @@ submit_io(struct xnvmeperf_job *job, struct xnvme_cmd_ctx *ctx)
 static bool
 refuses_metadata(uint16_t status)
 {
-	uint64_t sct = xnvme_bits_get(status, XNVME_SPEC_CQE_STATUS_SCT);
-	uint64_t sc = xnvme_bits_get(status, XNVME_SPEC_CQE_STATUS_SC);
+	uint64_t sct = xnvme_bits_get(status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SCT);
+	uint64_t sc = xnvme_bits_get(status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SC);
 
-	if (sct == XNVME_STATUS_CODE_TYPE_VENDOR) {
+	if (sct == XNVME_SPEC_BASE_STATUS_CODE_TYPE_VENDOR_SPECIFIC) {
 		return sc == ENOTSUP || sc == ENOSYS;
 	}
 
@@ -461,11 +464,11 @@ setup_job(struct xnvmeperf_job *job, struct xnvme_dev *dev, struct xnvmeperf_arg
 	switch (job->args->pattern) {
 	case IOPATTERN_READ:
 	case IOPATTERN_RANDREAD:
-		job->opcode = XNVME_SPEC_NVM_OPC_READ;
+		job->opcode = XNVME_SPEC_NVM_READ_OPCODE;
 		break;
 	case IOPATTERN_WRITE:
 	case IOPATTERN_RANDWRITE:
-		job->opcode = XNVME_SPEC_NVM_OPC_WRITE;
+		job->opcode = XNVME_SPEC_NVM_WRITE_OPCODE;
 		break;
 	case IOPATTERN_VERIFY:
 		// skip as opcode is set manually
@@ -1307,7 +1310,7 @@ xnvmeperf_verify(struct xnvmeperf_args *args)
 		}
 
 		// Phase 1: Write known patterns
-		job.opcode = XNVME_SPEC_NVM_OPC_WRITE;
+		job.opcode = XNVME_SPEC_NVM_WRITE_OPCODE;
 		job.buf = write_buf;
 		job.mbuf = write_mbuf;
 		job.offset = 0;
@@ -1402,7 +1405,7 @@ without_metadata:
 		}
 
 		// Phase 2: Read back and verify
-		job.opcode = XNVME_SPEC_NVM_OPC_READ;
+		job.opcode = XNVME_SPEC_NVM_READ_OPCODE;
 		job.buf = read_buf;
 		job.mbuf = read_mbuf;
 		job.offset = 0;
@@ -1735,7 +1738,7 @@ parse_run_args(struct xnvme_cli *cli, struct xnvmeperf_args *args)
 		return err;
 	}
 
-	args->gpu_buf = args->opts.be && (!strcmp(args->opts.be, "io_uring_dmabuf"));
+	args->gpu_buf = !strcmp(args->opts.be, "io_uring_dmabuf");
 
 	if (!cli->args.iopattern) {
 		err = -EINVAL;
@@ -1786,8 +1789,7 @@ parse_run_args(struct xnvme_cli *cli, struct xnvmeperf_args *args)
 
 	args->buf_host_bounce = cli->args.buf_host_bounce;
 	if (args->buf_host_bounce &&
-	    (args->gpu_buf ||
-	     (args->opts.be && (strstr(args->opts.be, "cuda") || strstr(args->opts.be, "hip"))))) {
+	    (args->gpu_buf || strstr(args->opts.be, "cuda") || strstr(args->opts.be, "hip"))) {
 		err = -EINVAL;
 		fprintf(stderr,
 			"Error: --buf-host-bounce reads into host memory and copies to the GPU;"
@@ -1809,8 +1811,7 @@ parse_run_args(struct xnvme_cli *cli, struct xnvmeperf_args *args)
 static void
 derive_heap_sizes(struct xnvmeperf_args *args)
 {
-	int is_gpu =
-		args->opts.be && (strstr(args->opts.be, "cuda") || strstr(args->opts.be, "hip"));
+	int is_gpu = strstr(args->opts.be, "cuda") || strstr(args->opts.be, "hip");
 	size_t nq = args->nqueues ? args->nqueues : 1;
 	size_t qd = args->qdepth ? args->qdepth : 1;
 	size_t queues = (size_t)args->ndevs * nq;
@@ -1897,8 +1898,8 @@ sub_cuda_run(struct xnvme_cli *cli)
 		return err;
 	}
 
-	if (!args.opts.be) {
-		args.opts.be = "upcie-cuda";
+	if (!args.opts.be[0]) {
+		snprintf(args.opts.be, sizeof(args.opts.be), "%s", "upcie-cuda");
 	} else if (strcmp(args.opts.be, "upcie-cuda") != 0) {
 		err = -EINVAL;
 		fprintf(stderr, "Error: cuda-run requires --be upcie-cuda, got '%s': err(%d)\n",
@@ -1923,8 +1924,8 @@ sub_cuda_verify(struct xnvme_cli *cli)
 		return err;
 	}
 
-	if (!args.opts.be) {
-		args.opts.be = "upcie-cuda";
+	if (!args.opts.be[0]) {
+		snprintf(args.opts.be, sizeof(args.opts.be), "%s", "upcie-cuda");
 	} else if (strcmp(args.opts.be, "upcie-cuda") != 0) {
 		err = -EINVAL;
 		fprintf(stderr, "Error: cuda-verify requires --be upcie-cuda, got '%s': err(%d)\n",

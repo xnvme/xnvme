@@ -5,14 +5,7 @@ Utilities used with pytest / xnvme-python-bindings
 import ctypes
 
 import numpy
-import xnvme.ctypes_bindings as xnvme
-from xnvme.ctypes_bindings.api import char_pointer_cast
-
-
-def xnvme_cmd_ctx_cpl_status(ctx):
-    """This function is a 'static inline' in the C API"""
-
-    return ctx.contents.cpl.status >> 1 & 0xFF or ctx.contents.cpl.status >> 9 & 0x7
+import xnvme
 
 
 def pointer_equal(ptr1, ptr2):
@@ -24,6 +17,14 @@ def pointer_equal(ptr1, ptr2):
     )
 
 
+def dev_open(uri, opts):
+    """The device xnvme_dev_open_uri() opens 'uri' with 'opts' as, or NULL"""
+
+    dev = ctypes.POINTER(xnvme.XnvmeDev)()
+    xnvme.xnvme_dev_open_uri(uri, opts, ctypes.byref(dev))
+    return dev
+
+
 def dev_from_params(device, be_opts):
     """
     Returns a device-handle as described by the given dictionary-parameters
@@ -32,17 +33,34 @@ def dev_from_params(device, be_opts):
     the pytest-fixture named xnvme_parametrize.
     """
 
-    opts = xnvme.xnvme_opts()
+    opts = xnvme.XnvmeOpts()
     xnvme.xnvme_opts_set_defaults(ctypes.byref(opts))
 
-    # Cast Python-strings to char-pointers and assign them to the xnvme_opts
+    # The string options are char arrays of xnvme_opts, which take bytes
     for key, val in ((k, v) for k, v in be_opts.items() if k not in ["label"]):
-        setattr(opts, key, char_pointer_cast(val))
+        setattr(opts, key, val.encode())
 
     # Directly assign the namespace-identifier value
     opts.nsid = device["nsid"]
 
-    return xnvme.xnvme_dev_open(char_pointer_cast(device["uri"]), ctypes.byref(opts))
+    return dev_open(device["uri"], ctypes.byref(opts))
+
+
+def args_of(record, **fields):
+    """A record of the arguments of a command prep, its size set, and 'fields'"""
+
+    return record(args_nbytes=ctypes.sizeof(record), **fields)
+
+
+def prep_and_pass(ctx, prep, args, dbuf=None, dbuf_nbytes=0):
+    """Prepare the command of 'ctx' with 'prep' from 'args', then pass it with
+    'dbuf'; returns what the first of the two that fails returns, or 0"""
+
+    err = prep(ctypes.byref(ctx.cmd), ctypes.byref(args))
+    if err:
+        return err
+
+    return xnvme.xnvme_cmd_pass(ctypes.byref(ctx), dbuf, dbuf_nbytes, None, 0)
 
 
 def buf_and_view(dev, buffer_size):
@@ -55,6 +73,7 @@ def buf_and_view(dev, buffer_size):
     """
 
     buf = xnvme.xnvme_buf_alloc(dev, buffer_size)
+    assert buf, f"xnvme_buf_alloc() of {buffer_size} bytes failed"
 
     view = numpy.ctypeslib.as_array(
         ctypes.cast(buf, ctypes.POINTER(ctypes.c_uint8)),

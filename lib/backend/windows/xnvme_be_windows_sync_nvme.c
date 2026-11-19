@@ -6,6 +6,7 @@
 #define _XOPEN_SOURCE 700
 #endif
 #include <libxnvme.h>
+#include <xnvme_cmd.h>
 #include <xnvme_dev.h>
 #include <xnvme_be_nosys.h>
 #ifdef XNVME_PLATFORM_WINDOWS_ENABLED
@@ -18,15 +19,16 @@
 #include <xnvme_be_state.h>
 
 static int
-xnvme_be_windows_read(HANDLE handle, union xnvme_spec_sqe cmd, void *dbuf, size_t dbuf_nbytes)
+xnvme_be_windows_read(HANDLE handle, union xnvme_cmd_sqe cmd, void *dbuf, size_t dbuf_nbytes)
 {
 	struct scsi_pass_through_direct_with_buffer sptdwb;
 	int ret = 0;
 	int err = 0;
 	ULONG length = 0, returned = 0;
 	LARGE_INTEGER la;
-	la.QuadPart = cmd.nvm.slba;
-	uint32_t nlb = cmd.nvm.nlb + 1;
+	la.QuadPart = xnvme_cmd_sqe_get_cdw10_11(&cmd);
+	uint32_t nlb =
+		(uint32_t)xnvme_bits_get(cmd.common.cdw12, XNVME_SPEC_NVM_READ_CDW12_NLB) + 1;
 
 	memset(&sptdwb, 0, sizeof(struct scsi_pass_through_direct_with_buffer));
 	sptdwb.sptd.Length = sizeof(SCSI_PASS_THROUGH_DIRECT);
@@ -61,15 +63,16 @@ xnvme_be_windows_read(HANDLE handle, union xnvme_spec_sqe cmd, void *dbuf, size_
 }
 
 static int
-xnvme_be_windows_write(HANDLE handle, union xnvme_spec_sqe cmd, void *dbuf, size_t dbuf_nbytes)
+xnvme_be_windows_write(HANDLE handle, union xnvme_cmd_sqe cmd, void *dbuf, size_t dbuf_nbytes)
 {
 	struct scsi_pass_through_direct_with_buffer sptdwb;
 	int ret = 0;
 	int err = 0;
 	ULONG length = 0, returned = 0;
 	LARGE_INTEGER la;
-	la.QuadPart = cmd.nvm.slba;
-	uint32_t nlb = cmd.nvm.nlb + 1;
+	la.QuadPart = xnvme_cmd_sqe_get_cdw10_11(&cmd);
+	uint32_t nlb =
+		(uint32_t)xnvme_bits_get(cmd.common.cdw12, XNVME_SPEC_NVM_WRITE_CDW12_NLB) + 1;
 
 	memset(&sptdwb, 0, sizeof(struct scsi_pass_through_direct_with_buffer));
 	sptdwb.sptd.Length = sizeof(SCSI_PASS_THROUGH_DIRECT);
@@ -110,27 +113,29 @@ xnvme_be_windows_sync_nvme_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t 
 	struct xnvme_be_windows_state *state = &xnvme_be_state(ctx->dev)->windows_state;
 	int ret = 0;
 
-	switch (ctx->cmd.common.opcode) {
-	case XNVME_SPEC_NVM_OPC_READ:
+	switch (xnvme_cmd_sqe_get_opc(&ctx->cmd)) {
+	case XNVME_SPEC_NVM_READ_OPCODE:
 		ret = xnvme_be_windows_read(state->sync_handle, ctx->cmd, dbuf, dbuf_nbytes);
 		break;
 
-	case XNVME_SPEC_NVM_OPC_WRITE:
+	case XNVME_SPEC_NVM_WRITE_OPCODE:
 		ret = xnvme_be_windows_write(state->sync_handle, ctx->cmd, dbuf, dbuf_nbytes);
 		break;
 
 	default:
-		XNVME_DEBUG("FAILED: nosys opcode: %d", ctx->cmd.common.opcode);
+		XNVME_DEBUG("FAILED: nosys opcode: %d", xnvme_cmd_sqe_get_opc(&ctx->cmd));
 		return -ENOSYS;
 	}
 
-	ctx->cpl.result = ret;
+	xnvme_cmd_cpl_set_dw0_1(&ctx->cpl, ret);
 	if (ret < 0) {
 		XNVME_DEBUG("FAILED: {dev_read,dev_write}(), errno: %d", ret);
-		ctx->cpl.result = 0;
-		ctx->cpl.status = xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC, ret);
-		ctx->cpl.status = xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT,
-						 XNVME_STATUS_CODE_TYPE_VENDOR);
+		xnvme_cmd_cpl_set_dw0_1(&ctx->cpl, 0);
+		ctx->cpl.status = xnvme_bits_set(
+			ctx->cpl.status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SC, ret);
+		ctx->cpl.status = xnvme_bits_set(ctx->cpl.status,
+						 XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SCT,
+						 XNVME_SPEC_BASE_STATUS_CODE_TYPE_VENDOR_SPECIFIC);
 		return ret;
 	}
 

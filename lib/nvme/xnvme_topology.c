@@ -15,7 +15,7 @@ xnvme_subsystem_reset(struct xnvme_dev *dev)
 
 	xnvme_dev_get_cmd_ctx(dev, &ctx);
 
-	ctx.cmd.common.opcode = XNVME_SPEC_PSEUDO_OPC_SUBSYSTEM_RESET;
+	xnvme_cmd_sqe_set_opc(&ctx.cmd, XNVME_SPEC_PSEUDO_OPC_SUBSYSTEM_RESET);
 
 	err = xnvme_cmd_pass_pseudo(&ctx, NULL, 0x0, NULL, 0x0);
 	if (err) {
@@ -24,8 +24,10 @@ xnvme_subsystem_reset(struct xnvme_dev *dev)
 	}
 	if (xnvme_cmd_ctx_cpl_status(&ctx)) {
 		XNVME_DEBUG("FAILED: xnvme_cmd_pass_pseudo(); xnvme_cmd_ctx_cpl_status.sc: %d",
-			    (int)xnvme_bits_get(ctx.cpl.status, XNVME_SPEC_CQE_STATUS_SC));
-		return -(int)xnvme_bits_get(ctx.cpl.status, XNVME_SPEC_CQE_STATUS_SC);
+			    (int)xnvme_bits_get(ctx.cpl.status,
+						XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SC));
+		return -(int)xnvme_bits_get(ctx.cpl.status,
+					    XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SC);
 	}
 
 	return 0;
@@ -39,7 +41,7 @@ xnvme_controller_reset(struct xnvme_dev *dev)
 
 	xnvme_dev_get_cmd_ctx(dev, &ctx);
 
-	ctx.cmd.common.opcode = XNVME_SPEC_PSEUDO_OPC_CONTROLLER_RESET;
+	xnvme_cmd_sqe_set_opc(&ctx.cmd, XNVME_SPEC_PSEUDO_OPC_CONTROLLER_RESET);
 
 	err = xnvme_cmd_pass_pseudo(&ctx, NULL, 0x0, NULL, 0x0);
 	if (err) {
@@ -48,8 +50,10 @@ xnvme_controller_reset(struct xnvme_dev *dev)
 	}
 	if (xnvme_cmd_ctx_cpl_status(&ctx)) {
 		XNVME_DEBUG("FAILED: xnvme_cmd_pass_pseudo(); xnvme_cmd_ctx_cpl_status.sc: %d",
-			    (int)xnvme_bits_get(ctx.cpl.status, XNVME_SPEC_CQE_STATUS_SC));
-		return -(int)xnvme_bits_get(ctx.cpl.status, XNVME_SPEC_CQE_STATUS_SC);
+			    (int)xnvme_bits_get(ctx.cpl.status,
+						XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SC));
+		return -(int)xnvme_bits_get(ctx.cpl.status,
+					    XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SC);
 	}
 
 	return 0;
@@ -63,7 +67,7 @@ xnvme_namespace_rescan(struct xnvme_dev *dev)
 
 	xnvme_dev_get_cmd_ctx(dev, &ctx);
 
-	ctx.cmd.common.opcode = XNVME_SPEC_PSEUDO_OPC_NAMESPACE_RESCAN;
+	xnvme_cmd_sqe_set_opc(&ctx.cmd, XNVME_SPEC_PSEUDO_OPC_NAMESPACE_RESCAN);
 
 	err = xnvme_cmd_pass_pseudo(&ctx, NULL, 0x0, NULL, 0x0);
 	if (err) {
@@ -72,8 +76,10 @@ xnvme_namespace_rescan(struct xnvme_dev *dev)
 	}
 	if (xnvme_cmd_ctx_cpl_status(&ctx)) {
 		XNVME_DEBUG("FAILED: xnvme_cmd_pass_pseudo(); xnvme_cmd_ctx_cpl_status.sc: %d",
-			    (int)xnvme_bits_get(ctx.cpl.status, XNVME_SPEC_CQE_STATUS_SC));
-		return -(int)xnvme_bits_get(ctx.cpl.status, XNVME_SPEC_CQE_STATUS_SC);
+			    (int)xnvme_bits_get(ctx.cpl.status,
+						XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SC));
+		return -(int)xnvme_bits_get(ctx.cpl.status,
+					    XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SC);
 	}
 
 	return 0;
@@ -82,14 +88,14 @@ xnvme_namespace_rescan(struct xnvme_dev *dev)
 }
 
 int
-xnvme_controller_get_registers(struct xnvme_dev *dev, struct xnvme_spec_ctrlr_bar *bar)
+xnvme_controller_get_registers(struct xnvme_dev *dev, struct xnvme_spec_base_registers *bar)
 {
 	struct xnvme_cmd_ctx ctx = {0};
 	int err;
 
 	xnvme_dev_get_cmd_ctx(dev, &ctx);
 
-	ctx.cmd.common.opcode = XNVME_SPEC_PSEUDO_OPC_SHOW_REGS;
+	xnvme_cmd_sqe_set_opc(&ctx.cmd, XNVME_SPEC_PSEUDO_OPC_SHOW_REGS);
 
 	err = xnvme_cmd_pass_pseudo(&ctx, bar, sizeof(*bar), NULL, 0x0);
 	if (err) {
@@ -98,8 +104,10 @@ xnvme_controller_get_registers(struct xnvme_dev *dev, struct xnvme_spec_ctrlr_ba
 	}
 	if (xnvme_cmd_ctx_cpl_status(&ctx)) {
 		XNVME_DEBUG("FAILED: xnvme_cmd_pass_pseudo(); xnvme_cmd_ctx_cpl_status.sc: %d",
-			    (int)xnvme_bits_get(ctx.cpl.status, XNVME_SPEC_CQE_STATUS_SC));
-		return -(int)xnvme_bits_get(ctx.cpl.status, XNVME_SPEC_CQE_STATUS_SC);
+			    (int)xnvme_bits_get(ctx.cpl.status,
+						XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SC));
+		return -(int)xnvme_bits_get(ctx.cpl.status,
+					    XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SC);
 	}
 
 	return 0;

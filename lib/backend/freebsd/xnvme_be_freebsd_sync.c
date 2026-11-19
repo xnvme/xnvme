@@ -16,6 +16,7 @@ __FBSDID("$FreeBSD$");
 #include <unistd.h>
 #include <dev/nvme/nvme.h>
 #include <errno.h>
+#include <xnvme_cmd.h>
 #include <xnvme_dev.h>
 #include <xnvme_be_freebsd.h>
 #include <xnvme_be_state.h>
@@ -33,15 +34,17 @@ xnvme_be_freebsd_nvme_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbyt
 		return -ENOTSUP;
 	}
 
-	switch (ctx->cmd.common.opcode) {
+	switch (xnvme_cmd_sqe_get_opc(&ctx->cmd)) {
 	case XNVME_SPEC_FS_OPC_READ:
-		ctx->cmd.nvm.slba = ctx->cmd.nvm.slba >> ctx->dev->geo.ssw;
-		ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_READ;
+		xnvme_cmd_sqe_set_cdw10_11(&ctx->cmd, xnvme_cmd_sqe_get_cdw10_11(&ctx->cmd) >>
+							      ctx->dev->geo.ssw);
+		xnvme_cmd_sqe_set_opc(&ctx->cmd, XNVME_SPEC_NVM_READ_OPCODE);
 		break;
 
 	case XNVME_SPEC_FS_OPC_WRITE:
-		ctx->cmd.nvm.slba = ctx->cmd.nvm.slba >> ctx->dev->geo.ssw;
-		ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_WRITE;
+		xnvme_cmd_sqe_set_cdw10_11(&ctx->cmd, xnvme_cmd_sqe_get_cdw10_11(&ctx->cmd) >>
+							      ctx->dev->geo.ssw);
+		xnvme_cmd_sqe_set_opc(&ctx->cmd, XNVME_SPEC_NVM_WRITE_OPCODE);
 		break;
 	}
 

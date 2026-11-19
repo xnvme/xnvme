@@ -64,16 +64,18 @@ struct xnvme_pi_ctx {
 	uint32_t pi_flags;       ///< Checks to perform, bits of ::xnvme_pi_check_type
 	bool md_interleave;      ///< Whether the metadata is interleaved with the data
 	uint16_t pi_type;        ///< Protection Information Type, a value of ::xnvme_pi_type
-	uint16_t pi_format; ///< Protection Information Format, a value of ::xnvme_spec_nvm_ns_pif
-	uint64_t init_ref_tag; ///< Reference Tag of the first block
-	uint16_t app_tag;      ///< Application Tag
-	uint16_t apptag_mask;  ///< Bits of the Application Tag to check
+	uint16_t pi_format;      ///< Protection Information Format, a value of
+				 ///< ::xnvme_spec_nvm_extended_lba_format_pif
+	uint64_t init_ref_tag;   ///< Reference Tag of the first block
+	uint16_t app_tag;        ///< Application Tag
+	uint16_t apptag_mask;    ///< Bits of the Application Tag to check
 };
 
 /**
  * Return the protection information size
  *
- * @param pi_format Protection Information Format, a value of ::xnvme_spec_nvm_ns_pif
+ * @param pi_format Protection Information Format, a value of
+ * ::xnvme_spec_nvm_extended_lba_format_pif
  * @return On success, the size for protection information format.
  */
 size_t
@@ -92,9 +94,12 @@ xnvme_pi_size(uint32_t pi_format);
  * @param init_ref_tag initial offset
  * @param apptag_mask Application Tag mask
  * @param app_tag Application Tag
- * @param pi_format Protection Information Format, a value of ::xnvme_spec_nvm_ns_pif
+ * @param pi_format Protection Information Format, a value of
+ * ::xnvme_spec_nvm_extended_lba_format_pif
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
+ *
+ * @errno
  */
 int
 xnvme_pi_ctx_init(struct xnvme_pi_ctx *ctx, uint32_t block_size, uint32_t md_size,
@@ -123,6 +128,8 @@ xnvme_pi_generate(struct xnvme_pi_ctx *ctx, uint8_t *data_buf, uint8_t *md_buf,
  * @param num_blocks Number of logical blocks
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
+ *
+ * @errno
  */
 int
 xnvme_pi_verify(struct xnvme_pi_ctx *ctx, uint8_t *data_buf, uint8_t *md_buf, uint32_t num_blocks);

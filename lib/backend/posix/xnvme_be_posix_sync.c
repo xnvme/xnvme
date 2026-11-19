@@ -14,6 +14,7 @@
 #ifdef XNVME_BE_POSIX_ENABLED
 #include <errno.h>
 #include <unistd.h>
+#include <xnvme_cmd.h>
 #include <xnvme_dev.h>
 #include <xnvme_be_posix.h>
 #include <xnvme_be_state.h>
@@ -33,25 +34,27 @@ xnvme_be_posix_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nb
 		goto exit;
 	}
 
-	switch (ctx->cmd.common.opcode) {
-	case XNVME_SPEC_NVM_OPC_WRITE:
-		res = pwrite(state->fd, dbuf, dbuf_nbytes, ctx->cmd.nvm.slba << ssw);
+	switch (xnvme_cmd_sqe_get_opc(&ctx->cmd)) {
+	case XNVME_SPEC_NVM_WRITE_OPCODE:
+		res = pwrite(state->fd, dbuf, dbuf_nbytes,
+			     xnvme_cmd_sqe_get_cdw10_11(&ctx->cmd) << ssw);
 		sc = res != (ssize_t)dbuf_nbytes ? errno : 0;
 		break;
-	case XNVME_SPEC_NVM_OPC_READ:
-		res = pread(state->fd, dbuf, dbuf_nbytes, ctx->cmd.nvm.slba << ssw);
+	case XNVME_SPEC_NVM_READ_OPCODE:
+		res = pread(state->fd, dbuf, dbuf_nbytes,
+			    xnvme_cmd_sqe_get_cdw10_11(&ctx->cmd) << ssw);
 		sc = res != (ssize_t)dbuf_nbytes ? errno : 0;
 		break;
 	case XNVME_SPEC_FS_OPC_WRITE:
-		res = pwrite(state->fd, dbuf, dbuf_nbytes, ctx->cmd.nvm.slba);
+		res = pwrite(state->fd, dbuf, dbuf_nbytes, xnvme_cmd_sqe_get_cdw10_11(&ctx->cmd));
 		sc = res != (ssize_t)dbuf_nbytes ? errno : 0;
 		break;
 	case XNVME_SPEC_FS_OPC_READ:
-		res = pread(state->fd, dbuf, dbuf_nbytes, ctx->cmd.nvm.slba);
+		res = pread(state->fd, dbuf, dbuf_nbytes, xnvme_cmd_sqe_get_cdw10_11(&ctx->cmd));
 		sc = res != (ssize_t)dbuf_nbytes ? errno : 0;
 		break;
 
-	case XNVME_SPEC_NVM_OPC_FLUSH:
+	case XNVME_SPEC_IO_FLUSH_OPCODE:
 	case XNVME_SPEC_FS_OPC_FLUSH:
 		res = fsync(state->fd);
 		sc = res ? errno : 0;
@@ -63,14 +66,16 @@ xnvme_be_posix_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nb
 	}
 
 exit:
-	ctx->cpl.result = res;
+	xnvme_cmd_cpl_set_dw0_1(&ctx->cpl, res);
 	if (sc) {
 		XNVME_DEBUG("FAILED: OPC(%d){pread,pwrite,fsync}(), errno: %d",
-			    ctx->cmd.common.opcode, sc);
-		ctx->cpl.result = 0;
-		ctx->cpl.status = xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC, sc);
-		ctx->cpl.status = xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT,
-						 XNVME_STATUS_CODE_TYPE_VENDOR);
+			    xnvme_cmd_sqe_get_opc(&ctx->cmd), sc);
+		xnvme_cmd_cpl_set_dw0_1(&ctx->cpl, 0);
+		ctx->cpl.status = xnvme_bits_set(
+			ctx->cpl.status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SC, sc);
+		ctx->cpl.status = xnvme_bits_set(ctx->cpl.status,
+						 XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SCT,
+						 XNVME_SPEC_BASE_STATUS_CODE_TYPE_VENDOR_SPECIFIC);
 		return -sc;
 	}
 
@@ -92,28 +97,30 @@ xnvme_be_posix_sync_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_
 		goto exit;
 	}
 
-	switch (ctx->cmd.common.opcode) {
-	case XNVME_SPEC_NVM_OPC_WRITE:
-		res = pwritev(state->fd, dvec, dvec_cnt, ctx->cmd.nvm.slba << ssw);
+	switch (xnvme_cmd_sqe_get_opc(&ctx->cmd)) {
+	case XNVME_SPEC_NVM_WRITE_OPCODE:
+		res = pwritev(state->fd, dvec, dvec_cnt,
+			      xnvme_cmd_sqe_get_cdw10_11(&ctx->cmd) << ssw);
 		sc = res != (ssize_t)dvec_nbytes ? errno : 0;
 		break;
 
-	case XNVME_SPEC_NVM_OPC_READ:
-		res = preadv(state->fd, dvec, dvec_cnt, ctx->cmd.nvm.slba << ssw);
+	case XNVME_SPEC_NVM_READ_OPCODE:
+		res = preadv(state->fd, dvec, dvec_cnt,
+			     xnvme_cmd_sqe_get_cdw10_11(&ctx->cmd) << ssw);
 		sc = res != (ssize_t)dvec_nbytes ? errno : 0;
 		break;
 
 	case XNVME_SPEC_FS_OPC_WRITE:
-		res = pwritev(state->fd, dvec, dvec_cnt, ctx->cmd.nvm.slba);
+		res = pwritev(state->fd, dvec, dvec_cnt, xnvme_cmd_sqe_get_cdw10_11(&ctx->cmd));
 		sc = res != (ssize_t)dvec_nbytes ? errno : 0;
 		break;
 
 	case XNVME_SPEC_FS_OPC_READ:
-		res = preadv(state->fd, dvec, dvec_cnt, ctx->cmd.nvm.slba);
+		res = preadv(state->fd, dvec, dvec_cnt, xnvme_cmd_sqe_get_cdw10_11(&ctx->cmd));
 		sc = res != (ssize_t)dvec_nbytes ? errno : 0;
 		break;
 
-	case XNVME_SPEC_NVM_OPC_FLUSH:
+	case XNVME_SPEC_IO_FLUSH_OPCODE:
 	case XNVME_SPEC_FS_OPC_FLUSH:
 		res = fsync(state->fd);
 		sc = res ? errno : 0;
@@ -125,14 +132,16 @@ xnvme_be_posix_sync_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_
 	}
 
 exit:
-	ctx->cpl.result = res;
+	xnvme_cmd_cpl_set_dw0_1(&ctx->cpl, res);
 	if (sc) {
 		XNVME_DEBUG("FAILED: OPC(%d){pread,pwrite,fsync}(), errno: %d",
-			    ctx->cmd.common.opcode, sc);
-		ctx->cpl.result = 0;
-		ctx->cpl.status = xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC, sc);
-		ctx->cpl.status = xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT,
-						 XNVME_STATUS_CODE_TYPE_VENDOR);
+			    xnvme_cmd_sqe_get_opc(&ctx->cmd), sc);
+		xnvme_cmd_cpl_set_dw0_1(&ctx->cpl, 0);
+		ctx->cpl.status = xnvme_bits_set(
+			ctx->cpl.status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SC, sc);
+		ctx->cpl.status = xnvme_bits_set(ctx->cpl.status,
+						 XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SCT,
+						 XNVME_SPEC_BASE_STATUS_CODE_TYPE_VENDOR_SPECIFIC);
 		return -sc;
 	}
 

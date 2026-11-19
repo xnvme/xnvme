@@ -7,6 +7,22 @@
  */
 
 /**
+ * Submission Queue Entry, the 64 bytes of a command
+ *
+ * A command is its opcode and the fields of its dwords. The spec headers name the opcode, such
+ * as XNVME_SPEC_NVM_READ_OPCODE, and each field by a mask of the dword it is in, such as
+ * XNVME_SPEC_NVM_READ_CDW12_NLB. The command preps, xnvme_cmd_prep_*(), fill the dwords of a
+ * command from a record of its fields.
+ *
+ * @union xnvme_cmd_sqe
+ */
+union xnvme_cmd_sqe {
+	uint32_t cdw[16]; ///< The command as dwords 0 to 15, as the specification numbers them
+	struct xnvme_spec_base_common_command_format common; ///< The Common Command Format
+};
+XNVME_STATIC_ASSERT(sizeof(union xnvme_cmd_sqe) == 64, "Incorrect size")
+
+/**
  * Attributes for asynchronous command-contexts
  *
  * @struct xnvme_cmd_ctx_async
@@ -23,9 +39,9 @@ struct xnvme_cmd_ctx_async {
  * @struct xnvme_cmd_ctx
  */
 struct xnvme_cmd_ctx {
-	union xnvme_spec_sqe cmd;         ///< Command to be processed
-	struct xnvme_spec_cqe cpl;        ///< Completion result from processing
-	struct xnvme_dev *dev;            ///< Device associated with the command
+	union xnvme_cmd_sqe cmd;                           ///< Command to be processed
+	struct xnvme_spec_base_completion_queue_entry cpl; ///< Completion result from processing
+	struct xnvme_dev *dev;                             ///< Device associated with the command
 	struct xnvme_cmd_ctx_async async; ///< Fields for command option: XNVME_CMD_ASYNC
 	///< Field containing command-options, the field is initialized by helper-functions
 	uint32_t opts;
@@ -58,11 +74,8 @@ xnvme_cmd_ctx_set_cb(struct xnvme_cmd_ctx *ctx, xnvme_queue_cb cb, void *cb_arg)
  * @param ctx Pointer to the ::xnvme_cmd_ctx
  * @param data The pointer to assign
  */
-static inline void
-xnvme_cmd_ctx_set_data(struct xnvme_cmd_ctx *ctx, void *data)
-{
-	ctx->async.cb_arg = data;
-}
+void
+xnvme_cmd_ctx_set_data(struct xnvme_cmd_ctx *ctx, void *data);
 
 /**
  * Retrieve the pointer assigned to the given ::xnvme_cmd_ctx with xnvme_cmd_ctx_set_data()
@@ -71,21 +84,20 @@ xnvme_cmd_ctx_set_data(struct xnvme_cmd_ctx *ctx, void *data)
  *
  * @return The pointer assigned with xnvme_cmd_ctx_set_data()
  */
-static inline void *
-xnvme_cmd_ctx_get_data(const struct xnvme_cmd_ctx *ctx)
-{
-	return ctx->async.cb_arg;
-}
+void *
+xnvme_cmd_ctx_get_data(const struct xnvme_cmd_ctx *ctx);
 
 /**
  * Initialize the given command-context for issuing synchronous commands to the given device
  *
- * @param dev Device handle (::xnvme_dev) obtained with xnvme_dev_open(), or with
+ * @param dev Device handle (::xnvme_dev) obtained with xnvme_dev_open_uri(), or with
  * xnvme_file_open()
  * @param ctx The ::xnvme_cmd_ctx to initialize; all of it is overwritten
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned: -EINVAL when
  * `dev` or `ctx` is NULL.
+ *
+ * @errno
  */
 int
 xnvme_dev_get_cmd_ctx(struct xnvme_dev *dev, struct xnvme_cmd_ctx *ctx);
@@ -99,18 +111,15 @@ void
 xnvme_cmd_ctx_clear(struct xnvme_cmd_ctx *ctx);
 
 /**
- * Encapsulate completion-error checking here for now.
+ * Check the status of the completion in the given ::xnvme_cmd_ctx
  *
  * @param ctx Pointer to the ::xnvme_cmd_ctx to check status on
  *
- * @return On success, 0 is return. On error, a non-zero value is returned.
+ * @return 0 when the Status Code and the Status Code Type of the completion are both zero,
+ * otherwise 1.
  */
-static inline int
-xnvme_cmd_ctx_cpl_status(struct xnvme_cmd_ctx *ctx)
-{
-	return xnvme_bits_get(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC) ||
-	       xnvme_bits_get(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT);
-}
+int
+xnvme_cmd_ctx_cpl_status(const struct xnvme_cmd_ctx *ctx);
 
 /**
  * Pass an NVMe IO Command through to the device via the given ::xnvme_cmd_ctx
@@ -129,6 +138,8 @@ xnvme_cmd_ctx_cpl_status(struct xnvme_cmd_ctx *ctx)
  * @param mbuf_nbytes size of the meta-payload in bytes
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
+ *
+ * @errno
  */
 int
 xnvme_cmd_pass(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
@@ -146,6 +157,8 @@ xnvme_cmd_pass(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *
  * @param mbuf_nbytes size of the meta-payload in bytes
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
+ *
+ * @errno
  */
 int
 xnvme_cmd_pass_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
@@ -161,6 +174,8 @@ xnvme_cmd_pass_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cn
  * @param mbuf_nbytes size of the meta-payload in bytes
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
+ *
+ * @errno
  */
 int
 xnvme_cmd_pass_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,

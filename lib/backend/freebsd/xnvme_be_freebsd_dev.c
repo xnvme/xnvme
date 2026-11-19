@@ -20,8 +20,9 @@
 #include <xnvme_be_freebsd.h>
 #include <xnvme_be_state.h>
 
-XNVME_STATIC_ASSERT(sizeof(union xnvme_spec_sqe) == sizeof(struct nvme_command), "Incorrect size")
-XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cqe) == sizeof(struct nvme_completion),
+XNVME_STATIC_ASSERT(sizeof(union xnvme_cmd_sqe) == sizeof(struct nvme_command), "Incorrect size")
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_base_completion_queue_entry) ==
+			    sizeof(struct nvme_completion),
 		    "Incorrect size")
 
 static int
@@ -144,14 +145,14 @@ xnvme_be_freebsd_dev_open(struct xnvme_dev *dev)
 							       &state->ctrlr_fd)) {
 			XNVME_DEBUG("INFO: open() : assuming it is an NVMe controller");
 			dev->ident.dtype = XNVME_DEV_TYPE_NVME_CONTROLLER;
-			dev->ident.csi = XNVME_SPEC_CSI_NVM;
+			dev->ident.csi = XNVME_SPEC_ADMIN_IDENTIFY_CDW11_CSI_NVM_COMMAND_SET;
 			dev->ident.nsid = 0;
 			state->ctrlr_fd = state->posix.fd;
 		}
 
 		XNVME_DEBUG("INFO: open() : responds like an NVMe namespace");
 		dev->ident.dtype = XNVME_DEV_TYPE_NVME_NAMESPACE;
-		dev->ident.csi = XNVME_SPEC_CSI_NVM;
+		dev->ident.csi = XNVME_SPEC_ADMIN_IDENTIFY_CDW11_CSI_NVM_COMMAND_SET;
 		break;
 
 	default:

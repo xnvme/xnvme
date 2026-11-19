@@ -6,6 +6,7 @@
 #define _XOPEN_SOURCE 700
 #endif
 #include <libxnvme.h>
+#include <xnvme_cmd.h>
 #include <xnvme_dev.h>
 #include <xnvme_be_nosys.h>
 #ifdef XNVME_PLATFORM_WINDOWS_ENABLED
@@ -20,7 +21,7 @@
 /**
  * For issuing the format command in Windows
  *
- * @param dev Device handle obtained with xnvme_dev_open() / xnvme_dev_openf()
+ * @param dev Device handle obtained with xnvme_dev_open_uri()
  *
  * @return On success, 0 is returned. On error, `GetLastError()` is returned.
  */
@@ -80,45 +81,48 @@ _be_windows_nvme_storage_property(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t 
 
 	///< NOTE: opcode-dispatch (admin)
 	// Prepare the specific request based on the admin command
-	switch (ctx->cmd.common.opcode) {
-	case XNVME_SPEC_ADM_OPC_IDFY:
+	switch (xnvme_cmd_sqe_get_opc(&ctx->cmd)) {
+	case XNVME_SPEC_ADMIN_IDENTIFY_OPCODE:
 		ioctl = IOCTL_STORAGE_QUERY_PROPERTY;
 		query->PropertyId = StorageDeviceProtocolSpecificProperty;
 		protocol_data->ProtocolType = ProtocolTypeNvme;
 		protocol_data->DataType = NVMeDataTypeIdentify;
-		protocol_data->ProtocolDataRequestValue = ctx->cmd.idfy.cns;
+		protocol_data->ProtocolDataRequestValue =
+			xnvme_bits_get(ctx->cmd.common.cdw10, XNVME_SPEC_ADMIN_IDENTIFY_CDW10_CNS);
 		protocol_data->ProtocolDataRequestSubValue = ctx->cmd.common.nsid;
-		if (ctx->cmd.idfy.cns == XNVME_SPEC_IDFY_NS ||
-		    ctx->cmd.idfy.cns == XNVME_SPEC_IDFY_CTRLR) {
+		if (xnvme_bits_get(ctx->cmd.common.cdw10, XNVME_SPEC_ADMIN_IDENTIFY_CDW10_CNS) ==
+			    XNVME_SPEC_ADMIN_IDENTIFY_CDW10_CNS_NVM_COMMAND_SET_IDENTIFY_NAMESPACE_DATA_STRUCTURE ||
+		    xnvme_bits_get(ctx->cmd.common.cdw10, XNVME_SPEC_ADMIN_IDENTIFY_CDW10_CNS) ==
+			    XNVME_SPEC_ADMIN_IDENTIFY_CDW10_CNS_IDENTIFY_CONTROLLER_DATA_STRUCTURE) {
 			query->PropertyId = StorageAdapterProtocolSpecificProperty;
 		}
 		break;
 
-	case XNVME_SPEC_ADM_OPC_LOG:
+	case XNVME_SPEC_ADMIN_GET_LOG_PAGE_OPCODE:
 		ioctl = IOCTL_STORAGE_QUERY_PROPERTY;
 		query->PropertyId = StorageDeviceProtocolSpecificProperty;
 		protocol_data->ProtocolType = ProtocolTypeNvme;
 		protocol_data->DataType = NVMeDataTypeLogPage;
-		protocol_data->ProtocolDataRequestValue =
-			xnvme_bits_get(ctx->cmd.log.cdw10, XNVME_SPEC_CMD_LOG_CDW10_LID);
+		protocol_data->ProtocolDataRequestValue = xnvme_bits_get(
+			ctx->cmd.common.cdw10, XNVME_SPEC_ADMIN_GET_LOG_PAGE_CDW10_LID);
 		protocol_data->ProtocolDataRequestSubValue = ctx->cmd.common.nsid;
 		protocol_data->ProtocolDataRequestSubValue2 = 0;
 		protocol_data->ProtocolDataRequestSubValue3 = 0;
 		break;
 
-	case XNVME_SPEC_ADM_OPC_GFEAT: {
+	case XNVME_SPEC_ADMIN_GET_FEATURES_OPCODE: {
 		DWORD cdw11 = 0;
 		ioctl = IOCTL_STORAGE_QUERY_PROPERTY;
 		query->PropertyId = StorageDeviceProtocolSpecificProperty;
 		protocol_data->ProtocolType = ProtocolTypeNvme;
 		protocol_data->DataType = NVMeDataTypeFeature;
-		protocol_data->ProtocolDataRequestValue = ctx->cmd.gfeat.cdw10.val;
+		protocol_data->ProtocolDataRequestValue = ctx->cmd.common.cdw10;
 		protocol_data->ProtocolDataRequestSubValue = cdw11;
 		protocol_data->ProtocolDataOffset = 0;
 		protocol_data->ProtocolDataLength = 0;
 		break;
 	}
-	case XNVME_SPEC_ADM_OPC_SFEAT: {
+	case XNVME_SPEC_ADMIN_SET_FEATURES_OPCODE: {
 		PSTORAGE_PROPERTY_SET query = NULL;
 		PSTORAGE_PROTOCOL_SPECIFIC_DATA_EXT protocol_data = NULL;
 		DWORD cdw11 = 0;
@@ -129,13 +133,15 @@ _be_windows_nvme_storage_property(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t 
 
 		query->PropertyId = StorageDeviceProtocolSpecificProperty;
 		query->SetType = PropertyStandardSet;
-		if (ctx->cmd.sfeat.cdw10.fid == XNVME_SPEC_FEAT_VWCACHE) {
+		if (xnvme_bits_get(ctx->cmd.common.cdw10,
+				   XNVME_SPEC_ADMIN_SET_FEATURES_CDW10_FID) ==
+		    XNVME_SPEC_BASE_FEATURE_VOLATILE_WRITE_CACHED) {
 			query->PropertyId = StorageAdapterProtocolSpecificProperty;
 		}
 
 		protocol_data->ProtocolType = ProtocolTypeNvme;
 		protocol_data->DataType = NVMeDataTypeFeature;
-		protocol_data->ProtocolDataValue = ctx->cmd.sfeat.cdw10.val;
+		protocol_data->ProtocolDataValue = ctx->cmd.common.cdw10;
 		protocol_data->ProtocolDataSubValue = cdw11;
 		protocol_data->ProtocolDataOffset = 0;
 		protocol_data->ProtocolDataLength = 0;
@@ -176,20 +182,20 @@ xnvme_be_windows_nvme_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t db
 {
 	int ret = 0;
 
-	switch (ctx->cmd.common.opcode) {
-	case XNVME_SPEC_ADM_OPC_IDFY:
-	case XNVME_SPEC_ADM_OPC_LOG:
-	case XNVME_SPEC_ADM_OPC_GFEAT:
-	case XNVME_SPEC_ADM_OPC_SFEAT:
+	switch (xnvme_cmd_sqe_get_opc(&ctx->cmd)) {
+	case XNVME_SPEC_ADMIN_IDENTIFY_OPCODE:
+	case XNVME_SPEC_ADMIN_GET_LOG_PAGE_OPCODE:
+	case XNVME_SPEC_ADMIN_GET_FEATURES_OPCODE:
+	case XNVME_SPEC_ADMIN_SET_FEATURES_OPCODE:
 		ret = _be_windows_nvme_storage_property(ctx, dbuf, dbuf_nbytes);
 		break;
 
-	case XNVME_SPEC_NVM_OPC_FMT:
+	case XNVME_SPEC_ADMIN_FORMAT_NVM_OPCODE:
 		ret = xnvme_be_windows_format(ctx->dev);
 		break;
 
 	default:
-		XNVME_DEBUG("FAILED: ENOSYS opcode: %d", ctx->cmd.common.opcode);
+		XNVME_DEBUG("FAILED: ENOSYS opcode: %d", xnvme_cmd_sqe_get_opc(&ctx->cmd));
 		ret = -ENOSYS;
 	}
 

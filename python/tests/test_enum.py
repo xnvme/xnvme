@@ -1,16 +1,14 @@
 import ctypes
-from ctypes import CFUNCTYPE, POINTER, c_int, c_void_p
 
 import pytest
-import xnvme.ctypes_bindings as xnvme
+import xnvme
 from conftest import xnvme_parametrize
 from utils import dev_from_params
-from xnvme.ctypes_bindings.api import char_pointer_cast
 
 DEVICE_COUNT = 0
 
 
-@CFUNCTYPE(c_int, POINTER(xnvme.xnvme_dev), c_void_p)
+@xnvme.XnvmeEnumerateCb
 def callback_func(dev, cb_args):
     global DEVICE_COUNT
     DEVICE_COUNT += 1

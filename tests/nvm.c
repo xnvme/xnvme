@@ -12,7 +12,7 @@ enumerate_cb(struct xnvme_dev *dev, void *cb_args)
 	const struct xnvme_ident *ident;
 
 	ident = xnvme_dev_get_ident(dev);
-	if (ident->csi != XNVME_SPEC_CSI_NVM) {
+	if (ident->csi != XNVME_SPEC_ADMIN_IDENTIFY_CDW11_CSI_NVM_COMMAND_SET) {
 		return XNVME_ENUMERATE_DEV_CLOSE;
 	}
 
@@ -79,13 +79,13 @@ sub_idfy(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
 	struct xnvme_cmd_ctx ctx = {0};
-	union xnvme_spec_idfy *idfy = NULL;
+	struct xnvme_spec_nvm_identify_namespace *idfy = NULL;
 	uint32_t nsid = xnvme_dev_get_nsid(cli->args.dev);
 	int err;
 
 	xnvme_dev_get_cmd_ctx(dev, &ctx);
 
-	xnvme_cli_pinf("xnvme_adm_idfy: {nsid: 0x%x}", nsid);
+	xnvme_cli_pinf("identify: {nsid: 0x%x}", nsid);
 
 	idfy = xnvme_buf_alloc(dev, sizeof(*idfy));
 	if (!idfy) {
@@ -94,15 +94,24 @@ sub_idfy(struct xnvme_cli *cli)
 		goto exit;
 	}
 
-	err = xnvme_adm_idfy_ns(&ctx, nsid, idfy);
+	struct xnvme_cmd_prep_adm_identify_args args = {
+		.args_nbytes = sizeof(args),
+		.nsid = nsid ? nsid : xnvme_dev_get_nsid(dev),
+		.cns = XNVME_SPEC_ADMIN_IDENTIFY_CDW10_CNS_NVM_COMMAND_SET_IDENTIFY_NAMESPACE_DATA_STRUCTURE,
+	};
+
+	err = xnvme_cmd_prep_adm_identify(&ctx.cmd, &args);
+	if (!err) {
+		err = xnvme_cmd_pass_admin(&ctx, idfy, sizeof(*idfy), NULL, 0);
+	}
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		xnvme_cli_perr("xnvme_adm_idfy()", err);
+		xnvme_cli_perr("identify", err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;
 	}
 
-	xnvme_spec_idfy_ns_pr(&idfy->ns, XNVME_PR_DEF);
+	xnvme_spec_idfy_ns_pr(idfy, XNVME_PR_DEF);
 
 	if (cli->args.data_output) {
 		xnvme_cli_pinf("Dumping to: '%s'", cli->args.data_output);
@@ -183,9 +192,19 @@ sub_read(struct xnvme_cli *cli)
 	}
 
 	xnvme_cli_pinf("Sending the command...");
-	err = xnvme_nvm_read(&ctx, nsid, slba, nlb, dbuf, mbuf);
+	struct xnvme_cmd_prep_nvm_read_args args = {
+		.args_nbytes = sizeof(args),
+		.nsid = nsid,
+		.slba = slba,
+		.nlb = (uint16_t)nlb,
+	};
+
+	err = xnvme_cmd_prep_nvm_read(&ctx.cmd, &args);
+	if (!err) {
+		err = xnvme_cmd_pass(&ctx, dbuf, dbuf_nbytes, mbuf, mbuf_nbytes);
+	}
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		xnvme_cli_perr("xnvme_nvm_read()", err);
+		xnvme_cli_perr("read", err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;
@@ -272,9 +291,19 @@ sub_write(struct xnvme_cli *cli)
 	}
 
 	xnvme_cli_pinf("Sending the command...");
-	err = xnvme_nvm_write(&ctx, nsid, slba, nlb, dbuf, mbuf);
+	struct xnvme_cmd_prep_nvm_write_args args = {
+		.args_nbytes = sizeof(args),
+		.nsid = nsid,
+		.slba = slba,
+		.nlb = (uint16_t)nlb,
+	};
+
+	err = xnvme_cmd_prep_nvm_write(&ctx.cmd, &args);
+	if (!err) {
+		err = xnvme_cmd_pass(&ctx, dbuf, dbuf_nbytes, mbuf, mbuf_nbytes);
+	}
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		xnvme_cli_perr("xnvme_nvm_write()", err);
+		xnvme_cli_perr("write", err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;
@@ -299,9 +328,19 @@ sub_write_zeroes(struct xnvme_cli *cli)
 
 	xnvme_dev_get_cmd_ctx(dev, &ctx);
 
-	err = xnvme_nvm_write_zeroes(&ctx, nsid, slba, nlb);
+	struct xnvme_cmd_prep_nvm_write_zeroes_args args = {
+		.args_nbytes = sizeof(args),
+		.nsid = nsid,
+		.slba = slba,
+		.nlb = (uint16_t)nlb,
+	};
+
+	err = xnvme_cmd_prep_nvm_write_zeroes(&ctx.cmd, &args);
+	if (!err) {
+		err = xnvme_cmd_pass(&ctx, NULL, 0, NULL, 0);
+	}
 	if (err) {
-		xnvme_cli_perr("xnvme_nvm_write_zeroes()", err);
+		xnvme_cli_perr("write_zeroes", err);
 		goto exit;
 	}
 
@@ -321,9 +360,19 @@ sub_write_uncor(struct xnvme_cli *cli)
 
 	xnvme_dev_get_cmd_ctx(dev, &ctx);
 
-	err = xnvme_nvm_write_uncorrectable(&ctx, nsid, slba, nlb);
+	struct xnvme_cmd_prep_nvm_write_uncorrectable_args args = {
+		.args_nbytes = sizeof(args),
+		.nsid = nsid,
+		.slba = slba,
+		.nlb = (uint16_t)nlb,
+	};
+
+	err = xnvme_cmd_prep_nvm_write_uncorrectable(&ctx.cmd, &args);
+	if (!err) {
+		err = xnvme_cmd_pass(&ctx, NULL, 0, NULL, 0);
+	}
 	if (err) {
-		xnvme_cli_perr("xnvme_nvm_write_uncorrectable()", err);
+		xnvme_cli_perr("write_uncorrectable", err);
 		goto exit;
 	}
 
@@ -353,17 +402,27 @@ sub_dir_send(struct xnvme_cli *cli)
 		nsid, doper, dtype, dspec, endir, tgtdir);
 
 	switch (dtype) {
-	case XNVME_SPEC_DIR_IDENTIFY:
-		if (doper == XNVME_SPEC_DSEND_IDFY_ENDIR) {
-			cdw12 = (tgtdir << 8) | endir;
+	case XNVME_SPEC_ADMIN_DIRECTIVE_SEND_CDW11_DTYPE_IDENTIFY:
+		if (doper ==
+		    XNVME_SPEC_ADMIN_DIRECTIVE_SEND_CDW11_DOPER_DTYPE0H_ENABLE_DIRECTIVE) {
+			cdw12 = xnvme_bits_set(
+				cdw12,
+				XNVME_SPEC_ADMIN_DIRECTIVE_SEND_ENABLE_DIRECTIVE_CDW12_ENDIR,
+				endir);
+			cdw12 = xnvme_bits_set(
+				cdw12,
+				XNVME_SPEC_ADMIN_DIRECTIVE_SEND_ENABLE_DIRECTIVE_CDW12_DTYPE,
+				tgtdir);
 			break;
 		} else {
 			xnvme_cli_perr("invalid directive operation for identify directives", err);
 			return err;
 		}
-	case XNVME_SPEC_DIR_STREAMS:
-		if ((doper == XNVME_SPEC_DSEND_STREAMS_RELID) ||
-		    (doper == XNVME_SPEC_DSEND_STREAMS_RELRS)) {
+	case XNVME_SPEC_ADMIN_DIRECTIVE_SEND_CDW11_DTYPE_STREAMS:
+		if ((doper ==
+		     XNVME_SPEC_ADMIN_DIRECTIVE_SEND_CDW11_DOPER_DTYPE1H_RELEASE_IDENTIFIER) ||
+		    (doper ==
+		     XNVME_SPEC_ADMIN_DIRECTIVE_SEND_CDW11_DOPER_DTYPE1H_RELEASE_RESOURCES)) {
 			break;
 		} else {
 			xnvme_cli_perr("invalid directive operation for stream directives", err);
@@ -374,10 +433,21 @@ sub_dir_send(struct xnvme_cli *cli)
 		return err;
 	}
 
-	err = xnvme_adm_dir_send(&ctx, nsid, doper, dtype, dspec, cdw12);
+	struct xnvme_cmd_prep_adm_directive_send_args args = {
+		.args_nbytes = sizeof(args),
+		.nsid = nsid,
+		.dspec = (uint16_t)dspec,
+		.dtype = (uint8_t)dtype,
+		.doper = doper,
+		.cdw12 = cdw12,
+	};
 
+	err = xnvme_cmd_prep_adm_directive_send(&ctx.cmd, &args);
+	if (!err) {
+		err = xnvme_cmd_pass_admin(&ctx, NULL, 0, NULL, 0);
+	}
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		xnvme_cli_perr("xnvme_adm_dsend()", err);
+		xnvme_cli_perr("directive_send", err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 	}
@@ -405,24 +475,28 @@ sub_dir_receive(struct xnvme_cli *cli)
 		       dtype, nsr);
 
 	switch (dtype) {
-	case XNVME_SPEC_DIR_IDENTIFY:
-		if (doper == XNVME_SPEC_DRECV_IDFY_RETPR) {
+	case XNVME_SPEC_ADMIN_DIRECTIVE_RECEIVE_CDW11_DTYPE_IDENTIFY:
+		if (doper ==
+		    XNVME_SPEC_ADMIN_DIRECTIVE_RECEIVE_CDW11_DOPER_DTYPE0H_RETURN_PARAMETERS) {
 			dbuf_nbytes = 4096;
 			break;
 		} else {
 			xnvme_cli_perr("invalid directive operation for identify directive", err);
 			return err;
 		}
-	case XNVME_SPEC_DIR_STREAMS:
+	case XNVME_SPEC_ADMIN_DIRECTIVE_RECEIVE_CDW11_DTYPE_STREAMS:
 		switch (doper) {
-		case XNVME_SPEC_DRECV_STREAMS_RETPR:
+		case XNVME_SPEC_ADMIN_DIRECTIVE_RECEIVE_CDW11_DOPER_DTYPE1H_RETURN_PARAMETERS:
 			dbuf_nbytes = 32;
 			break;
-		case XNVME_SPEC_DRECV_STREAMS_GETST:
+		case XNVME_SPEC_ADMIN_DIRECTIVE_RECEIVE_CDW11_DOPER_DTYPE1H_GET_STATUS:
 			dbuf_nbytes = 128 * 1024;
 			break;
-		case XNVME_SPEC_DRECV_STREAMS_ALLRS:
-			cdw12 = nsr & 0xFFFF;
+		case XNVME_SPEC_ADMIN_DIRECTIVE_RECEIVE_CDW11_DOPER_DTYPE1H_ALLOCATE_RESOURCES:
+			cdw12 = xnvme_bits_set(
+				cdw12,
+				XNVME_SPEC_ADMIN_DIRECTIVE_RECEIVE_ALLOCATE_RESOURCES_CDW12_NSR,
+				nsr);
 			break;
 		default:
 			xnvme_cli_perr("invalid directive operation for streams directive", err);
@@ -442,39 +516,51 @@ sub_dir_receive(struct xnvme_cli *cli)
 			goto exit;
 		}
 	}
-	err = xnvme_adm_dir_recv(&ctx, nsid, doper, dtype, cdw12, dbuf, dbuf_nbytes);
+	struct xnvme_cmd_prep_adm_directive_receive_args args = {
+		.args_nbytes = sizeof(args),
+		.nsid = nsid,
+		.numd = dbuf_nbytes ? dbuf_nbytes / sizeof(uint32_t) - 1 : 0,
+		.dtype = (uint8_t)dtype,
+		.doper = doper,
+		.cdw12 = cdw12,
+	};
 
+	err = xnvme_cmd_prep_adm_directive_receive(&ctx.cmd, &args);
+	if (!err) {
+		err = xnvme_cmd_pass_admin(&ctx, dbuf, dbuf_nbytes, NULL, 0);
+	}
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		xnvme_cli_perr("xnvme_adm_drecv()", err);
+		xnvme_cli_perr("directive_receive", err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;
 	}
 
 	switch (dtype) {
-	case XNVME_SPEC_DIR_IDENTIFY:
-		if (doper == XNVME_SPEC_DRECV_IDFY_RETPR) {
-			xnvme_spec_drecv_idfy_pr((struct xnvme_spec_idfy_dir_rp *)dbuf,
+	case XNVME_SPEC_ADMIN_DIRECTIVE_RECEIVE_CDW11_DTYPE_IDENTIFY:
+		if (doper ==
+		    XNVME_SPEC_ADMIN_DIRECTIVE_RECEIVE_CDW11_DOPER_DTYPE0H_RETURN_PARAMETERS) {
+			xnvme_spec_drecv_idfy_pr((struct xnvme_spec_base_return_parameters *)dbuf,
 						 XNVME_PR_DEF);
 			break;
 		} else {
 			xnvme_cli_perr("invalid directive operation for identify directive", err);
 			goto exit;
 		}
-	case XNVME_SPEC_DIR_STREAMS:
+	case XNVME_SPEC_ADMIN_DIRECTIVE_RECEIVE_CDW11_DTYPE_STREAMS:
 		switch (doper) {
-		case XNVME_SPEC_DRECV_STREAMS_RETPR:
-			xnvme_spec_drecv_srp_pr((struct xnvme_spec_streams_dir_rp *)dbuf,
+		case XNVME_SPEC_ADMIN_DIRECTIVE_RECEIVE_CDW11_DOPER_DTYPE1H_RETURN_PARAMETERS:
+			xnvme_spec_drecv_srp_pr(
+				(struct xnvme_spec_base_return_parameters_figure712 *)dbuf,
+				XNVME_PR_DEF);
+			break;
+		case XNVME_SPEC_ADMIN_DIRECTIVE_RECEIVE_CDW11_DOPER_DTYPE1H_GET_STATUS:
+			xnvme_spec_drecv_sgs_pr((struct xnvme_spec_base_get_status *)dbuf,
 						XNVME_PR_DEF);
 			break;
-		case XNVME_SPEC_DRECV_STREAMS_GETST:
-			xnvme_spec_drecv_sgs_pr((struct xnvme_spec_streams_dir_gs *)dbuf,
-						XNVME_PR_DEF);
+		case XNVME_SPEC_ADMIN_DIRECTIVE_RECEIVE_CDW11_DOPER_DTYPE1H_ALLOCATE_RESOURCES:
+			xnvme_spec_drecv_sar_pr(ctx.cpl.dw0, XNVME_PR_DEF);
 			break;
-		case XNVME_SPEC_DRECV_STREAMS_ALLRS: {
-			struct xnvme_spec_alloc_resource ar = {.val = ctx.cpl.cdw0};
-			xnvme_spec_drecv_sar_pr(&ar, XNVME_PR_DEF);
-		} break;
 		default:
 			xnvme_cli_perr("invalid directive operation for streams directive", err);
 			goto exit;
@@ -558,11 +644,19 @@ sub_write_directive(struct xnvme_cli *cli)
 	}
 
 	xnvme_cli_pinf("Preparing and sending the command...");
-	xnvme_prep_nvm(&ctx, XNVME_SPEC_NVM_OPC_WRITE, nsid, slba, nlb);
-	ctx.cmd.nvm.dtype = dtype;
-	ctx.cmd.nvm.cdw13.dspec = dspec;
+	struct xnvme_cmd_prep_nvm_write_args args = {
+		.args_nbytes = sizeof(args),
+		.nsid = nsid,
+		.slba = slba,
+		.dtype = (uint8_t)dtype,
+		.nlb = (uint16_t)nlb,
+		.dspec = (uint16_t)dspec,
+	};
 
-	err = xnvme_cmd_pass(&ctx, dbuf, dbuf_nbytes, mbuf, mbuf_nbytes);
+	err = xnvme_cmd_prep_nvm_write(&ctx.cmd, &args);
+	if (!err) {
+		err = xnvme_cmd_pass(&ctx, dbuf, dbuf_nbytes, mbuf, mbuf_nbytes);
+	}
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		xnvme_cli_perr("xnvme_cmd_pass()", err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
@@ -674,36 +768,41 @@ sub_write_read_pi(struct xnvme_cli *cli)
 		xnvme_pi_generate(&pi_ctx, dbuf, mbuf, nlb + 1);
 	}
 
-	xnvme_prep_nvm(&ctx, XNVME_SPEC_NVM_OPC_WRITE, nsid, slba, nlb);
-	ctx.cmd.nvm.prinfo = (pract << 3 | prchk);
+	struct xnvme_cmd_prep_nvm_write_args wargs = {
+		.args_nbytes = sizeof(wargs),
+		.nsid = nsid,
+		.slba = slba,
+		.prinfo = (uint8_t)(pract << 3 | prchk),
+		.nlb = (uint16_t)nlb,
+	};
 
 	switch (geo->pi_type) {
 	case XNVME_PI_TYPE1:
 	case XNVME_PI_TYPE2:
 		switch (geo->pi_format) {
-		case XNVME_SPEC_NVM_NS_16B_GUARD:
+		case XNVME_SPEC_NVM_EXTENDED_LBA_FORMAT_PIF_16B_GUARD_PROTECTION_INFORMATION:
 			if (prchk & XNVME_PI_FLAGS_REFTAG_CHECK) {
-				ctx.cmd.nvm.ilbrt = (uint32_t)slba;
+				wargs.lbtl = (uint32_t)slba;
 			}
 			break;
-		case XNVME_SPEC_NVM_NS_64B_GUARD:
+		case XNVME_SPEC_NVM_EXTENDED_LBA_FORMAT_PIF_64B_GUARD_PROTECTION_INFORMATION:
 			if (prchk & XNVME_PI_FLAGS_REFTAG_CHECK) {
-				ctx.cmd.nvm.ilbrt = (uint32_t)slba;
-				ctx.cmd.common.cdw03 = ((slba >> 32) & 0xffff);
+				wargs.lbtl = (uint32_t)slba;
+				wargs.lbtu = (uint64_t)((slba >> 32) & 0xffff) << 32;
 			}
 			break;
 		default:
 			break;
 		}
 		if (prchk & XNVME_PI_FLAGS_APPTAG_CHECK) {
-			ctx.cmd.nvm.lbat = apptag;
-			ctx.cmd.nvm.lbatm = apptag_mask;
+			wargs.lbat = (uint16_t)apptag;
+			wargs.lbatm = (uint16_t)apptag_mask;
 		}
 		break;
 	case XNVME_PI_TYPE3:
 		if (prchk & XNVME_PI_FLAGS_APPTAG_CHECK) {
-			ctx.cmd.nvm.lbat = apptag;
-			ctx.cmd.nvm.lbatm = apptag_mask;
+			wargs.lbat = (uint16_t)apptag;
+			wargs.lbatm = (uint16_t)apptag_mask;
 		}
 		break;
 	case XNVME_PI_DISABLE:
@@ -711,7 +810,10 @@ sub_write_read_pi(struct xnvme_cli *cli)
 	}
 
 	xnvme_cli_pinf("Sending the command...");
-	err = xnvme_cmd_pass(&ctx, dbuf, dbuf_nbytes, mbuf, mbuf_nbytes);
+	err = xnvme_cmd_prep_nvm_write(&ctx.cmd, &wargs);
+	if (!err) {
+		err = xnvme_cmd_pass(&ctx, dbuf, dbuf_nbytes, mbuf, mbuf_nbytes);
+	}
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		xnvme_cli_perr("xnvme_cmd_pass()", err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
@@ -733,10 +835,24 @@ sub_write_read_pi(struct xnvme_cli *cli)
 		}
 	}
 
-	xnvme_prep_nvm(&ctx, XNVME_SPEC_NVM_OPC_READ, nsid, slba, nlb);
+	// The read checks, or with PRACT strips, the protection information that the write sent
+	struct xnvme_cmd_prep_nvm_read_args rargs = {
+		.args_nbytes = sizeof(rargs),
+		.nsid = nsid,
+		.slba = slba,
+		.prinfo = wargs.prinfo,
+		.nlb = (uint16_t)nlb,
+		.elbatm = wargs.lbatm,
+		.elbat = wargs.lbat,
+		.elbtl = wargs.lbtl,
+		.elbtu = wargs.lbtu,
+	};
 
 	xnvme_cli_pinf("Sending the command...");
-	err = xnvme_cmd_pass(&ctx, dbuf, dbuf_nbytes, mbuf, mbuf_nbytes);
+	err = xnvme_cmd_prep_nvm_read(&ctx.cmd, &rargs);
+	if (!err) {
+		err = xnvme_cmd_pass(&ctx, dbuf, dbuf_nbytes, mbuf, mbuf_nbytes);
+	}
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		xnvme_cli_perr("xnvme_cmd_pass()", err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
@@ -827,9 +943,19 @@ sub_compare(struct xnvme_cli *cli)
 	}
 
 	xnvme_cli_pinf("Sending the command...");
-	err = xnvme_nvm_compare(&ctx, nsid, slba, nlb, dbuf, mbuf);
+	struct xnvme_cmd_prep_nvm_compare_args args = {
+		.args_nbytes = sizeof(args),
+		.nsid = nsid,
+		.slba = slba,
+		.nlb = (uint16_t)nlb,
+	};
+
+	err = xnvme_cmd_prep_nvm_compare(&ctx.cmd, &args);
+	if (!err) {
+		err = xnvme_cmd_pass(&ctx, dbuf, dbuf_nbytes, mbuf, mbuf_nbytes);
+	}
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		xnvme_cli_perr("xnvme_nvm_compare()", err);
+		xnvme_cli_perr("compare", err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;

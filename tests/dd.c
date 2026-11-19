@@ -35,8 +35,10 @@ cb_func(struct xnvme_cmd_ctx *ctx, void *cb_arg)
 	} else {
 		ssize_t res;
 
-		res = xnvme_file_pwrite(&work->dst_ctx, work->buf, ctx->cpl.result,
-					ctx->cmd.nvm.slba - work->start_offset);
+		res = xnvme_file_pwrite(
+			&work->dst_ctx, work->buf, ctx->cpl.dw0,
+			((uint64_t)ctx->cmd.common.cdw11 << 32 | ctx->cmd.common.cdw10) -
+				work->start_offset);
 		if (res || xnvme_cmd_ctx_cpl_status(&work->dst_ctx)) {
 			xnvme_cli_perr("xnvme_file_pwrite(dst)", res);
 			xnvme_cmd_ctx_pr(&work->dst_ctx, XNVME_PR_DEF);

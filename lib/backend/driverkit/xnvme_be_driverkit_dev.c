@@ -196,7 +196,7 @@ xnvme_be_driverkit_dev_open(struct xnvme_dev *dev)
 	int qpid;
 
 	dev->ident.dtype = XNVME_DEV_TYPE_NVME_NAMESPACE;
-	dev->ident.csi = XNVME_SPEC_CSI_NVM;
+	dev->ident.csi = XNVME_SPEC_ADMIN_IDENTIFY_CDW11_CSI_NVM_COMMAND_SET;
 	dev->ident.nsid = dev->opts.nsid;
 
 	qpid = xnvme_be_driverkit_create_ioqpair(state, 31, 0x0);
