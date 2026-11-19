@@ -14,27 +14,7 @@
 #include <xnvme_cli.h>
 
 #define XNVME_CLI_SUB_MAXOPTS 64
-
-const char *
-xnvme_cli_opt_type_str(enum xnvme_cli_opt_type otype)
-{
-	switch (otype) {
-	case XNVME_CLI_POSA:
-		return "XNVME_CLI_POSA";
-	case XNVME_CLI_LFLG:
-		return "XNVME_CLI_LFLG";
-	case XNVME_CLI_LOPT:
-		return "XNVME_CLI_LOPT";
-	case XNVME_CLI_LREQ:
-		return "XNVME_CLI_LREQ";
-	case XNVME_CLI_POSN:
-		return "XNVME_CLI_POSN";
-	case XNVME_CLI_SKIP:
-		return "XNVME_CLI_SKIP";
-	}
-
-	return "XNVME_CLI_ENOSYS";
-}
+#define XNVME_CLI_SUB_NAME_LEN_MAX 30
 
 /**
  * Returns the minimum width required for sub-name, should be in the range
@@ -70,15 +50,13 @@ sub_by_name(struct xnvme_cli *cli, const char *name)
 	return NULL;
 }
 
-// TODO: finish this printer function
-void
+static void
 xnvme_cli_args_pr(struct xnvme_cli_args *args, int opts)
 {
 	xnvme_cli_pinf("opts: %d", opts);
 
-	for (int i = 0; i < 16; ++i) {
-		printf("cdw%i: 0x%" PRIx32 "\n", i, args->cdw[i]);
-	}
+	printf("cdw11: 0x%" PRIx32 "\n", args->cdw[11]);
+	printf("cdw12: 0x%" PRIx32 "\n", args->cdw[12]);
 
 	printf("uri: '%s'\n", args->uri);
 	printf("sys_uri: '%s'\n", args->sys_uri);
@@ -91,7 +69,7 @@ xnvme_cli_args_pr(struct xnvme_cli_args *args, int opts)
 	printf("help: %" PRIu32 "\n", args->help);
 }
 
-const char *
+static const char *
 xnvme_cli_opt_value_type_str(int vtype)
 {
 	switch (vtype) {
@@ -758,7 +736,7 @@ static struct xnvme_cli_opt_attr xnvme_cli_opts[] = {
 	},
 };
 
-struct xnvme_cli_opt_attr *
+static struct xnvme_cli_opt_attr *
 xnvme_cli_opt_attr_by_opt(enum xnvme_cli_opt opt, struct xnvme_cli_opt_attr *attrs)
 {
 	for (int idx = 0; attrs[idx].opt; ++idx) {
@@ -776,20 +754,6 @@ const struct xnvme_cli_opt_attr *
 xnvme_cli_get_opt_attr(enum xnvme_cli_opt opt)
 {
 	return xnvme_cli_opt_attr_by_opt(opt, xnvme_cli_opts);
-}
-
-struct xnvme_cli_opt_attr *
-xnvme_cli_opt_attr_by_getoptval(int getoptval, struct xnvme_cli_opt_attr *attrs)
-{
-	for (int idx = 0; attrs[idx].getoptval; ++idx) {
-		if (attrs[idx].getoptval != getoptval) {
-			continue;
-		}
-
-		return &attrs[idx];
-	}
-
-	return NULL;
 }
 
 void
@@ -840,7 +804,7 @@ xnvme_cli_perr(const char *msg, int err)
 }
 #endif
 
-void
+static void
 xnvme_cli_usage_sub_long(struct xnvme_cli *cli, struct xnvme_cli_sub *sub)
 {
 	printf("Usage: %s %s ", cli->argv[0], sub->name);
@@ -934,7 +898,7 @@ xnvme_cli_usage_sub_long(struct xnvme_cli *cli, struct xnvme_cli_sub *sub)
 	}
 }
 
-void
+static void
 xnvme_cli_usage_sub_short(struct xnvme_cli_sub *sub, size_t name_width)
 {
 	int name_len = strnlen(sub->name, XNVME_CLI_SUB_NAME_LEN_MAX);
@@ -951,7 +915,7 @@ xnvme_cli_usage_sub_short(struct xnvme_cli_sub *sub, size_t name_width)
 	printf("\n");
 }
 
-void
+static void
 xnvme_cli_usage(struct xnvme_cli *cli)
 {
 	if (!cli) {
@@ -1156,7 +1120,7 @@ parse_cpulist(struct xnvme_cli_args *args, const char *list)
 	return 0;
 }
 
-int
+static int
 xnvme_cli_assign_arg(struct xnvme_cli *cli, struct xnvme_cli_opt_attr *opt_attr, char *arg,
 		     enum xnvme_cli_opt_type opt_type)
 {
@@ -1614,29 +1578,6 @@ struct xnvme_cli_counts {
 	int total;
 };
 
-void
-xnvme_cli_counts_pr(const struct xnvme_cli_counts *counts)
-{
-	printf("xnvme_cli_counts:");
-
-	if (!counts) {
-		printf(" ~\n");
-		return;
-	}
-
-	printf("\n");
-	printf("  posa: %d", counts->posa);
-	printf("  posn: %d", counts->posn);
-	printf("  lreq: %d", counts->lreq);
-	printf("  lopt: %d", counts->lopt);
-	printf("  lflg: %d", counts->lflg);
-
-	printf("  total_long: %d", counts->total_long);
-	printf("  total_req: %d", counts->total_req);
-	printf("  total: %d", counts->total);
-	printf("\n");
-}
-
 /**
  * Parse at most XNVME_CLI_SUB_OPTS_LEN arguments
  */
@@ -1673,7 +1614,7 @@ cli_pinf_missing(struct xnvme_cli *cli, struct xnvme_cli_sub *sub, int npos_give
 	printf("# See: '%s %s --help'\n", cli->argv[0], sub->name);
 }
 
-int
+static int
 xnvme_cli_parse(struct xnvme_cli *cli)
 {
 	struct xnvme_cli_args *args = &cli->args;
@@ -1935,7 +1876,24 @@ xnvme_cli_parse(struct xnvme_cli *cli)
 	return 0;
 }
 
-int
+/**
+ * Split a device argument into its URI and the namespace it names
+ *
+ * A device argument is a URI, optionally followed by a query naming the namespace:
+ * "<uri>/?nsid=<nsid>" or "<uri>?nsid=<nsid>", the identifier in decimal or hex. The
+ * device-open helpers use this, so every tool takes such arguments. It is a
+ * convention of the command line only: ::xnvme_dev_open takes the URI without a query.
+ *
+ * @param arg The device argument
+ * @param uri Set to the URI without the query
+ * @param uri_nbytes Size of the buffer 'uri' points to
+ * @param nsid Set to the namespace identifier when the query names one, left as is otherwise
+ *
+ * @return 1 when the query names a namespace, 0 when there is no query. On error, negative
+ * errno is returned: -EINVAL for an unknown key, a malformed identifier, or a URI that does
+ * not fit 'uri'.
+ */
+static int
 xnvme_cli_uri_parse(const char *arg, char *uri, size_t uri_nbytes, uint32_t *nsid)
 {
 	const char *query;
@@ -2249,7 +2207,7 @@ xnvme_cli_enumeration_append(struct xnvme_cli_enumeration *list, const struct xn
 	return 0;
 }
 
-int
+static int
 xnvme_cli_enumeration_fpr(FILE *stream, struct xnvme_cli_enumeration *list, int opts)
 {
 	int wrtn = 0;
@@ -2329,7 +2287,7 @@ enumeration_has_ident(struct xnvme_cli_enumeration *list, struct xnvme_ident *id
 	return 0;
 }
 
-int
+static int
 xnvme_cli_enumeration_fpp(FILE *stream, struct xnvme_cli_enumeration *list, int opts)
 {
 	int wrtn = 0;

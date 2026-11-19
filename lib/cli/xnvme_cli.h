@@ -183,9 +183,6 @@ struct xnvme_cli_args {
 	int posn_count;    ///< Number of remaining positional args
 };
 
-void
-xnvme_cli_args_pr(struct xnvme_cli_args *args, int opts);
-
 /**
  * Command-Line Options, each command-line option can be one of ::xnvme_cli_opt_type
  *
@@ -403,8 +400,6 @@ typedef int (*xnvme_cli_subfunc)(struct xnvme_cli *);
 
 #define XNVME_CLI_SUB_OPTS_LEN 200
 
-#define XNVME_CLI_SUB_NAME_LEN_MAX 30
-
 /**
  * Filled by the user of libxnvmc, usually statically right above main
  */
@@ -474,21 +469,6 @@ xnvme_cli_enumeration_free(struct xnvme_cli_enumeration *list);
 int
 xnvme_cli_enumeration_append(struct xnvme_cli_enumeration *list, const struct xnvme_ident *entry);
 
-/**
- * Prints the given ::xnvme_cli_enumeration to the given output stream
- *
- * @param stream output stream used for printing
- * @param list pointer to structure to print
- * @param opts printer options, see ::xnvme_pr
- *
- * @return On success, the number of characters printed is returned.
- */
-int
-xnvme_cli_enumeration_fpr(FILE *stream, struct xnvme_cli_enumeration *list, int opts);
-
-int
-xnvme_cli_enumeration_fpp(FILE *stream, struct xnvme_cli_enumeration *list, int opts);
-
 int
 xnvme_cli_enumeration_pp(struct xnvme_cli_enumeration *list, int opts);
 
@@ -547,30 +527,10 @@ int
 xnvme_cli_to_opts(const struct xnvme_cli *cli, struct xnvme_opts *opts);
 
 /**
- * Split a device argument into its URI and the namespace it names
- *
- * A device argument is a URI, optionally followed by a query naming the namespace:
- * "<uri>/?nsid=<nsid>" or "<uri>?nsid=<nsid>", the identifier in decimal or hex. The
- * device-open helpers of xnvme_cli use this, so every tool takes such arguments. It is a
- * convention of the command line only: ::xnvme_dev_open takes the URI without a query.
- *
- * @param arg The device argument
- * @param uri Set to the URI without the query
- * @param uri_nbytes Size of the buffer 'uri' points to
- * @param nsid Set to the namespace identifier when the query names one, left as is otherwise
- *
- * @return 1 when the query names a namespace, 0 when there is no query. On error, negative
- * errno is returned: -EINVAL for an unknown key, a malformed identifier, or a URI that does
- * not fit 'uri'.
- */
-int
-xnvme_cli_uri_parse(const char *arg, char *uri, size_t uri_nbytes, uint32_t *nsid);
-
-/**
  * Open a device for each of the given URIs
  *
- * A URI may name its namespace as described for ::xnvme_cli_uri_parse; a namespace named
- * that way must be active, or the open fails with -ENODEV.
+ * A URI may name its namespace with a query, "<uri>?nsid=<nsid>"; a namespace named that
+ * way must be active, or the open fails with -ENODEV.
  *
  * @param uris The device URIs to open
  * @param count The number of URIs
