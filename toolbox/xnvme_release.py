@@ -15,13 +15,21 @@ non-zero, saying why, when any of that is not so.
 With --bump X.Y.Z it instead writes X.Y.Z into every file carrying the
 version, and with --contributors it prints the authors since the previous tag
 that CONTRIBUTORS.md does not name.
+
+With --archive PATH it checks the source archive at PATH against the version of
+the tree, and prints what is wrong with it, one problem per line; see
+archive_problems(). --subprojects names the subprojects the archive must carry,
+and --release says that the archive is that of a release.
 """
 
 import argparse
+import posixpath
 import re
 import subprocess
 import sys
-from pathlib import Path
+import tarfile
+import tempfile
+from pathlib import Path, PurePosixPath
 
 SUBJECT = re.compile(r"^ver: bump to v(\d+\.\d+\.\d+)$")
 
@@ -116,6 +124,95 @@ def missing_contributors(root: Path):
     return sorted(authors - named)
 
 
+def version_of(root: Path) -> str:
+    """The version that meson.build under 'root' carries"""
+
+    path, pattern = VERSIONED[0]
+    try:
+        text = (root / path).read_text()
+    except OSError as exc:
+        raise ValueError(str(exc)) from exc
+    found = re.search(pattern, text, re.M)
+    if not found:
+        raise ValueError(f"{path}: no match of {pattern!r}")
+
+    return found.group(1)
+
+
+def archive_problems(path: Path, version: str, subprojects=(), release=False):
+    """What is wrong with the source archive at 'path' for a release of 'version'
+
+    Every member lies under the directory 'xnvme-<version>/', which holds no git
+    metadata and no link to outside it or to a file it does not hold. The files
+    carrying the version carry 'version', as check() reads them, CHANGELOG.rst
+    has its section, and '.vcs_tag' records the revision, as a build of the
+    archive has no git metadata; when 'release', that revision is the tag
+    'v<version>'. Each of 'subprojects' is a directory of files.
+    """
+
+    top = PurePosixPath(f"xnvme-{version}")
+    problems = []
+    with tarfile.open(path, "r:gz") as tar:
+        members = tar.getmembers()
+        names = {PurePosixPath(member.name) for member in members}
+        files = {PurePosixPath(m.name) for m in members if m.isfile()}
+
+        for member in members:
+            name = PurePosixPath(member.name)
+            if (
+                name.is_absolute()
+                or ".." in name.parts
+                or name.parts[:1] != (top.name,)
+            ):
+                problems.append(f"{member.name}: not under {top}/")
+                continue
+            if ".git" in name.parts:
+                problems.append(f"{member.name}: git metadata")
+            if member.issym() or member.islnk():
+                base = name.parent if member.issym() else PurePosixPath()
+                target = PurePosixPath(posixpath.normpath(base / member.linkname))
+                if member.linkname.startswith("/") or target.parts[:1] != (top.name,):
+                    problems.append(
+                        f"{member.name}: a link to {member.linkname}, outside {top}/"
+                    )
+                elif target not in names:
+                    problems.append(
+                        f"{member.name}: a link to {member.linkname}, which the archive does not hold"
+                    )
+
+        if top / ".vcs_tag" not in files:
+            problems.append(
+                f"{top}/.vcs_tag: missing, so a build of the archive reports no revision"
+            )
+        elif release:
+            stamp = tar.extractfile(str(top / ".vcs_tag")).read()
+            revision = stamp.decode(errors="replace").strip()
+            if revision != f"v{version}":
+                problems.append(
+                    f"{top}/.vcs_tag: {revision}, not the tag v{version} of the release"
+                )
+        for subproject in subprojects:
+            directory = top / "subprojects" / subproject
+            if not any(directory in name.parents for name in files):
+                problems.append(f"{directory}/: missing or without files")
+
+        needed = sorted({path for path, _ in VERSIONED} | {"CHANGELOG.rst"})
+        missing = [p for p in needed if top / p not in files]
+        problems += [f"{top}/{p}: missing" for p in missing]
+        if not missing:
+            with tempfile.TemporaryDirectory() as tmp:
+                for p in needed:
+                    dest = Path(tmp) / p
+                    dest.parent.mkdir(parents=True, exist_ok=True)
+                    dest.write_bytes(tar.extractfile(str(top / p)).read())
+                try:
+                    check(f"ver: bump to v{version}", Path(tmp))
+                except ValueError as exc:
+                    problems.append(str(exc))
+
+    return problems
+
+
 def main():
     prsr = argparse.ArgumentParser(description="Check a version bump, print its notes")
     prsr.add_argument("subject", nargs="?", help="Subject of the commit")
@@ -124,10 +221,23 @@ def main():
     mode.add_argument(
         "--contributors", action="store_true", help="Authors CONTRIBUTORS.md misses"
     )
+    mode.add_argument(
+        "--archive", type=Path, help="Check a source archive against the tree"
+    )
+    prsr.add_argument(
+        "--subprojects",
+        default="",
+        help="Comma-separated subprojects the archive must carry",
+    )
+    prsr.add_argument(
+        "--release",
+        action="store_true",
+        help="With --archive: the archive is that of a release",
+    )
     prsr.add_argument("--root", type=Path, default=Path.cwd())
     args = prsr.parse_args()
-    if args.subject and (args.bump or args.contributors):
-        prsr.error("give a commit subject, --bump or --contributors, not both")
+    if args.subject and (args.bump or args.contributors or args.archive):
+        prsr.error("give a commit subject, --bump, --contributors or --archive")
 
     try:
         if args.bump:
@@ -135,11 +245,24 @@ def main():
         elif args.contributors:
             for name in missing_contributors(args.root):
                 print(name)
+        elif args.archive:
+            subprojects = [s for s in args.subprojects.split(",") if s]
+            version = version_of(args.root)
+            try:
+                problems = archive_problems(
+                    args.archive, version, subprojects, args.release
+                )
+            except (OSError, EOFError, tarfile.TarError) as exc:
+                raise ValueError(f"{args.archive}: {exc}") from exc
+            for problem in problems:
+                print(problem)
+            if problems:
+                return 1
         elif args.subject:
             _, notes = check(args.subject, args.root)
             print(notes)
         else:
-            prsr.error("give a commit subject, --bump or --contributors")
+            prsr.error("give a commit subject, --bump, --contributors or --archive")
     except ValueError as exc:
         print(f"release: {exc}", file=sys.stderr)
         return 1
