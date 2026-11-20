@@ -19,6 +19,11 @@ GATES_SPEC = importlib.util.spec_from_file_location(
 )
 gha_gates = importlib.util.module_from_spec(GATES_SPEC)
 GATES_SPEC.loader.exec_module(gha_gates)
+PUBLISH_SPEC = importlib.util.spec_from_file_location(
+    "xnvme_publish", ROOT / "toolbox" / "xnvme_publish.py"
+)
+xnvme_publish = importlib.util.module_from_spec(PUBLISH_SPEC)
+PUBLISH_SPEC.loader.exec_module(xnvme_publish)
 
 # The values run_step() gives the expressions in the env of a job or a step
 CONTEXTS = {
@@ -446,6 +451,9 @@ def test_a_release_attaches_the_archives_and_reports_of_the_run(tmp_path):
     )
     with tarfile.open(assets / "test-results-v1.2.3.tar.gz") as tar:
         assert "reports/verify-reports/report.txt" in tar.getnames()
+    # What 'make publish' fetches from the release
+    for name in xnvme_publish.assets("1.2.3"):
+        xnvme_publish.verify(assets / name)
 
 
 def test_the_release_takes_the_version_notes_and_assets():
@@ -495,6 +503,25 @@ def test_both_publish_on_a_push_to_main():
         content = yaml.safe_load((WORKFLOWS / workflow).read_text())
         # PyYAML reads the key 'on' as True
         assert content[True] == {"push": {"branches": ["main"]}}
+
+
+def test_no_workflow_uploads_to_a_registry():
+    """An upload to PyPI or crates.io cannot be undone, so a maintainer makes it"""
+    content = yaml.safe_load((WORKFLOWS / "publish-release.yml").read_text())
+
+    assert list(content["jobs"]) == ["release"]
+    for workflow in WORKFLOWS.glob("*.yml"):
+        text = workflow.read_text()
+        for upload in ["xnvme_publish.py", "pypi-publish", "crates-io-auth", "twine"]:
+            assert upload not in text, f"{workflow.name} runs {upload}"
+
+
+def test_make_publish_uploads_to_pypi_and_crates_io():
+    makefile = (ROOT / "Makefile").read_text()
+    recipe = makefile[makefile.index("\npublish:\n") :].split("\n\n")[0]
+
+    assert "xnvme_publish.py pypi $(VERSION)" in recipe
+    assert "xnvme_publish.py crate $(VERSION)" in recipe
 
 
 def test_the_docgen_deploy_retries_a_rejected_push():

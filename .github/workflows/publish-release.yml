@@ -10,7 +10,8 @@ name: publish-release
 # of them and 'ci-result' passed in its run. The artifacts are used only when
 # that pull-request's head has the tree main now has, which branch protection's
 # up-to-date rule ensures for a merge; otherwise the release fails. Any
-# other push does nothing here.
+# other push does nothing here. Nothing is uploaded to PyPI or crates.io, as an
+# upload cannot be undone; a maintainer runs 'make publish' after the release.
 on:
   push:
     branches: [main]
@@ -90,3 +91,4 @@ jobs:
         title: 'Release Notes: {tag}'
         assets: assets/*
         dispatch: verify.yml job=docgen
+
