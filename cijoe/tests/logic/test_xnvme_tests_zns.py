@@ -1,6 +1,6 @@
 import pytest
 
-from ..conftest import get_osname, xnvme_cli_args, xnvme_parametrize
+from ..conftest import get_osname, xnvme_cli_args, xnvme_parametrize, zoned_bdev_reset
 
 
 def test_enum(cijoe):
@@ -183,4 +183,25 @@ def test_reset_open_report(cijoe, device, be_opts, cli_args):
     err, _ = cijoe.run(
         f"xnvme test zns report {cli_args} --slba {slba} --limit {limit}"
     )
+    assert not err
+
+
+@xnvme_parametrize(labels=["zns"], opts=["be", "admin", "async"])
+def test_write_read_async(cijoe, device, be_opts, cli_args):
+    if get_osname() == "freebsd" and be_opts["be"] not in [
+        "spdk",
+        "ramdisk_emu",
+        "ramdisk_thrpool",
+    ]:
+        pytest.skip(reason="Freebsd kernel doesn't support zns")
+    # Buffered writes to a zoned block device are flushed by the page cache with no
+    # write-pointer ordering guarantee; bypass it to keep the writes sequential.
+    # The test resets the zone through the NVMe admin path where admin=nvme,
+    # which the block layer does not see; see zoned_bdev_reset()
+    zoned_bdev_reset(cijoe, device)
+    err, _ = cijoe.run(f"xnvme test zns write-async {cli_args} --direct 1")
+    assert not err
+
+    # read-async reads a Full zone, such as the one write-async just filled
+    err, _ = cijoe.run(f"xnvme test zns read-async {cli_args}")
     assert not err
