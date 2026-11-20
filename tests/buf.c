@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <libxnvme.h>
+#include <xnvme_cli.h>
 
 #define THREADS 16
 #define SLOTS 8

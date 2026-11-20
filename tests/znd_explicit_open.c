@@ -4,6 +4,7 @@
 
 #include <errno.h>
 #include <libxnvme.h>
+#include <xnvme_cli.h>
 
 static int
 test_open_zdptr(struct xnvme_cli *cli)
@@ -18,7 +19,7 @@ test_open_zdptr(struct xnvme_cli *cli)
 		zns->lbafe[xnvme_bits_get(nvm->flbas, XNVME_SPEC_IDFY_NS_FLBAS_FORMAT)].zdes * 64;
 	uint8_t *zde = NULL;
 
-	uint64_t zslba = cli->args.lba;
+	uint64_t zslba = 0;
 	uint64_t zidx = 0;
 
 	struct xnvme_znd_report *before = NULL, *after = NULL;
@@ -66,7 +67,7 @@ test_open_zdptr(struct xnvme_cli *cli)
 			return err;
 		}
 
-		if (cli->given[XNVME_CLI_OPT_SLBA] && (cli->args.lba != descr->zslba)) {
+		if (cli->given[XNVME_CLI_OPT_SLBA] && (cli->args.slba != descr->zslba)) {
 			continue;
 		}
 

@@ -12,8 +12,8 @@ The :ref:`sec-api-c` section starts with technical details on using the library
 header. It is followed by subsections that overview the :ref:`sec-api-c-core`
 abstractions, and additional layers such as :ref:`sec-api-c-nvme`
 and :ref:`sec-api-c-file`. It also includes supplemental helpers and convenience
-functions found in :ref:`sec-api-c-cli` and :ref:`sec-api-c-util`, as well as
-practical :ref:`sec-api-c-examples`.
+functions found in :ref:`sec-api-c-util`, as well as practical
+:ref:`sec-api-c-examples`.
 
 .. _coreapi:
 .. figure:: ../_static/core_api.png
@@ -44,10 +44,6 @@ practical :ref:`sec-api-c-examples`.
 
 :ref:`sec-api-c-file`
   This section describes file-related functionalities within **xNVMe**.
-
-:ref:`sec-api-c-cli`
-  This section covers the command-line interface (CLI) functionalities of
-  **xNVMe**.
 
 :ref:`sec-api-c-util`
   This portion covers :ref:`sec-api-c-util`, which consists of helpers

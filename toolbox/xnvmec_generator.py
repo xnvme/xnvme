@@ -256,8 +256,13 @@ def parse_frontend(tsig):
                     [f"xnvme-{name}-{prog}", "--help"], cwd=str(builddir / f"{name}s")
                 )
                 match = re.match(RE_SIG, pout, re.MULTILINE | re.IGNORECASE)
-                # A program printing its own --help: the usage, a blank line, the description
-                pdescr = match.group("descr") if match else pout.partition("\n\n")[2]
+                # A program printing its own --help: the usage, a blank line, the description,
+                # and maybe a blank line and its options
+                pdescr = (
+                    match.group("descr")
+                    if match
+                    else pout.partition("\n\n")[2].partition("\n\n")[0]
+                )
                 rows.append((f"{name}-{prog}", summary(pdescr)))
             usage = f"xnvme {name} <program> <command> [<args>]"
             tsig["group_pages"].append((name, descr, usage, rows))
@@ -561,11 +566,7 @@ def find_binaries(folder):
 
     bins = []
 
-    # These examples parse argv by hand, so their --help is not one to generate from
-    skip = ("dev", "enum", "hello", "single-")
     for path in sorted((builddir / folder).rglob("*")):
-        if path.stem.startswith(tuple(f"xnvme-example-{name}" for name in skip)):
-            continue
         if path.is_file() and path.stat().st_mode & os.X_OK:
             bins.append(str(path))
 
@@ -614,7 +615,9 @@ def setup():
 def main(args):
     """Generate man pages for xNVMe CLI tools"""
 
-    folders = {"examples": [], "tests": [], "tools": []}
+    # The examples parse argv by hand, so their --help is not one to generate from;
+    # xnvme-example(1) lists them with the description their --help gives
+    folders = {"tests": [], "tools": []}
     for folder, tools in folders.items():
         for tool in find_binaries(folder):
             logging.info("Parsing tool: %r", tool)

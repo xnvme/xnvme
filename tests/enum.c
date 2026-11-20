@@ -4,6 +4,7 @@
 
 #include <errno.h>
 #include <libxnvme.h>
+#include <xnvme_cli.h>
 
 #define MAX_DEVS 100
 #define MAX_LISTINGS 1024
@@ -47,19 +48,20 @@ test_enum(struct xnvme_cli *cli)
 		err = xnvme_cli_enumeration_alloc(&listing[i], MAX_DEVS);
 		if (err) {
 			XNVME_DEBUG("FAILED: xnvme_cli_enumeration_alloc()");
-			return err;
+			goto exit;
 		}
 
 		err = xnvme_enumerate(cli->args.sys_uri, &opts, *enumerate_cb, listing[i]);
 		if (err) {
 			xnvme_cli_perr("xnvme_enumerate()", err);
 			xnvme_cli_pinf("The %ld' xnvme_enumerate() failed", i + 1);
-			return err;
+			goto exit;
 		}
 
 		if (listing[i]->nentries < 1) {
 			xnvme_cli_pinf("The enumeration %ld did not contain any entries", i);
-			return ENOENT;
+			err = ENOENT;
+			goto exit;
 		}
 
 		if (i && (listing[i]->nentries != listing[i - 1]->nentries)) {
@@ -67,12 +69,18 @@ test_enum(struct xnvme_cli *cli)
 
 			xnvme_cli_enumeration_pr(listing[i], XNVME_PR_DEF);
 			xnvme_cli_enumeration_pr(listing[i - 1], XNVME_PR_DEF);
-			return EIO;
+			err = EIO;
+			goto exit;
 		}
 	}
 	xnvme_cli_pinf("LGTM: xnvme_enumerate()");
 
-	return 0;
+exit:
+	for (uint64_t i = 0; i < nlistings; ++i) {
+		xnvme_cli_enumeration_free(listing[i]);
+	}
+
+	return err;
 }
 
 static int
@@ -98,7 +106,7 @@ test_enum_open(struct xnvme_cli *cli)
 	err = xnvme_enumerate(cli->args.sys_uri, &enum_opts, *enumerate_cb, listing);
 	if (err) {
 		xnvme_cli_perr("xnvme_enumerate()", err);
-		return err;
+		goto exit;
 	}
 	xnvme_cli_enumeration_pr(listing, XNVME_PR_DEF);
 
@@ -108,7 +116,8 @@ test_enum_open(struct xnvme_cli *cli)
 
 	if (listing->nentries < 1) {
 		xnvme_cli_pinf("The enumeration did not contain any entries");
-		return ENOENT;
+		err = ENOENT;
+		goto exit;
 	}
 
 	for (int64_t i = 0; i < listing->nentries; ++i) {
@@ -120,7 +129,7 @@ test_enum_open(struct xnvme_cli *cli)
 			err = xnvme_cli_to_opts(cli, &opts);
 			if (err) {
 				xnvme_cli_perr("xnvme_cli_to_opts()", err);
-				return err;
+				goto exit;
 			}
 
 			opts.nsid = listing->entries[i].nsid;
@@ -130,10 +139,10 @@ test_enum_open(struct xnvme_cli *cli)
 				err = errno;
 				xnvme_cli_pinf("xnvme_dev_open(%s)", listing->entries[i].uri);
 				xnvme_cli_perr("xnvme_dev_open()", err);
-				return err;
+				goto exit;
 			}
 			if (cli->args.verbose) {
-				xnvme_dev_pr(dev[i], XNVME_PR_DEF);
+				xnvme_dev_pr(dev[hidx], XNVME_PR_DEF);
 			}
 		}
 
@@ -144,7 +153,11 @@ test_enum_open(struct xnvme_cli *cli)
 	}
 
 	xnvme_cli_pinf("LGTM: xnvme_enumerate() + xnvme_dev_open() * count");
-	return 0;
+
+exit:
+	xnvme_cli_enumeration_free(listing);
+
+	return err;
 }
 
 int

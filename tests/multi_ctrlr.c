@@ -7,6 +7,7 @@
 #include <string.h>
 
 #include <libxnvme.h>
+#include <xnvme_cli.h>
 
 /**
  * Write a distinct pattern to every controller and read them all back

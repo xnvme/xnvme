@@ -3,168 +3,79 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <errno.h>
+#include <getopt.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <libxnvme.h>
 
+/**
+ * This example shows how to fill a Zone using synchronous write commands
+ *
+ * - Retrieve the descriptor of an empty Zone
+ * - Allocate buffers for Command Payload
+ * - Write the Zone one LBA at a time, from its start to its capacity
+ * - Reporting on IO-errors
+ * - Teardown
+ */
 static int
-sub_sync_read(struct xnvme_cli *cli)
+zone_write(struct xnvme_dev *dev)
 {
-	struct xnvme_dev *dev = cli->args.dev;
 	const struct xnvme_geo *geo = xnvme_dev_get_geo(dev);
-	uint32_t nsid = cli->args.nsid;
-
+	uint32_t nsid = xnvme_dev_get_nsid(dev);
 	struct xnvme_spec_znd_descr zone = {0};
 
 	size_t buf_nbytes;
 	char *buf = NULL;
+	struct xnvme_timer timer = {0};
 	int err;
 
 	if (geo->type != XNVME_GEO_ZONED) {
-		XNVME_DEBUG("FAILED: not zns, got; %d", geo->type);
-		return EINVAL;
+		fprintf(stderr, "Not a zoned namespace\n");
+		return -EINVAL;
 	}
-	if (!cli->given[XNVME_CLI_OPT_NSID]) {
-		nsid = xnvme_dev_get_nsid(cli->args.dev);
+
+	err = xnvme_znd_descr_from_dev_in_state(dev, XNVME_SPEC_ZND_STATE_EMPTY, &zone);
+	if (err) {
+		fprintf(stderr, "xnvme_znd_descr_from_dev_in_state(): %s\n", strerror(-err));
+		goto exit;
 	}
-	if (cli->given[XNVME_CLI_OPT_SLBA]) {
-		err = xnvme_znd_descr_from_dev(dev, cli->args.slba, &zone);
-		if (err) {
-			xnvme_cli_perr("xnvme_znd_descr_from_dev()", -err);
-			goto exit;
-		}
-	} else {
-		err = xnvme_znd_descr_from_dev_in_state(dev, XNVME_SPEC_ZND_STATE_EMPTY, &zone);
-		if (err) {
-			xnvme_cli_perr("xnvme_znd_descr_from_dev()", -err);
-			goto exit;
-		}
-	}
-	xnvme_cli_pinf("Using the following zone:");
 	xnvme_spec_znd_descr_pr(&zone, XNVME_PR_DEF);
 
 	buf_nbytes = zone.zcap * geo->lba_nbytes;
 
-	xnvme_cli_pinf("Allocating and filling buf_nbytes: %zu", buf_nbytes);
+	printf("Allocating and filling buf_nbytes: %zu\n", buf_nbytes);
 	buf = xnvme_buf_alloc(dev, buf_nbytes);
 	if (!buf) {
 		err = -errno;
-		xnvme_cli_perr("xnvme_buf_alloc()", err);
+		fprintf(stderr, "xnvme_buf_alloc(): %s\n", strerror(-err));
 		goto exit;
 	}
 
-	err = xnvme_buf_fill(buf, buf_nbytes, "zero");
+	err = xnvme_buf_fill(buf, buf_nbytes, "anum");
 	if (err) {
-		xnvme_cli_perr("xnvme_buf_fill()", err);
+		fprintf(stderr, "xnvme_buf_fill(): %s\n", strerror(-err));
 		goto exit;
 	}
 
-	xnvme_cli_pinf("Read from uri: '%s'", cli->args.uri);
-	xnvme_cli_timer_start(cli);
+	xnvme_timer_start(&timer);
 
 	for (uint64_t sect = 0; sect < zone.zcap; ++sect) {
-		struct xnvme_cmd_ctx ctx = {0};
+		struct xnvme_cmd_ctx ctx;
 		void *payload = buf + sect * geo->lba_nbytes;
 
 		xnvme_dev_get_cmd_ctx(dev, &ctx);
-
-		err = xnvme_nvm_read(&ctx, nsid, zone.zslba + sect, 0, payload, NULL);
-		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-			xnvme_cli_perr("xnvme_nvm_read()", err);
-			xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
-			err = err ? err : -EIO;
-			goto exit;
-		}
-	}
-
-	xnvme_cli_timer_stop(cli);
-	xnvme_cli_timer_bw_pr(cli, "Wall-clock", zone.zcap * geo->lba_nbytes);
-
-	if (cli->args.data_output) {
-		xnvme_cli_pinf("Dumping nbytes: %zu, to: '%s'", buf_nbytes, cli->args.data_output);
-		err = xnvme_buf_to_file(buf, buf_nbytes, cli->args.data_output);
-		if (err) {
-			xnvme_cli_perr("xnvme_buf_to_file()", err);
-		}
-	}
-
-exit:
-	xnvme_buf_free(dev, buf);
-
-	return err < 0 ? err : 0;
-}
-
-static int
-sub_sync_write(struct xnvme_cli *cli)
-{
-	struct xnvme_dev *dev = cli->args.dev;
-	const struct xnvme_geo *geo = xnvme_dev_get_geo(dev);
-	uint32_t nsid = cli->args.nsid;
-
-	struct xnvme_spec_znd_descr zone = {0};
-
-	size_t buf_nbytes;
-	char *buf = NULL;
-	int err;
-
-	if (geo->type != XNVME_GEO_ZONED) {
-		XNVME_DEBUG("FAILED: not zns, got; %d", geo->type);
-		return EINVAL;
-	}
-	if (!cli->given[XNVME_CLI_OPT_NSID]) {
-		nsid = xnvme_dev_get_nsid(cli->args.dev);
-	}
-	if (cli->given[XNVME_CLI_OPT_SLBA]) {
-		err = xnvme_znd_descr_from_dev(dev, cli->args.slba, &zone);
-		if (err) {
-			xnvme_cli_perr("xnvme_znd_descr_from_dev()", -err);
-			goto exit;
-		}
-	} else {
-		err = xnvme_znd_descr_from_dev_in_state(dev, XNVME_SPEC_ZND_STATE_EMPTY, &zone);
-		if (err) {
-			xnvme_cli_perr("xnvme_znd_descr_from_dev()", -err);
-			goto exit;
-		}
-	}
-	xnvme_cli_pinf("Using the following zone:");
-	xnvme_spec_znd_descr_pr(&zone, XNVME_PR_DEF);
-
-	buf_nbytes = zone.zcap * geo->lba_nbytes;
-
-	xnvme_cli_pinf("Allocating and filling buf_nbytes: %zu", buf_nbytes);
-	buf = xnvme_buf_alloc(dev, buf_nbytes);
-	if (!buf) {
-		err = -errno;
-		xnvme_cli_perr("xnvme_buf_alloc()", err);
-		goto exit;
-	}
-
-	err = xnvme_buf_fill(buf, buf_nbytes,
-			     cli->args.data_input ? cli->args.data_input : "anum");
-	if (err) {
-		xnvme_cli_perr("xnvme_buf_fill()", err);
-		goto exit;
-	}
-
-	xnvme_cli_pinf("Write to uri: '%s'", cli->args.uri);
-	xnvme_cli_timer_start(cli);
-
-	for (uint64_t sect = 0; sect < zone.zcap; ++sect) {
-		struct xnvme_cmd_ctx ctx = {0};
-		void *payload = buf + sect * geo->lba_nbytes;
-
-		xnvme_dev_get_cmd_ctx(dev, &ctx);
-
 		err = xnvme_nvm_write(&ctx, nsid, zone.zslba + sect, 0, payload, NULL);
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-			xnvme_cli_perr("xnvme_nvm_write()", err);
-			xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 			err = err ? err : -EIO;
+			fprintf(stderr, "xnvme_nvm_write(): %s\n", strerror(-err));
+			xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 			goto exit;
 		}
 	}
 
-	xnvme_cli_timer_stop(cli);
-	xnvme_cli_timer_bw_pr(cli, "Wall-clock", zone.zcap * geo->lba_nbytes);
+	xnvme_timer_stop(&timer);
+	xnvme_timer_bw_pr(&timer, "Wall-clock", buf_nbytes);
 
 exit:
 	xnvme_buf_free(dev, buf);
@@ -172,156 +83,96 @@ exit:
 	return err < 0 ? err : 0;
 }
 
-static int
-sub_sync_append(struct xnvme_cli *cli)
+static const struct option g_lopts[] = {
+	// Given to xnvme_dev_open() in struct xnvme_opts
+	{"be", required_argument, NULL, 'b'},     {"admin", required_argument, NULL, 'A'},
+	{"sync", required_argument, NULL, 's'},   {"async", required_argument, NULL, 'a'},
+	{"mem", required_argument, NULL, 'm'},    {"dev-nsid", required_argument, NULL, 'N'},
+	{"direct", required_argument, NULL, 'D'}, {"homi-id", required_argument, NULL, 'H'},
+	{"help", no_argument, NULL, 'h'},         {NULL, 0, NULL, 0},
+};
+
+static void
+usage(const char *name)
 {
-	struct xnvme_dev *dev = cli->args.dev;
-	const struct xnvme_geo *geo = xnvme_dev_get_geo(dev);
-	uint32_t nsid = cli->args.nsid;
-
-	struct xnvme_spec_znd_descr zone = {0};
-
-	size_t buf_nbytes;
-	char *buf = NULL;
-	int err;
-
-	if (geo->type != XNVME_GEO_ZONED) {
-		XNVME_DEBUG("FAILED: not zns, got; %d", geo->type);
-		return EINVAL;
-	}
-	if (!cli->given[XNVME_CLI_OPT_NSID]) {
-		nsid = xnvme_dev_get_nsid(cli->args.dev);
-	}
-	if (cli->given[XNVME_CLI_OPT_SLBA]) {
-		err = xnvme_znd_descr_from_dev(dev, cli->args.slba, &zone);
-		if (err) {
-			xnvme_cli_perr("xnvme_znd_descr_from_dev()", -err);
-			goto exit;
-		}
-	} else {
-		err = xnvme_znd_descr_from_dev_in_state(dev, XNVME_SPEC_ZND_STATE_EMPTY, &zone);
-		if (err) {
-			xnvme_cli_perr("xnvme_znd_descr_from_dev()", -err);
-			goto exit;
-		}
-	}
-	xnvme_cli_pinf("Using the following zone:");
-	xnvme_spec_znd_descr_pr(&zone, XNVME_PR_DEF);
-
-	buf_nbytes = zone.zcap * geo->lba_nbytes;
-
-	xnvme_cli_pinf("Allocating and filling buf_nbytes: %zu", buf_nbytes);
-	buf = xnvme_buf_alloc(dev, buf_nbytes);
-	if (!buf) {
-		err = -errno;
-		xnvme_cli_perr("xnvme_buf_alloc()", err);
-		goto exit;
-	}
-
-	err = xnvme_buf_fill(buf, buf_nbytes,
-			     cli->args.data_input ? cli->args.data_input : "anum");
-	if (err) {
-		xnvme_cli_perr("xnvme_buf_fill()", err);
-		goto exit;
-	}
-
-	xnvme_cli_pinf("Append to uri: '%s'", cli->args.uri);
-	xnvme_cli_timer_start(cli);
-
-	for (uint64_t sect = 0; sect < zone.zcap; ++sect) {
-		struct xnvme_cmd_ctx ctx = {0};
-		void *payload = buf + sect * geo->lba_nbytes;
-
-		xnvme_dev_get_cmd_ctx(dev, &ctx);
-
-		err = xnvme_znd_append(&ctx, nsid, zone.zslba, 0, payload, NULL);
-		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-			xnvme_cli_perr("xnvme_cmd_append()", err);
-			xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
-			err = err ? err : -EIO;
-			goto exit;
-		}
-	}
-
-	xnvme_cli_timer_stop(cli);
-	xnvme_cli_timer_bw_pr(cli, "Wall-clock", zone.zcap * geo->lba_nbytes);
-
-exit:
-	xnvme_buf_free(dev, buf);
-
-	return err < 0 ? err : 0;
+	printf("Usage: %s <uri> [options]\n\n"
+	       "Fill the first empty zone of the device at <uri> with synchronous write "
+	       "commands\n\n"
+	       "Options:\n"
+	       "  --be STRING     Backend\n"
+	       "  --admin STRING  Admin command-interface\n"
+	       "  --sync STRING   Synchronous command-interface\n"
+	       "  --async STRING  Asynchronous command-interface\n"
+	       "  --mem STRING    Memory allocator for buffers\n"
+	       "  --dev-nsid NUM  Namespace to open the device with\n"
+	       "  --direct NUM    Bypass OS-managed caching\n"
+	       "  --homi-id NUM   Identifier of the controller host\n",
+	       name);
 }
-
-//
-// Command-Line Interface (CLI) definition
-//
-
-static struct xnvme_cli_sub g_subs[] = {
-	{
-		"read",
-		"Zone Read of a full zone",
-		"Zone Read of a full zone",
-		sub_sync_read,
-		{
-			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
-			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
-
-			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
-			{XNVME_CLI_OPT_NSID, XNVME_CLI_LOPT},
-			{XNVME_CLI_OPT_SLBA, XNVME_CLI_LOPT},
-			{XNVME_CLI_OPT_DATA_OUTPUT, XNVME_CLI_LOPT},
-
-			XNVME_CLI_SYNC_OPTS,
-		},
-	},
-
-	{
-		"write",
-		"Zone Write sync. until full",
-		"Zone Write sync. until full",
-		sub_sync_write,
-		{
-			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
-			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
-
-			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
-			{XNVME_CLI_OPT_NSID, XNVME_CLI_LOPT},
-			{XNVME_CLI_OPT_SLBA, XNVME_CLI_LOPT},
-			{XNVME_CLI_OPT_DATA_INPUT, XNVME_CLI_LOPT},
-
-			XNVME_CLI_SYNC_OPTS,
-		},
-	},
-
-	{
-		"append",
-		"Zone Append sync. until full",
-		"Zone Append sync. until full",
-		sub_sync_append,
-		{
-			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
-			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
-
-			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
-			{XNVME_CLI_OPT_NSID, XNVME_CLI_LOPT},
-			{XNVME_CLI_OPT_SLBA, XNVME_CLI_LOPT},
-			{XNVME_CLI_OPT_DATA_INPUT, XNVME_CLI_LOPT},
-
-			XNVME_CLI_SYNC_OPTS,
-		},
-	},
-};
-
-static struct xnvme_cli g_cli = {
-	.title = "Zoned Synchronous IO Example",
-	.descr_short = "Synchronous IO: read / write / append, "
-		       "using 4k payload at QD1",
-	.subs = g_subs,
-	.nsubs = sizeof g_subs / sizeof(*g_subs),
-};
 
 int
 main(int argc, char **argv)
 {
-	return xnvme_cli_run(&g_cli, argc, argv, XNVME_CLI_INIT_DEV_OPEN);
+	struct xnvme_opts opts = {0};
+	struct xnvme_dev *dev;
+	int opt, err;
+
+	xnvme_opts_set_defaults(&opts);
+
+	if (argc < 2 || !strcmp(argv[1], "--help")) {
+		usage(argv[0]);
+		return argc < 2;
+	}
+
+	optind = 2;
+	while ((opt = getopt_long(argc, argv, "", g_lopts, NULL)) != -1) {
+		switch (opt) {
+		case 'b':
+			opts.be = optarg;
+			break;
+		case 'A':
+			opts.admin = optarg;
+			break;
+		case 's':
+			opts.sync = optarg;
+			break;
+		case 'a':
+			opts.async = optarg;
+			break;
+		case 'm':
+			opts.mem = optarg;
+			break;
+		case 'N':
+			opts.nsid = strtoul(optarg, NULL, 0);
+			break;
+		case 'D':
+			opts.direct = strtoul(optarg, NULL, 0);
+			break;
+		case 'H':
+			opts.homi_id = strtoul(optarg, NULL, 0);
+			opts.shm_id = opts.homi_id;
+			break;
+		case 'h':
+			usage(argv[0]);
+			return 0;
+		default:
+			return 1;
+		}
+	}
+	if (optind < argc) {
+		fprintf(stderr, "Unexpected argument: '%s'\n", argv[optind]);
+		return 1;
+	}
+
+	dev = xnvme_dev_open(argv[1], &opts);
+	if (!dev) {
+		fprintf(stderr, "xnvme_dev_open(): %s\n", strerror(errno));
+		return 1;
+	}
+
+	err = zone_write(dev);
+
+	xnvme_dev_close(dev);
+
+	return err ? 1 : 0;
 }

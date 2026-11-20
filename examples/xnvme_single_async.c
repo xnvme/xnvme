@@ -11,10 +11,10 @@ static void
 cb_fn(struct xnvme_cmd_ctx *ctx, void *XNVME_UNUSED(cb_arg))
 {
 	if (xnvme_cmd_ctx_cpl_status(ctx)) {
-		xnvme_cli_pinf("Command did not complete successfully");
+		printf("Command did not complete successfully\n");
 		xnvme_cmd_ctx_pr(ctx, XNVME_PR_DEF);
 	} else {
-		xnvme_cli_pinf("Command completed succesfully");
+		printf("Command completed succesfully\n");
 	}
 
 	// Completed: Put the command-context back in the queue
@@ -55,7 +55,7 @@ main(int argc, char **argv)
 
 	dev = xnvme_dev_open(argv[1], &opts);
 	if (!dev) {
-		xnvme_cli_perr("xnvme_dev_open()", errno);
+		fprintf(stderr, "xnvme_dev_open(): %s\n", strerror(errno));
 		return 1;
 	}
 	nsid = xnvme_dev_get_nsid(dev);
@@ -63,7 +63,7 @@ main(int argc, char **argv)
 	// Initialize a command-queue
 	ret = xnvme_queue_init(dev, qdepth, 0, &queue);
 	if (ret) {
-		xnvme_cli_perr("xnvme_queue_init()", ret);
+		fprintf(stderr, "xnvme_queue_init(): %s\n", strerror(-ret));
 		xnvme_dev_close(dev);
 		return 1;
 	}
@@ -75,16 +75,16 @@ main(int argc, char **argv)
 
 	buf_nbytes = xnvme_dev_get_geo(dev)->nbytes;
 
-	xnvme_cli_pinf("Allocate a payload-buffer of nbytes: %zu", buf_nbytes);
+	printf("Allocate a payload-buffer of nbytes: %zu\n", buf_nbytes);
 	buf = xnvme_buf_alloc(dev, buf_nbytes);
 	if (!buf) {
-		xnvme_cli_perr("xnvme_buf_alloc()", errno);
+		fprintf(stderr, "xnvme_buf_alloc(): %s\n", strerror(errno));
 		goto exit;
 	}
 
 	err = xnvme_buf_clear(buf, buf_nbytes);
 	if (err) {
-		xnvme_cli_perr("xnvme_buf_clear()", err);
+		fprintf(stderr, "xnvme_buf_clear(): %s\n", strerror(-err));
 		goto exit;
 	}
 
@@ -97,7 +97,7 @@ submit:
 		err = xnvme_nvm_read(ctx, nsid, 0x0, 0, buf, NULL);
 		switch (err) {
 		case 0:
-			xnvme_cli_pinf("Submission succeeded");
+			printf("Submission succeeded\n");
 			break;
 
 		// Submission failed: queue is full => process completions and try again
@@ -108,7 +108,7 @@ submit:
 
 		// Submission failed: unexpected error, put the command-context back in the queue
 		default:
-			xnvme_cli_perr("xnvme_nvm_read()", err);
+			fprintf(stderr, "xnvme_nvm_read(): %s\n", strerror(-err));
 			xnvme_queue_put_cmd_ctx(queue, ctx);
 			goto exit;
 		}
@@ -117,7 +117,7 @@ submit:
 	// Done submitting, wait for all outstanding I/O to complete as we are about to exit
 	ret = xnvme_queue_drain(queue);
 	if (ret < 0) {
-		xnvme_cli_perr("xnvme_queue_drain()", ret);
+		fprintf(stderr, "xnvme_queue_drain(): %s\n", strerror(-ret));
 		goto exit;
 	}
 

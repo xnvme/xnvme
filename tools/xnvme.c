@@ -12,6 +12,7 @@
 #include <time.h>
 #include <unistd.h>
 #include <libxnvme.h>
+#include <xnvme_cli.h>
 #include <xnvme_vcs.h>
 #include "xnvme_cmd.h"
 
@@ -77,7 +78,7 @@ sub_listing(struct xnvme_cli *cli)
 	xnvme_cli_enumeration_pp(listing, XNVME_PR_DEF);
 
 exit:
-	xnvme_buf_virt_free(listing);
+	xnvme_cli_enumeration_free(listing);
 
 	return err;
 }
@@ -185,7 +186,6 @@ static struct xnvme_cli_sub g_subs[] = {
 		{
 			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
 			{XNVME_CLI_OPT_SYS_URI, XNVME_CLI_LOPT},
-			{XNVME_CLI_OPT_FLAGS, XNVME_CLI_LOPT},
 
 			XNVME_CLI_CORE_OPTS,
 		},
@@ -198,7 +198,6 @@ static struct xnvme_cli_sub g_subs[] = {
 		{
 			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
 			{XNVME_CLI_OPT_SYS_URI, XNVME_CLI_LOPT},
-			{XNVME_CLI_OPT_FLAGS, XNVME_CLI_LOPT},
 
 			XNVME_CLI_CORE_OPTS,
 		},
@@ -211,7 +210,6 @@ static struct xnvme_cli_sub g_subs[] = {
 		{
 			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
 			{XNVME_CLI_OPT_SYS_URI, XNVME_CLI_LOPT},
-			{XNVME_CLI_OPT_FLAGS, XNVME_CLI_LOPT},
 
 			XNVME_CLI_CORE_OPTS,
 		},

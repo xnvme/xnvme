@@ -48,9 +48,6 @@ NAMESPACES: dict[str, set[str]] = {
         "xnvme_file",
         "xnvme_spec_fs",
     },
-    "cli": {
-        "xnvme_cli",
-    },
     "util": {
         "xnvme_be",
         "xnvme_compat",

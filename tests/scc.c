@@ -4,6 +4,7 @@
 
 #include <errno.h>
 #include <libxnvme.h>
+#include <xnvme_cli.h>
 
 /**
  * TODO: add a test, scopy-failure, verifying the following completion-behavior:

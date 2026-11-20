@@ -11,7 +11,7 @@ def test_read(cijoe, device, be_opts, cli_args):
         "io_uring_cmd",
     ]:
         pytest.skip(reason=f"[async={be_opts['async']}] Eventfd not supported")
-    err, _ = cijoe.run(f"xnvme example single-async-efd read {cli_args}")
+    err, _ = cijoe.run(f"xnvme example single-async-efd {cli_args}")
     assert not err
 
 
@@ -27,6 +27,6 @@ def test_read_queue_init_fails(cijoe, device, be_opts, cli_args):
     # A thread pool of no threads makes xnvme_queue_init() return -EINVAL
     err, _ = cijoe.run(
         "XNVME_BE_THRPOOL_ASYNC_NTHREADS=0 "
-        f"xnvme example single-async-efd read {cli_args}"
+        f"xnvme example single-async-efd {cli_args}"
     )
     assert err and err < 128, f"exit status {err}, not the error of the queue init"
