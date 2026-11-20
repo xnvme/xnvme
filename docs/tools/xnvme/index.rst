@@ -36,6 +36,11 @@ starting with ``#`` are comments. A test or an example installs as
 ``xnvme example`` lists it without a ``.extension``. A program named after a
 command of ``xnvme`` itself is never run.
 
+As ``xnvme`` often runs as root, it runs a program, and reads a
+``.extension``, only when the file and its directory belong to root or to the
+user running ``xnvme``, under ``sudo`` the user who ran it, and only they and
+their groups can write them.
+
 ``xnvme env`` says, as YAML, whether the host is ready for the userspace
 drivers: the IOMMU groups, whether each kernel module is available, built in
 and loaded, the hugepages of each size and NUMA node, where hugetlbfs is
