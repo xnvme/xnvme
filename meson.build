@@ -339,7 +339,7 @@ xnvme_vcs_h = vcs_tag(
   command: [python3, vcs_tag_py],
   fallback: 'unknown',
 )
-meson.add_dist_script(python3, vcs_tag_py, '--dist')
+meson.add_dist_script(python3, vcs_tag_py, '--dist', meson.project_version())
 
 # Provide configuration via header-file 'xnvme_config.h'
 add_project_arguments(['-include', 'xnvme_config.h'], language: 'c')

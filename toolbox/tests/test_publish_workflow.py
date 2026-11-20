@@ -88,3 +88,18 @@ def test_a_docgen_run_runs_only_what_the_documentation_needs():
     check = step["run"]
     guard = check.index('if [ "$EVENT" = "pull_request" ]; then')
     assert guard < check.index("for job in source-format-check docgen-shallow")
+
+
+def test_the_source_archive_is_made_from_the_head_of_the_pull_request():
+    """vcs_tag.py --dist reads the subject of HEAD, which on the merge commit
+    GitHub checks out for a pull-request by default is not the bump"""
+
+    (checkout,) = [
+        step
+        for step in steps("verify.yml", "source-archive")
+        if step.get("uses", "").startswith("actions/checkout@")
+    ]
+
+    assert checkout["with"]["ref"] == (
+        "${{ github.event.pull_request.head.sha || github.sha }}"
+    )
