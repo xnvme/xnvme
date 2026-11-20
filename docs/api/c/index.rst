@@ -65,6 +65,5 @@ a few important points to know about the **xNVMe** headers:
    nvme/index
    file/index
    util/index
-   cli/index
    gpu/index
    examples/index

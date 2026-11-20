@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <libxnvme.h>
+#include <xnvme_cli.h>
 
 #define SET_EVENT_TYPES ((uint8_t[]){0x0, 0x1, 0x2, 0x3, 0x80, 0x81})
 #define SET_EVENT_BUF_SIZE sizeof(SET_EVENT_TYPES)

@@ -1,10 +1,21 @@
+// SPDX-FileCopyrightText: Samsung Electronics Co., Ltd
+//
+// SPDX-License-Identifier: BSD-3-Clause
+
 /**
- * SPDX-FileCopyrightText: Samsung Electronics Co., Ltd
+ * The command-line library shared by the tools, tests and examples of xNVMe;
+ * internal to xNVMe and not part of the public API.
  *
- * SPDX-License-Identifier: BSD-3-Clause
- *
- * @file libxnvme_cli.h
+ * @file xnvme_cli.h
  */
+#ifndef __INTERNAL_XNVME_CLI_H
+#define __INTERNAL_XNVME_CLI_H
+
+#include <libxnvme.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define XNVME_CLI_CORE_OPTS                                                                  \
 	{XNVME_CLI_OPT_ORCH_TITLE, XNVME_CLI_SKIP}, {XNVME_CLI_OPT_SUBNQN, XNVME_CLI_LOPT},  \
@@ -657,3 +668,9 @@ xnvme_cli_dev_open_multi(const char **uris, int count, struct xnvme_opts *opts,
  */
 void
 xnvme_cli_dev_close_multi(struct xnvme_dev **devs, int count);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif

@@ -18,9 +18,9 @@ Sharing a Controller (:ref:`sec-api-c-xnvme_cplane`)
 
 Pretty-Printers (:ref:`sec-api-c-xnvme_pp`)
   The pretty-printers of the **xNVMe** API, of its structures, enums and
-  library information, are declared here, apart from those of the
-  command-line library and the inline timer printers, so that a binding can
-  leave them out and print in its own language.
+  library information, are declared here, apart from the inline timer
+  printers, so that a binding can leave them out and print in its own
+  language.
 
 Deprecated Functions (:ref:`sec-api-c-xnvme_compat`)
   Functions kept so code written for earlier releases builds unchanged; in a

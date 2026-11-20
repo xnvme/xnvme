@@ -4,6 +4,7 @@
 #ifdef XNVME_PLATFORM_LINUX_ENABLED
 #include <errno.h>
 #include <libxnvme.h>
+#include <xnvme_cli.h>
 #include <signal.h>
 #include <unistd.h>
 

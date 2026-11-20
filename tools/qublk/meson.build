@@ -29,11 +29,11 @@ else
   executable(
     'xnvme-qublk',
     [qublk_source, xnvme_vcs_h],
-    include_directories: [conf_inc, xnvme_inc, xnvme_priv_inc, xnvme_cuse_inc],
+    include_directories: [conf_inc, xnvme_inc, xnvme_priv_inc, xnvme_cli_inc, xnvme_cuse_inc],
     c_args: qublk_c_args,
     link_args: link_args_hardening,
     pie: get_option('hardening'),
-    link_with: [xnvmelib, xnvme_cuse_lib],
+    link_with: [xnvmelib, xnvme_cli_lib, xnvme_cuse_lib],
     install_rpath: xnvmelib_rpath,
     dependencies: [uring_dep, thread_dep],
     install: true,

@@ -11,7 +11,7 @@
 #include <stdint.h>
 #include <unistd.h>
 #include <libxnvme.h>
-#include <xnvme_be.h>
+#include <xnvme_cli.h>
 
 #define XNVME_CLI_SUB_MAXOPTS 64
 

@@ -5,6 +5,7 @@
 #include <errno.h>
 #include <inttypes.h>
 #include <libxnvme.h>
+#include <xnvme_cli.h>
 
 struct bits_case {
 	uint64_t val;

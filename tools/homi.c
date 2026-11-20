@@ -18,6 +18,7 @@
 #endif
 
 #include <libxnvme.h>
+#include <xnvme_cli.h>
 #include <xnvme_cuse.h>
 #include <xnvme_vcs.h>
 

@@ -25,10 +25,10 @@ if thread_dep.found()
   xnvmeperf_bin = executable(
     'xnvme-perf',
     xnvmeperf_sources,
-    include_directories: [conf_inc, xnvme_inc, xnvme_priv_inc],
+    include_directories: [conf_inc, xnvme_inc, xnvme_priv_inc, xnvme_cli_inc],
     link_args: link_args_hardening,
     pie: get_option('hardening'),
-    link_with: xnvmelib,
+    link_with: [xnvmelib, xnvme_cli_lib],
     install_rpath: xnvmelib_rpath,
     dependencies: xnvmeperf_deps,
     cuda_args: xnvmeperf_cuda_args,

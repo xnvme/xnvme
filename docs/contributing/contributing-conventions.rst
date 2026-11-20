@@ -107,7 +107,7 @@ C: API
 
   - The source-code for the command-line tools serve as examples of utilizing
     the C API in general and the tools are used during testing
-  - The command-line utilities must use the ``libxnvme_cli.h`` as this provides a
+  - The command-line utilities must use ``lib/cli/xnvme_cli.h`` as this provides a
     common command-line interface, the common-cli is nice as for usability,
     such that all cli-tools use the same arguments, it is also essential for
     instrumentation of not just the logic of the tool but also the library
@@ -174,18 +174,19 @@ Layout
   - ``nvme``: the NVMe command sets, the spec and its printers, topology and
     protection information
   - ``file``: the file API
-  - ``cli``: the command-line library the tools share
 
   ``lib/meson.build`` lists ``util`` first, then ``backend`` and
-  ``platform``, which the public API is built on, then ``core``, ``nvme``,
-  ``file`` and ``cli``
+  ``platform``, which the public API is built on, then ``core``, ``nvme``
+  and ``file``
 
 * A printer, a function named by what it prints and suffixed ``_fpr``,
   ``_pr`` or ``_str``, is declared in ``include/libxnvme_pp.h``, not in the
   header of its type, so that a binding leaves out the printers by leaving out
-  one header. The printers of the command-line library stay in
-  ``libxnvme_cli.h``, and a ``static inline`` printer, which has no symbol for
-  a binding to call, stays with what it prints, such as ``xnvme_timer_pr()``
+  one header. A ``static inline`` printer, which has no symbol for a binding
+  to call, stays with what it prints, such as ``xnvme_timer_pr()``
+* ``lib/cli/`` is a static library of its own for the tools, tests and
+  examples, not part of ``libxnvme``. It holds the command-line library they
+  share, so its options can change without changing the API
 * ``lib/cuse/`` is a static library of its own for the tools, not part of
   ``libxnvme``. It holds the NVMe-driver ioctl() mimic; the CUSE protocol
   under it comes from uFuse, ``subprojects/ufuse.wrap``

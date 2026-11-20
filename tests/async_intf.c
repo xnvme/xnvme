@@ -4,6 +4,7 @@
 
 #include <errno.h>
 #include <libxnvme.h>
+#include <xnvme_cli.h>
 
 #define XNVME_TESTS_QDEPTH_MAX 512
 #define XNVME_TESTS_NQUEUE_MAX 1024

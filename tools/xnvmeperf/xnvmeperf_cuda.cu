@@ -13,6 +13,7 @@
 #include <unistd.h>
 
 #include <libxnvme.h>
+#include <xnvme_cli.h>
 
 extern "C" {
 #include "xnvmeperf.h"
