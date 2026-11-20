@@ -1,4 +1,7 @@
 import importlib.util
+import json
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -57,7 +60,9 @@ def test_a_glob_minimatch_reads_otherwise_is_an_error(glob):
         (["examples/xnvme_hello.c"], ["gate:emulated"]),
         ([".github/workflows/verify-emulated.yml"], ["gate:emulated"]),
         (["Makefile"], ["gate:emulated"]),
-        (["CHANGELOG.rst"], []),
+        (["CHANGELOG.rst"], ["gate:release"]),
+        (["toolbox/xnvme_release.py"], ["gate:emulated", "gate:release"]),
+        (["subprojects/spdk.wrap"], ["gate:emulated", "gate:release"]),
         (["toolbox/pkgs/debian-trixie.sh"], ["gate:emulated"]),
         (["meson.build"], ["gate:emulated"]),
         (
@@ -254,3 +259,70 @@ def test_only_the_gated_jobs_and_ci_result_need_gates():
         if "gates" in (job.get("needs") or [])
     }
     assert needing == gated | {"ci-result"}
+
+
+def test_jobs_lists_every_gated_job():
+    """The 'publish-release' workflow requires what 'jobs' lists to have passed"""
+
+    listed = subprocess.run(
+        [sys.executable, str(SCRIPT), "jobs"],
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.split()
+
+    assert listed == [job for jobs in gates.GATES.values() for job in jobs]
+    assert "release-checklist" in listed
+
+
+def needs(**results):
+    """A 'needs' context of jobs with 'results', the fixed jobs a pull-request
+    must pass among them unless given"""
+
+    jobs = {job: "success" for job in gates.REQUIRED} | results
+    return {job: {"result": result} for job, result in jobs.items()}
+
+
+def test_a_pull_request_passes_with_its_gates_closed():
+    assert gates.verdict(needs(perf="skipped"), "pull_request", "") == []
+
+
+def test_a_failed_or_cancelled_job_fails_any_run():
+    results = needs(perf="failure", build="cancelled", matrices="skipped")
+
+    for event in ("pull_request", "workflow_dispatch"):
+        assert gates.verdict(results, event, "") == ["Did not succeed: perf build"]
+
+
+def test_a_pull_request_requires_its_fixed_jobs():
+    results = needs(**{"docgen-shallow": "skipped"})
+
+    assert gates.verdict(results, "pull_request", "") == [
+        "docgen-shallow is required and was skipped"
+    ]
+    assert gates.verdict(results, "workflow_dispatch", "") == []
+
+
+def test_a_release_requires_every_job_to_have_passed():
+    results = needs(perf="skipped", build="success")
+
+    assert gates.verdict(results, "pull_request", "1.2.3") == [
+        "v1.2.3 is released only when every job passed; did not: perf"
+    ]
+    assert gates.verdict(needs(perf="success"), "pull_request", "1.2.3") == []
+
+
+def test_verdict_prints_the_results_and_fails_with_why():
+    run = subprocess.run(
+        [sys.executable, str(SCRIPT), "verdict", "--event", "pull_request"]
+        + ["--version", "1.2.3"],
+        input=json.dumps(needs(perf="skipped")),
+        capture_output=True,
+        text=True,
+    )
+
+    assert run.returncode == 1
+    assert "perf: skipped" in run.stdout.splitlines()
+    assert run.stdout.splitlines()[-1] == (
+        "::error::v1.2.3 is released only when every job passed; did not: perf"
+    )
