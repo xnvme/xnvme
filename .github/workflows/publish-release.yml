@@ -10,7 +10,10 @@ name: publish-release
 # 'ci-result' passed in that run. The artifacts are used only when that
 # pull-request's head has the tree main now has, which branch protection's
 # up-to-date rule makes the case for a merge; otherwise the release fails. Any
-# other push does nothing here.
+# other push does nothing here. The 'pypi' job then fetches the sdist of the
+# release with toolbox/xnvme_publish.py and uploads it with
+# pypa/gh-action-pypi-publish, and the 'crates-io' job uploads xnvme-sys with
+# the script; a maintainer runs the script by 'make publish' when that fails.
 on:
   push:
     branches: [main]
@@ -33,6 +36,8 @@ jobs:
       actions: write
       contents: write
       pull-requests: read
+    outputs:
+      version: ${{ steps.check.outputs.version }}
     env:
       GH_TOKEN: ${{ github.token }}
       REPO: ${{ github.repository }}
@@ -90,3 +95,56 @@ jobs:
         title: 'Release Notes: {tag}'
         assets: assets/*
         dispatch: verify.yml job=docgen
+
+  # PyPI and crates.io accept the upload by trusted publishing: each is set up
+  # once to trust this workflow in its environment, so no token is kept as a
+  # secret. Each registry has a job of its own, so a failed upload is re-run
+  # alone, and an upload of the version done already is skipped
+  pypi:
+    needs: release
+    runs-on: ubuntu-24.04
+    environment: pypi
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      VERSION: ${{ needs.release.outputs.version }}
+
+    steps:
+    - name: Grab source
+      uses: actions/checkout@v6
+
+    - name: Retrieve the Python sdist of the release, by the name PyPI requires
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: python3 toolbox/xnvme_publish.py fetch "$VERSION" --dir publish
+
+    - name: Upload the sdist to PyPI
+      uses: pypa/gh-action-pypi-publish@v1.14.3
+      with:
+        packages-dir: publish/pypi/
+        skip-existing: true
+
+  crates-io:
+    needs: release
+    runs-on: ubuntu-24.04
+    environment: crates-io
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      VERSION: ${{ needs.release.outputs.version }}
+
+    steps:
+    - name: Grab source
+      uses: actions/checkout@v6
+
+    - name: Get a token of crates.io
+      id: auth
+      uses: rust-lang/crates-io-auth-action@v1.0.6
+
+    - name: Upload xnvme-sys from the source archive of the release
+      env:
+        GH_TOKEN: ${{ github.token }}
+        CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
+      run: python3 toolbox/xnvme_publish.py crate "$VERSION"

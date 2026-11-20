@@ -19,6 +19,11 @@ GATES_SPEC = importlib.util.spec_from_file_location(
 )
 gha_gates = importlib.util.module_from_spec(GATES_SPEC)
 GATES_SPEC.loader.exec_module(gha_gates)
+PUBLISH_SPEC = importlib.util.spec_from_file_location(
+    "xnvme_publish", ROOT / "toolbox" / "xnvme_publish.py"
+)
+xnvme_publish = importlib.util.module_from_spec(PUBLISH_SPEC)
+PUBLISH_SPEC.loader.exec_module(xnvme_publish)
 
 # The values of the expressions the steps run below take their env from
 CONTEXTS = {
@@ -448,6 +453,9 @@ def test_a_release_attaches_the_archives_and_reports_of_the_run(tmp_path):
     )
     with tarfile.open(assets / "test-results-v1.2.3.tar.gz") as tar:
         assert "reports/verify-reports/report.txt" in tar.getnames()
+    # What the 'pypi' and 'crates-io' jobs fetch from the release
+    for name in xnvme_publish.assets("1.2.3"):
+        xnvme_publish.verify(assets / name)
 
 
 def test_the_release_takes_the_version_notes_and_assets():
@@ -455,6 +463,9 @@ def test_the_release_takes_the_version_notes_and_assets():
     (action,) = action_steps("publish-release.yml", "release", "release")
 
     assert release["concurrency"]["cancel-in-progress"] is False
+    assert release["jobs"]["release"]["outputs"]["version"] == (
+        "${{ steps.check.outputs.version }}"
+    )
     assert action["with"]["version"] == "${{ steps.check.outputs.version }}"
     assert action["with"]["notes-file"] == "${{ runner.temp }}/notes.md"
     assert action["with"]["assets"] == "assets/*"
@@ -497,6 +508,49 @@ def test_both_publish_on_a_push_to_main():
         content = yaml.safe_load((WORKFLOWS / workflow).read_text())
         # PyYAML reads the key 'on' as True
         assert content[True] == {"push": {"branches": ["main"]}}
+
+
+@pytest.mark.parametrize("job", ["pypi", "crates-io"])
+def test_the_registries_take_the_assets_of_the_release(job):
+    content = yaml.safe_load((WORKFLOWS / "publish-release.yml").read_text())
+    upload = content["jobs"][job]
+
+    assert upload["needs"] == "release"
+    assert upload["env"]["VERSION"] == "${{ needs.release.outputs.version }}"
+    # Trusted publishing, with no token kept as a secret
+    assert upload["permissions"] == {"contents": "read", "id-token": "write"}
+    assert upload["environment"] == job
+    assert "secrets." not in yaml.safe_dump(upload)
+    # gh fetches the assets of the release
+    (fetching,) = [s for s in upload["steps"] if "xnvme_publish.py" in s.get("run", "")]
+    assert fetching["env"]["GH_TOKEN"] == "${{ github.token }}"
+
+
+def test_pypi_takes_the_sdist_of_the_release_by_the_name_it_requires():
+    _, retrieve, publish = steps("publish-release.yml", "pypi")
+
+    assert retrieve["run"] == (
+        'python3 toolbox/xnvme_publish.py fetch "$VERSION" --dir publish'
+    )
+    assert publish["uses"].startswith("pypa/gh-action-pypi-publish@")
+    assert publish["with"] == {"packages-dir": "publish/pypi/", "skip-existing": True}
+
+
+def test_crates_io_takes_xnvme_sys_from_the_source_archive_of_the_release():
+    _, auth, publish = steps("publish-release.yml", "crates-io")
+
+    assert auth["uses"].startswith("rust-lang/crates-io-auth-action@")
+    assert auth["id"] == "auth"
+    assert publish["env"]["CARGO_REGISTRY_TOKEN"] == "${{ steps.auth.outputs.token }}"
+    assert publish["run"] == 'python3 toolbox/xnvme_publish.py crate "$VERSION"'
+
+
+def test_make_publish_runs_what_the_jobs_run():
+    makefile = (ROOT / "Makefile").read_text()
+    recipe = makefile[makefile.index("\npublish:\n") :].split("\n\n")[0]
+
+    assert "xnvme_publish.py pypi $(VERSION)" in recipe
+    assert "xnvme_publish.py crate $(VERSION)" in recipe
 
 
 def test_the_docgen_deploy_retries_a_rejected_push():
