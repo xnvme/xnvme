@@ -54,7 +54,6 @@ extern "C" {
 #include "libxnvme_topology.h"
 #include "libxnvme_libconf.h"
 #include "libxnvme_pp.h"
-#include "libxnvme_cli.h"
 #include "libxnvme_pi.h"
 #include "libxnvme_cuda.h"
 #include "libxnvme_compat.h"

@@ -6,8 +6,8 @@
 Check that the printers of the API are declared in libxnvme_pp.h, and in no
 other libxnvme_*.h, so a binding leaves them all out by leaving out one header
 
-The command-line library keeps its own printers. A static inline printer has
-no symbol for a binding to call, and stays with what it prints.
+A static inline printer has no symbol for a binding to call, and stays with
+what it prints.
 """
 
 import re
@@ -19,7 +19,7 @@ from pathlib import Path
 PRINTER = re.compile(
     r"^(?P<head>[A-Za-z_][\w \t*]*?)?\**(?P<name>xnvme_\w+_(?:fpr|pr|pp|fpp|str|yaml))\("
 )
-EXEMPT = ["libxnvme_pp.h", "libxnvme_cli.h"]
+EXEMPT = ["libxnvme_pp.h"]
 
 
 def printers(text):

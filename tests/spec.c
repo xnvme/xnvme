@@ -7,6 +7,7 @@
 #include <stddef.h>
 #include <string.h>
 #include <libxnvme.h>
+#include <xnvme_cli.h>
 
 /**
  * The masks of each field of bits fit the field, which the structure must still

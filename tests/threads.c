@@ -5,6 +5,7 @@
 #include <errno.h>
 #include <pthread.h>
 #include <libxnvme.h>
+#include <xnvme_cli.h>
 
 #define THREADS 8
 

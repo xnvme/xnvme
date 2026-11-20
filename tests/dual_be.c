@@ -6,6 +6,7 @@
 #include <stdlib.h>
 
 #include <libxnvme.h>
+#include <xnvme_cli.h>
 
 static int
 open_alt(struct xnvme_cli *cli, struct xnvme_dev **alt_dev)

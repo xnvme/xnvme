@@ -4,6 +4,7 @@
 
 #include <errno.h>
 #include <libxnvme.h>
+#include <xnvme_cli.h>
 
 #define IOSIZE_DEF 4096
 #define QDEPTH_MAX 256

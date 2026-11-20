@@ -5,6 +5,7 @@
 #include <errno.h>
 #include <string.h>
 #include <libxnvme.h>
+#include <xnvme_cli.h>
 #include <xnvme_dev.h>
 #include <liburing/xnvme_be_liburing.h>
 

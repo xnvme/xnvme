@@ -13,6 +13,7 @@
 #include <time.h>
 #include <unistd.h>
 #include <libxnvme.h>
+#include <xnvme_cli.h>
 #include <xnvme_vcs.h>
 #include "xnvme_cmd.h"
 

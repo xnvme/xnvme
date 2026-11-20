@@ -5,6 +5,7 @@
 #include <errno.h>
 #include <string.h>
 #include <libxnvme.h>
+#include <xnvme_cli.h>
 #include <xnvme_dev.h>
 
 static struct xnvme_dev *

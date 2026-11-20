@@ -4,6 +4,7 @@
 
 #include <errno.h>
 #include <libxnvme.h>
+#include <xnvme_cli.h>
 
 #define MAX_DEVS 100
 #define MAX_LISTINGS 1024

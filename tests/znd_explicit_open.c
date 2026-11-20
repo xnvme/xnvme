@@ -4,6 +4,7 @@
 
 #include <errno.h>
 #include <libxnvme.h>
+#include <xnvme_cli.h>
 
 static int
 test_open_zdptr(struct xnvme_cli *cli)

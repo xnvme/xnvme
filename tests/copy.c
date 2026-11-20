@@ -4,6 +4,7 @@
 
 #include <errno.h>
 #include <libxnvme.h>
+#include <xnvme_cli.h>
 
 /**
  *  Test COPY command
