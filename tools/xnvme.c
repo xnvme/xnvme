@@ -186,7 +186,6 @@ static struct xnvme_cli_sub g_subs[] = {
 		{
 			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
 			{XNVME_CLI_OPT_SYS_URI, XNVME_CLI_LOPT},
-			{XNVME_CLI_OPT_FLAGS, XNVME_CLI_LOPT},
 
 			XNVME_CLI_CORE_OPTS,
 		},
@@ -199,7 +198,6 @@ static struct xnvme_cli_sub g_subs[] = {
 		{
 			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
 			{XNVME_CLI_OPT_SYS_URI, XNVME_CLI_LOPT},
-			{XNVME_CLI_OPT_FLAGS, XNVME_CLI_LOPT},
 
 			XNVME_CLI_CORE_OPTS,
 		},
@@ -212,7 +210,6 @@ static struct xnvme_cli_sub g_subs[] = {
 		{
 			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
 			{XNVME_CLI_OPT_SYS_URI, XNVME_CLI_LOPT},
-			{XNVME_CLI_OPT_FLAGS, XNVME_CLI_LOPT},
 
 			XNVME_CLI_CORE_OPTS,
 		},

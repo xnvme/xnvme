@@ -150,12 +150,6 @@ static struct xnvme_cli_opt_attr xnvme_cli_opts[] = {
 		.descr = "Path to meta input-file",
 	},
 	{
-		.opt = XNVME_CLI_OPT_META_OUTPUT,
-		.vtype = XNVME_CLI_OPT_VTYPE_FILE,
-		.name = "meta-output",
-		.descr = "Path to meta output-file",
-	},
-	{
 		.opt = XNVME_CLI_OPT_LBAFL,
 		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "lbafl",
@@ -359,22 +353,10 @@ static struct xnvme_cli_opt_attr xnvme_cli_opts[] = {
 		.descr = "Feature e.g. cdw11 content",
 	},
 	{
-		.opt = XNVME_CLI_OPT_FLAGS,
-		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
-		.name = "flags",
-		.descr = "Command flags",
-	},
-	{
 		.opt = XNVME_CLI_OPT_ALL,
 		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "all",
 		.descr = "Select / Affect all",
-	},
-	{
-		.opt = XNVME_CLI_OPT_SEED,
-		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
-		.name = "seed",
-		.descr = "Use given 'NUM' as random seed",
 	},
 	{
 		.opt = XNVME_CLI_OPT_LIMIT,
@@ -1257,9 +1239,6 @@ xnvme_cli_assign_arg(struct xnvme_cli *cli, struct xnvme_cli_opt_attr *opt_attr,
 	case XNVME_CLI_OPT_META_INPUT:
 		args->meta_input = arg ? arg : "INVALID_INPUT";
 		break;
-	case XNVME_CLI_OPT_META_OUTPUT:
-		args->meta_output = arg ? arg : "INVALID_INPUT";
-		break;
 	case XNVME_CLI_OPT_LBAFL:
 		args->lbafl = num;
 		break;
@@ -1366,9 +1345,6 @@ xnvme_cli_assign_arg(struct xnvme_cli *cli, struct xnvme_cli_opt_attr *opt_attr,
 	case XNVME_CLI_OPT_FEAT:
 		args->feat = num;
 		break;
-	case XNVME_CLI_OPT_SEED:
-		args->seed = num;
-		break;
 	case XNVME_CLI_OPT_LIMIT:
 		args->limit = num;
 		break;
@@ -1395,10 +1371,6 @@ xnvme_cli_assign_arg(struct xnvme_cli *cli, struct xnvme_cli_opt_attr *opt_attr,
 		break;
 	case XNVME_CLI_OPT_BUF_HOST_BOUNCE:
 		args->buf_host_bounce = true;
-		break;
-
-	case XNVME_CLI_OPT_FLAGS:
-		args->flags = num;
 		break;
 
 	case XNVME_CLI_OPT_ALL:

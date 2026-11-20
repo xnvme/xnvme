@@ -58,7 +58,6 @@ struct xnvme_cli_args {
 	const char *data_input;
 	const char *data_output;
 	const char *meta_input;
-	const char *meta_output;
 
 	uint32_t cdw[16];
 
@@ -99,7 +98,6 @@ struct xnvme_cli_args {
 	uint32_t fid;
 	uint32_t feat;
 
-	uint32_t seed;
 	uint32_t iosize;
 	uint32_t qdepth;
 	uint32_t dev_id;
@@ -113,7 +111,6 @@ struct xnvme_cli_args {
 	uint64_t count;
 	uint64_t offset;
 
-	uint64_t flags;
 	bool all;
 
 	bool save;
@@ -204,8 +201,7 @@ enum xnvme_cli_opt {
 	XNVME_CLI_OPT_DATA_INPUT,  ///< XNVME_CLI_OPT_DATA_INPUT
 	XNVME_CLI_OPT_DATA_OUTPUT, ///< XNVME_CLI_OPT_DATA_OUTPUT
 
-	XNVME_CLI_OPT_META_INPUT,  ///< XNVME_CLI_OPT_META_INPUT
-	XNVME_CLI_OPT_META_OUTPUT, ///< XNVME_CLI_OPT_META_OUTPUT
+	XNVME_CLI_OPT_META_INPUT, ///< XNVME_CLI_OPT_META_INPUT
 
 	XNVME_CLI_OPT_LBAFL, ///< XNVME_CLI_OPT_LBAFL
 	XNVME_CLI_OPT_SLBA,  ///< XNVME_CLI_OPT_SLBA
@@ -244,7 +240,6 @@ enum xnvme_cli_opt {
 	XNVME_CLI_OPT_FID,  ///< XNVME_CLI_OPT_FID
 	XNVME_CLI_OPT_FEAT, ///< XNVME_CLI_OPT_FEAT
 
-	XNVME_CLI_OPT_SEED,   ///< XNVME_CLI_OPT_SEED
 	XNVME_CLI_OPT_LIMIT,  ///< XNVME_CLI_OPT_LIMIT
 	XNVME_CLI_OPT_IOSIZE, ///< XNVME_CLI_OPT_IOSIZE
 	XNVME_CLI_OPT_QDEPTH, ///< XNVME_CLI_OPT_QDEPTH
@@ -256,8 +251,6 @@ enum xnvme_cli_opt {
 
 	XNVME_CLI_OPT_COUNT,  ///< XNVME_CLI_OPT_COUNT
 	XNVME_CLI_OPT_OFFSET, ///< XNVME_CLI_OPT_OFFSET
-
-	XNVME_CLI_OPT_FLAGS, ///< XNVME_CLI_OPT_FLAGS
 
 	XNVME_CLI_OPT_ALL, ///< XNVME_CLI_OPT_ALL
 
