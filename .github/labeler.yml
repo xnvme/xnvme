@@ -61,3 +61,17 @@
     - 'tools/**'
     - 'include/**'
     - '*.md'
+
+'gate:release':
+- changed-files:
+  - any-glob-to-any-file:
+    - 'toolbox/xnvme_release.py'
+    - 'toolbox/meson_dist_archive_fixer.py'
+    - 'toolbox/vcs_tag.py'
+    - 'subprojects/**'
+    - 'meson.build'
+    - 'Makefile'
+    - '.github/workflows/verify.yml'
+    - '.github/workflows/publish-release.yml'
+    - 'CHANGELOG.rst'
+    - 'CONTRIBUTORS.md'

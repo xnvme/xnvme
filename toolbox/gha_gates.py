@@ -22,6 +22,14 @@ the lines GITHUB_OUTPUT takes. 'gate:all' opens every gate.
 as JSON on stdin, and prints a table of the gates and what each gave, ending in
 a line with how many of them passed.
 
+'verdict' is run by 'ci-result' on the same results, prints each job and its
+result, and exits non-zero, printing why as error annotations, when verdict()
+returns a reason to fail the run.
+
+'jobs' prints the gated jobs, one per line, which the 'publish-release'
+workflow requires to have passed in the run it releases from, as a pull-request
+that releases runs all of them.
+
 'report' is run by the 'gates-report' workflow on the jobs of a finished run
 attempt, as the API lists them, a JSON list of objects with 'name' and
 'conclusion' on stdin, and the log of its 'ci-result' job, and prints the
@@ -49,7 +57,12 @@ GATES = {
     "rdma": ["verify-nvme-rdma-emulated"],
     "perf": ["perf"],
     "docgen": ["docgen-full"],
+    "release": ["release-checklist"],
 }
+
+# The fixed jobs a pull-request must pass, as a documentation-only change skips
+# the other fixed jobs
+REQUIRED = ["source-format-check", "docgen-shallow"]
 
 # Job results, the worst first; a gate gives the worst of its jobs'
 WORST = ["failure", "cancelled", "timed_out", "action_required", "success", "skipped"]
@@ -180,6 +193,35 @@ def summary(results):
     return "\n".join(lines)
 
 
+def verdict(results, event, version):
+    """The reasons 'ci-result' fails a run of 'event', empty when it passes.
+    'results' is the 'needs' context, and 'version' is what the run releases,
+    empty for none. A run fails when a job failed or was cancelled, on a
+    pull-request when a job of REQUIRED did not pass, and on a release when any
+    job did not pass"""
+
+    def result(job):
+        return results.get(job, {}).get("result", "missing")
+
+    problems = []
+    bad = [job for job in results if result(job) in ("failure", "cancelled")]
+    if bad:
+        problems.append(f"Did not succeed: {' '.join(bad)}")
+    if event == "pull_request":
+        for job in REQUIRED:
+            if result(job) != "success":
+                problems.append(f"{job} is required and was {result(job)}")
+    if version:
+        bad = [job for job in results if result(job) != "success"]
+        if bad:
+            problems.append(
+                f"v{version} is released only when every job passed; "
+                f"did not: {' '.join(bad)}"
+            )
+
+    return problems
+
+
 def results_from_jobs(jobs):
     """The 'needs'-shaped results of the gated jobs and 'ci-result' from the jobs
     of a run as the API lists them. A called workflow's jobs are named
@@ -264,6 +306,12 @@ def main():
     )
     sub.add_parser("open", help="Which gates the labels open")
     sub.add_parser("summary", help="The gates and what they gave")
+    sub.add_parser("jobs", help="The gated jobs")
+    verdict_parser = sub.add_parser("verdict", help="Whether 'ci-result' passes")
+    verdict_parser.add_argument("--event", required=True, help="The run's event")
+    verdict_parser.add_argument(
+        "--version", default="", help="The version the run releases, if any"
+    )
     report_parser = sub.add_parser("report", help="The pull-request comment")
     report_parser.add_argument("--sha", required=True, help="The run's head")
     report_parser.add_argument("--attempt", required=True, help="The run attempt")
@@ -284,6 +332,19 @@ def main():
             print(f"{gate}={'true' if is_open else 'false'}")
     elif args.command == "summary":
         print(summary(json.load(sys.stdin)))
+    elif args.command == "jobs":
+        for jobs in GATES.values():
+            for job in jobs:
+                print(job)
+    elif args.command == "verdict":
+        results = json.load(sys.stdin)
+        for job, result in results.items():
+            print(f"{job}: {result.get('result')}")
+        problems = verdict(results, args.event, args.version)
+        for problem in problems:
+            print(f"::error::{problem}")
+        if problems:
+            return 1
     else:
         log = Path(args.log).read_text(errors="replace")
         body = report(json.load(sys.stdin), log, args.sha, args.attempt, args.url)
