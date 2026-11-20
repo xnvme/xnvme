@@ -576,11 +576,7 @@ def find_binaries(folder):
 
     bins = []
 
-    # These examples parse argv by hand, so their --help is not one to generate from
-    skip = ("dev", "enum", "hello", "io-async", "single-", "zoned-io-async")
     for path in sorted((builddir / folder).rglob("*")):
-        if path.stem.startswith(tuple(f"xnvme-example-{name}" for name in skip)):
-            continue
         if path.is_file() and path.stat().st_mode & os.X_OK:
             bins.append(str(path))
 
@@ -629,7 +625,9 @@ def setup():
 def main(args):
     """Generate man pages for xNVMe CLI tools"""
 
-    folders = {"examples": [], "tests": [], "tools": []}
+    # The examples parse argv by hand, so their --help is not one to generate from;
+    # xnvme-example(1) lists them with the description their --help gives
+    folders = {"tests": [], "tools": []}
     for folder, tools in folders.items():
         for tool in find_binaries(folder):
             logging.info("Parsing tool: %r", tool)
