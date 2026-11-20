@@ -94,7 +94,11 @@ jobs:
   # also starts, it adds the labels the changed files call for by
   # .github/labeler.yml, which it may not have added yet. The rules and the
   # script are the base branch's, as the labeler's are, so a pull-request does
-  # not decide its own gates by changing them
+  # not decide its own gates by changing them. A pull-request whose last commit
+  # is 'ver: bump to vX.Y.Z' releases from this run once merged, so it runs
+  # every gated job, as with 'gate:all', and fails here when meson.build does
+  # not carry the version of the subject or the branch lacks commits of main,
+  # as the release would then fail after the merge
   #
   gates:
     if: github.event.pull_request.draft != true
@@ -109,8 +113,25 @@ jobs:
       hardware: ${{ steps.read.outputs.hardware }}
       perf: ${{ steps.read.outputs.perf }}
       rdma: ${{ steps.read.outputs.rdma }}
+      release: ${{ steps.read.outputs.release }}
+      version: ${{ steps.ready.outputs.version }}
 
     steps:
+    - name: Grab the head of the pull-request
+      if: github.event_name == 'pull_request'
+      uses: actions/checkout@v6
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}
+
+    - name: Check whether the pull-request releases a version
+      id: ready
+      if: github.event_name == 'pull_request'
+      uses: refenv/gha-project-auto-release/ready@v1
+      with:
+        version-file: meson.build
+        version-pattern: "^\\s*version: '([^']+)',"
+        changelog: ''
+
     - name: Grab the rules and the script of the base branch
       uses: actions/checkout@v6
       with:
@@ -130,6 +151,7 @@ jobs:
         ATTEMPT: ${{ github.run_attempt }}
         PR: ${{ github.event.pull_request.number }}
         REPO: ${{ github.repository }}
+        VERSION: ${{ steps.ready.outputs.version }}
       run: |
         labels=""
         if [ "$EVENT" = "pull_request" ]; then
@@ -142,6 +164,10 @@ jobs:
           echo "labels: $(echo $labels)"
           echo "called for by the changed files: $(echo $called)"
           labels=$(printf '%s\n%s\n' "$labels" "$called")
+        fi
+        if [ -n "$VERSION" ]; then
+          echo "releases v$VERSION, so every gated job runs"
+          labels=$(printf '%s\ngate:all\n' "$labels")
         fi
         python3 base/toolbox/gha_gates.py open <<< "$labels" | tee -a "$GITHUB_OUTPUT"
 
@@ -506,16 +532,69 @@ jobs:
     uses: ./.github/workflows/verify-packaging.yml
 
   #
+  # The release checklist: the source archives a release attaches, and
+  # CONTRIBUTORS.md, which it updates
+  #
+  release-checklist:
+    needs: [gates, source-archive]
+    if: github.event.inputs.job == 'all' || (github.event_name == 'pull_request' && needs.gates.outputs.release == 'true')
+    runs-on: ubuntu-24.04
+
+    steps:
+    - name: Grab source, with the history and the tags
+      uses: actions/checkout@v6
+      with:
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        fetch-depth: 0
+
+    - name: Retrieve the source archive
+      uses: actions/download-artifact@v7.0.0
+      with:
+        name: xnvme-src-archive
+        path: src
+
+    - name: Retrieve the source archive with subprojects
+      uses: actions/download-artifact@v7.0.0
+      with:
+        name: xnvme-src-archive-with-subprojects
+        path: fat
+
+    - name: Check the source archives
+      env:
+        VERSION: ${{ needs.gates.outputs.version }}
+      run: |
+        status=0
+        python3 toolbox/xnvme_release.py --archive src/xnvme-src.tar.gz --subprojects upcie,ufuse ${VERSION:+--release} || status=1
+        python3 toolbox/xnvme_release.py --archive fat/xnvme-src.tar.gz --subprojects upcie,ufuse,spdk ${VERSION:+--release} || status=1
+        exit $status
+
+    - name: Check that CONTRIBUTORS.md names the authors since the previous release
+      env:
+        VERSION: ${{ needs.gates.outputs.version }}
+      run: |
+        missing=$(python3 toolbox/xnvme_release.py --contributors)
+        if [ -z "$missing" ]; then
+          exit 0
+        fi
+        echo "$missing"
+        if [ -n "$VERSION" ]; then
+          echo "::error::CONTRIBUTORS.md does not name the authors above, which v$VERSION must"
+          exit 1
+        fi
+        echo "::warning::CONTRIBUTORS.md does not name the authors above, which the next release must"
+
+  #
   # The one check that branch protection requires. It fails when any job that ran
   # failed or was cancelled, the jobs a label added among them, and when the
   # source checks or the docs did not build. It requires no label: what a label
   # adds counts once it runs, so a green 'ci-result' is as exhaustive as the
-  # labels the pull-request carried.
+  # labels the pull-request carried. On a pull-request that releases, it fails
+  # unless every job passed.
   #
   ci-result:
     needs: [changes-to-docs, gates, source-archive, source-format-check, ffi-python, ffi-rust, matrices, docgen-shallow, build,
       verify-makefile, verify-nvme-pcie-emulated, verify-nvme-pcie-hardware, verify-nvme-rdma-emulated, verify-nvme-tcp-emulated,
-      verify-packaging, verify-gpu-emulated, perf, docgen-full]
+      verify-packaging, verify-gpu-emulated, perf, docgen-full, release-checklist]
     runs-on: ubuntu-24.04
     if: always() && github.event.pull_request.draft != true
 
@@ -538,21 +617,6 @@ jobs:
       env:
         RESULTS: ${{ toJSON(needs) }}
         EVENT: ${{ github.event_name }}
+        VERSION: ${{ needs.gates.outputs.version }}
       run: |
-        jq -r 'to_entries[] | "\(.key): \(.value.result)"' <<< "$RESULTS"
-        bad=$(jq -r '[to_entries[] | select(.value.result == "failure" or .value.result == "cancelled") | .key] | join(" ")' \
-          <<< "$RESULTS")
-        if [ -n "$bad" ]; then
-          echo "::error::Did not succeed: $bad"
-          exit 1
-        fi
-        # What a pull-request must pass; a manual run does only what its 'job' names
-        if [ "$EVENT" = "pull_request" ]; then
-          for job in source-format-check docgen-shallow; do
-            result=$(jq -r --arg job "$job" '.[$job].result' <<< "$RESULTS")
-            if [ "$result" != "success" ]; then
-              echo "::error::$job is required and was $result"
-              exit 1
-            fi
-          done
-        fi
+        python3 toolbox/gha_gates.py verdict --event "$EVENT" --version "$VERSION" <<< "$RESULTS"

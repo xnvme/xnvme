@@ -108,8 +108,13 @@ The gates
      - The documentation with its commands run in a guest, to catch a change
        that breaks it. What is published is built after the merge, by a run
        on ``main`` that ``publish-docs`` starts
+   * - ``gate:release``
+     - The release checklist: the source archives against the version of the
+       tree, and ``CONTRIBUTORS.md`` against the authors since the previous
+       release, see :ref:`sec-contributing-release`
    * - ``gate:all``
-     - Every gate above, as for a release
+     - Every gate above. A pull-request whose last commit is the version bump
+       runs every gated job without a label
 
 The files a pull-request changes suggest gates, by the rules in
 ``.github/labeler.yml`` on ``main``. The ``labeler`` workflow adds their
@@ -137,11 +142,13 @@ and ``ci-result``, and nothing else.
 gate. So a green ``ci-result`` covers the fixed set and the gates that were
 open, and no more: a pull-request without ``gate:hardware`` has not been on a
 drive, and which gates a change needs before it merges is the reviewers'
-judgement.
+judgement. A pull-request whose last commit is ``ver: bump to vX.Y.Z`` is
+the exception: it runs every job, gated or fixed, and ``ci-result`` fails it
+unless every one of them passed.
 
 ``ci-result`` lists each gate and what its jobs gave, telling a gate that was
 not opened from one that was opened but did not run, as when a job it needs
-failed. Its notice says how many gates passed, as in ``2/6 gates passed:
+failed. Its notice says how many gates passed, as in ``2/7 gates passed:
 emulated, hardware``. The ``gates-report`` workflow keeps that table as one
 comment on the pull-request, updated after every run of its head, so it can
 be read there rather than in the run.
