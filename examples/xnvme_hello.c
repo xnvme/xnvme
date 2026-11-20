@@ -22,7 +22,7 @@ main(int argc, char **argv)
 
 	dev = xnvme_dev_open(argv[1], &opts);
 	if (!dev) {
-		xnvme_cli_perr("xnvme_dev_open()", errno);
+		fprintf(stderr, "xnvme_dev_open(): %s\n", strerror(errno));
 		return 1;
 	}
 

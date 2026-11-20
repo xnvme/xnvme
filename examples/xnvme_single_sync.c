@@ -36,23 +36,23 @@ main(int argc, char **argv)
 
 	dev = xnvme_dev_open(argv[1], &opts);
 	if (!dev) {
-		xnvme_cli_perr("xnvme_dev_open()", errno);
+		fprintf(stderr, "xnvme_dev_open(): %s\n", strerror(errno));
 		return 1;
 	}
 	nsid = xnvme_dev_get_nsid(dev);
 
 	buf_nbytes = xnvme_dev_get_geo(dev)->nbytes;
 
-	xnvme_cli_pinf("Allocate a payload-buffer of nbytes: %zu", buf_nbytes);
+	printf("Allocate a payload-buffer of nbytes: %zu\n", buf_nbytes);
 	buf = xnvme_buf_alloc(dev, buf_nbytes);
 	if (!buf) {
-		xnvme_cli_perr("xnvme_buf_alloc()", errno);
+		fprintf(stderr, "xnvme_buf_alloc(): %s\n", strerror(errno));
 		goto exit;
 	}
 
 	err = xnvme_buf_clear(buf, buf_nbytes);
 	if (err) {
-		xnvme_cli_perr("xnvme_buf_clear()", err);
+		fprintf(stderr, "xnvme_buf_clear(): %s\n", strerror(-err));
 		goto exit;
 	}
 
@@ -65,12 +65,12 @@ main(int argc, char **argv)
 		// Submit and wait for the completion of a read command
 		err = xnvme_nvm_read(&ctx, nsid, 0x0, 0, buf, NULL);
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-			xnvme_cli_perr("xnvme_nvm_read()", err);
+			fprintf(stderr, "xnvme_nvm_read(): %s\n", strerror(-err));
 			xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 			err = err ? err : -EIO;
 			goto exit;
 		}
-		xnvme_cli_pinf("Submitted and completed command succesfully");
+		printf("Submitted and completed command succesfully\n");
 	}
 
 exit:

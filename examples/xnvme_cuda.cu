@@ -57,7 +57,7 @@ main(int argc, char **argv)
 	dev = xnvme_dev_open(argv[1], &opts);
 	if (!dev) {
 		err = -errno;
-		xnvme_cli_perr("xnvme_dev_open()", err);
+		fprintf(stderr, "xnvme_dev_open(): %s\n", strerror(-err));
 		return err;
 	}
 
@@ -75,7 +75,7 @@ main(int argc, char **argv)
 	buf = (char *)xnvme_buf_alloc(dev, qdepth * lba_nbytes);
 	if (!buf) {
 		err = -errno;
-		xnvme_cli_perr("xnvme_buf_alloc()", err);
+		fprintf(stderr, "xnvme_buf_alloc(): %s\n", strerror(-err));
 		goto exit;
 	}
 
@@ -83,7 +83,7 @@ main(int argc, char **argv)
 	h_cmds = (union xnvme_spec_sqe *)calloc(qdepth, sizeof(*h_cmds));
 	if (!h_cmds) {
 		err = -errno;
-		xnvme_cli_perr("calloc(h_cmds)", err);
+		fprintf(stderr, "calloc(h_cmds): %s\n", strerror(-err));
 		goto exit;
 	}
 
@@ -100,7 +100,7 @@ main(int argc, char **argv)
 	/* Copy commands to device memory before passing to the kernel */
 	cerr = cudaMalloc((void **)&d_cmds, qdepth * sizeof(*d_cmds));
 	if (cerr) {
-		xnvme_cli_perr("cudaMalloc(d_cmds), cudaError_t: %d", cerr);
+		fprintf(stderr, "cudaMalloc(d_cmds): %s\n", cudaGetErrorString(cerr));
 		err = -ENOMEM;
 		goto exit;
 	}
@@ -109,7 +109,7 @@ main(int argc, char **argv)
 	/* Allocate a per-thread error buffer so the kernel can report failures */
 	cerr = cudaMalloc((void **)&d_errors, qdepth * sizeof(int));
 	if (cerr) {
-		xnvme_cli_perr("cudaMalloc(d_errors), cudaError_t: %d", cerr);
+		fprintf(stderr, "cudaMalloc(d_errors): %s\n", cudaGetErrorString(cerr));
 		err = -ENOMEM;
 		goto exit;
 	}
@@ -117,7 +117,7 @@ main(int argc, char **argv)
 
 	err = xnvme_cuda_queue_create(dev, qdepth, 0, &gpu_queue);
 	if (err) {
-		xnvme_cli_perr("xnvme_cuda_queue_create()", err);
+		fprintf(stderr, "xnvme_cuda_queue_create(): %s\n", strerror(-err));
 		goto exit;
 	}
 
@@ -138,7 +138,7 @@ main(int argc, char **argv)
 	h_errors = (int *)calloc(qdepth, sizeof(int));
 	if (!h_errors) {
 		err = -errno;
-		xnvme_cli_perr("calloc(h_errors)", err);
+		fprintf(stderr, "calloc(h_errors): %s\n", strerror(-err));
 		goto exit;
 	}
 	cudaMemcpy(h_errors, d_errors, qdepth * sizeof(int), cudaMemcpyDeviceToHost);
