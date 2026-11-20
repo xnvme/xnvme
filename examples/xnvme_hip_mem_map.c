@@ -36,7 +36,7 @@ read_lba0(struct xnvme_dev *dev, void *buf)
 	err = xnvme_nvm_read(&ctx, xnvme_dev_get_nsid(dev), 0x0, 0, buf, NULL);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		err = err ? err : -EIO;
-		xnvme_cli_perr("xnvme_nvm_read()", err);
+		fprintf(stderr, "xnvme_nvm_read(): %s\n", strerror(-err));
 		return err;
 	}
 
@@ -61,13 +61,13 @@ reopen_and_read(const char *uri, struct xnvme_opts *opts, struct xnvme_dev **dev
 	*dev = xnvme_dev_open(uri, opts);
 	if (!*dev) {
 		err = -errno;
-		xnvme_cli_perr("xnvme_dev_open()", err);
+		fprintf(stderr, "xnvme_dev_open(): %s\n", strerror(-err));
 		return err;
 	}
 
 	err = xnvme_buf_register(*dev, buf, nbytes);
 	if (err) {
-		xnvme_cli_perr("xnvme_buf_register()", err);
+		fprintf(stderr, "xnvme_buf_register(): %s\n", strerror(-err));
 		return err;
 	}
 	*mapped = 1;
@@ -99,13 +99,13 @@ second_ctrlr_read(const char *uri, struct xnvme_opts *opts, struct xnvme_dev **d
 	second = xnvme_dev_open(uri, opts);
 	if (!second) {
 		err = -errno;
-		xnvme_cli_perr("xnvme_dev_open()", err);
+		fprintf(stderr, "xnvme_dev_open(): %s\n", strerror(-err));
 		return err;
 	}
 
 	err = xnvme_buf_register(second, buf, nbytes);
 	if (err) {
-		xnvme_cli_perr("xnvme_buf_register()", err);
+		fprintf(stderr, "xnvme_buf_register(): %s\n", strerror(-err));
 		xnvme_dev_close(second);
 		return err;
 	}
@@ -159,7 +159,7 @@ main(int argc, char **argv)
 	dev = xnvme_dev_open(argv[1], &opts);
 	if (!dev) {
 		err = -errno;
-		xnvme_cli_perr("xnvme_dev_open()", err);
+		fprintf(stderr, "xnvme_dev_open(): %s\n", strerror(-err));
 		return err;
 	}
 
@@ -175,28 +175,28 @@ main(int argc, char **argv)
 	herr = hipMalloc(&buf, buf_nbytes);
 	if (herr != hipSuccess) {
 		err = -ENOMEM;
-		xnvme_cli_perr("hipMalloc()", err);
+		fprintf(stderr, "hipMalloc(): %s\n", strerror(-err));
 		goto exit;
 	}
-	xnvme_cli_pinf("hipMalloc(%zu) -> %p", buf_nbytes, buf);
+	printf("hipMalloc(%zu) -> %p\n", buf_nbytes, buf);
 
 	err = xnvme_buf_register(dev, buf, buf_nbytes);
 	if (err) {
-		xnvme_cli_perr("xnvme_buf_register()", err);
+		fprintf(stderr, "xnvme_buf_register(): %s\n", strerror(-err));
 		goto exit;
 	}
 	mapped = 1;
-	xnvme_cli_pinf("xnvme_buf_register(%p, %zu): registered", buf, buf_nbytes);
+	printf("xnvme_buf_register(%p, %zu): registered\n", buf, buf_nbytes);
 
 	xnvme_dev_get_cmd_ctx(dev, &ctx);
 	err = xnvme_nvm_read(&ctx, xnvme_dev_get_nsid(dev), 0x0, nlb - 1, buf, NULL);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		err = err ? err : -EIO;
-		xnvme_cli_perr("xnvme_nvm_read()", err);
+		fprintf(stderr, "xnvme_nvm_read(): %s\n", strerror(-err));
 		goto exit;
 	}
 
-	xnvme_cli_pinf("OK: read %zu LBAs into a registered hipMalloc buffer", nlb);
+	printf("OK: read %zu LBAs into a registered hipMalloc buffer\n", nlb);
 
 	err = reopen_and_read(argv[1], &opts, &dev, buf, buf_nbytes, &mapped);
 	if (!err && (argc > 3)) {
