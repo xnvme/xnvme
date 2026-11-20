@@ -4,7 +4,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 """
 Checks that xnvme lists and runs an extension, a program xnvme-<name> that xNVMe does not
-install, in the section of the overview that its <name>.extension names
+install, in the section of the overview that its <name>.extension names, and that it neither
+runs a program nor reads a .extension that another user can change
 
     frontend_extension.py XNVME
 """
@@ -38,21 +39,25 @@ def main(xnvme):
     failed = []
 
     with tempfile.TemporaryDirectory() as tmp:
-        exec_path, ext_dir = (
-            os.path.join(tmp, name) for name in ["exec", "extensions"]
+        exec_path, open_path, ext_dir = (
+            os.path.join(tmp, name) for name in ["exec", "open", "extensions"]
         )
-        for path in [exec_path, ext_dir]:
+        for path in [exec_path, open_path, ext_dir]:
             os.mkdir(path, 0o700)
         for name in [
             "extcheck",
             "extcheckstart",
             "extcheckbare",
             "extcheckctrl",
+            "extcheckopenext",
             "test-extcheck",
             "example-extcheck",
             "ext\x1bcheck",
         ]:
             write(os.path.join(exec_path, f"xnvme-{name}"), PROGRAM, 0o700)
+        write(os.path.join(exec_path, "xnvme-extcheckopen"), PROGRAM, 0o707)
+        write(os.path.join(open_path, "xnvme-extcheckopendir"), PROGRAM, 0o700)
+        os.chmod(open_path, 0o707)
         for name, extension, mode in [
             (
                 "extcheck",
@@ -65,25 +70,28 @@ def main(xnvme):
                 "section=host\ndescription=\x1b[31mRed\x07 \u009b2Jcheck\n",
                 0o644,
             ),
+            ("extcheckopenext", "section=host\ndescription=Open check\n", 0o646),
         ]:
             write(os.path.join(ext_dir, f"{name}.extension"), extension, mode)
         env = dict(
             os.environ,
-            XNVME_EXEC_PATH=exec_path,
+            XNVME_EXEC_PATH=f"{exec_path}:{open_path}",
             XNVME_EXTENSION_DIR=ext_dir,
         )
+        env.pop("SUDO_UID", None)
 
-        def run(*args):
+        def run(*args, **extra):
             return subprocess.run(
                 [xnvme, *args],
-                env=env,
+                env=dict(env, **extra),
                 capture_output=True,
                 text=True,
                 encoding="utf-8",
                 errors="replace",
             )
 
-        overview = run().stdout
+        shown = run()
+        overview = shown.stdout
         for row, heading, descr in [
             ("xnvme extcheck ", "Serve devices:", "Serve a check"),
             ("xnvme extcheckstart ", "Start here:", "Start a check"),
@@ -98,6 +106,10 @@ def main(xnvme):
         if "extcheckbare" in overview:
             failed.append(
                 f"the overview lists an extension without a section:\n{overview}"
+            )
+        if "extcheckopenext" in overview or "not reading" not in shown.stderr:
+            failed.append(
+                f"the overview reads a .extension every user can write:\n{shown}"
             )
 
         listed = run("--list-cmds").stdout
@@ -118,6 +130,29 @@ def main(xnvme):
         for group in ["test", "example"]:
             if f"xnvme {group} extcheck" not in run(group).stdout:
                 failed.append(f"xnvme {group} does not list the extension 'extcheck'")
+
+        for name in ["extcheckopen", "extcheckopendir"]:
+            refused = run(name)
+            if (
+                refused.returncode == 0
+                or "writable by every user" not in refused.stderr
+            ):
+                failed.append(
+                    f"xnvme {name} ran a program every user can change:\n{refused}"
+                )
+
+        # Changing the owner of a file takes root, as the Linux containers of CI run the tests
+        if os.geteuid() == 0:
+            other = os.path.join(exec_path, "xnvme-extcheck")
+            os.chown(other, 65534, -1)
+            refused = run("extcheck")
+            if refused.returncode == 0 or "owned by uid 65534" not in refused.stderr:
+                failed.append(f"xnvme ran a program of another user:\n{refused}")
+            ran = run("extcheck", SUDO_UID="65534").stdout.strip()
+            if ran != "extension ran with":
+                failed.append(
+                    f"xnvme did not run a program of the user who ran sudo: '{ran}'"
+                )
 
     for msg in failed:
         print(msg)

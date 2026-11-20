@@ -5,6 +5,7 @@
 #include <dirent.h>
 #include <inttypes.h>
 #include <errno.h>
+#include <limits.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
@@ -316,12 +317,129 @@ cli_resolve(const char *prefix, const char *name, char *path, size_t path_len)
 	return -ENOENT;
 }
 
+#ifdef XNVME_PLATFORM_WINDOWS_ENABLED
+static int
+cli_untrusted(const char *path, char *why, size_t why_len)
+{
+	// Windows has neither the owner nor the mode bits that the check reads
+	(void)path;
+	(void)why;
+	(void)why_len;
+
+	return 0;
+}
+#else
+/**
+ * Whether 'id' is root, 'self', or, when xnvme runs as root, the id that sudo puts in the
+ * variable 'sudo_var' for the user who ran it; git trusts the owner of a repository the same way
+ */
+static bool
+cli_trusted_id(unsigned long id, unsigned long self, const char *sudo_var)
+{
+	const char *env = geteuid() ? NULL : getenv(sudo_var);
+	unsigned long sudo_id;
+	char *end;
+
+	if (!id || id == self) {
+		return true;
+	}
+	if (!env || !env[0]) {
+		return false;
+	}
+	errno = 0;
+	sudo_id = strtoul(env, &end, 10);
+
+	return !errno && !*end && id == sudo_id;
+}
+
+static int
+cli_untrusted_path(const char *path, char *why, size_t why_len)
+{
+	struct stat st;
+
+	if (stat(path, &st)) {
+		int err = errno;
+
+		snprintf(why, why_len, "cannot stat '%s': %s", path, strerror(err));
+		return -err;
+	}
+	if (!cli_trusted_id(st.st_uid, geteuid(), "SUDO_UID")) {
+		snprintf(why, why_len,
+			 "'%s' is owned by uid %lu, neither root nor the user running xnvme", path,
+			 (unsigned long)st.st_uid);
+		return -EPERM;
+	}
+	if (st.st_mode & S_IWOTH) {
+		snprintf(why, why_len, "'%s' is writable by every user", path);
+		return -EPERM;
+	}
+	if ((st.st_mode & S_IWGRP) && !cli_trusted_id(st.st_gid, getegid(), "SUDO_GID")) {
+		snprintf(why, why_len, "'%s' is writable by the group %lu", path,
+			 (unsigned long)st.st_gid);
+		return -EPERM;
+	}
+
+	return 0;
+}
+
+static void
+cli_dirname(const char *path, char *dir, size_t dir_len)
+{
+	const char *slash = strrchr(path, '/');
+
+	if (!slash) {
+		snprintf(dir, dir_len, ".");
+		return;
+	}
+	snprintf(dir, dir_len, "%.*s", slash == path ? 1 : (int)(slash - path), path);
+}
+
+/**
+ * xnvme often runs as root, so it runs a program, or reads a '<name>.extension', only when the
+ * file and its directory, as named and as resolved, belong to root or the user running xnvme, and
+ * only they and their groups can write them, so a build tree made under umask 002 still runs
+ *
+ * @return 0 when 'path' passes, otherwise a negative errno, and why in 'why'
+ */
+static int
+cli_untrusted(const char *path, char *why, size_t why_len)
+{
+	char real[PATH_MAX];
+	char dirs[2][PATH_MAX];
+	const char *checked[3] = {dirs[0], real, dirs[1]};
+
+	if (!realpath(path, real)) {
+		int err = errno;
+
+		snprintf(why, why_len, "cannot resolve '%s': %s", path, strerror(err));
+		return -err;
+	}
+	cli_dirname(path, dirs[0], sizeof(dirs[0]));
+	cli_dirname(real, dirs[1], sizeof(dirs[1]));
+	for (int i = 0; i < 3; ++i) {
+		int err = cli_untrusted_path(checked[i], why, why_len);
+
+		if (err) {
+			return err;
+		}
+	}
+
+	return 0;
+}
+#endif
+
 static int
 cli_run(const char *path, char *argv0, int argc, char **argv)
 {
-	char **nargv = calloc(argc + 2, sizeof(*nargv));
+	char why[4096 + 256];
+	char **nargv;
 	int err;
 
+	if (cli_untrusted(path, why, sizeof(why))) {
+		fprintf(stderr, "xnvme: not running '%s': %s\n", path, why);
+		return 1;
+	}
+	nargv = calloc(argc + 2, sizeof(*nargv));
 	if (!nargv) {
 		fprintf(stderr, "xnvme: out of memory\n");
 		return 1;
@@ -594,7 +712,7 @@ cli_strlcpy(char *dst, const char *src, size_t dst_len)
 /**
  * Reads the section and the description of an extension from '<name>.extension' in
  * cli_extension_dir(), lines of 'section=<section>' and 'description=<text>'; other lines, such
- * as comments starting with '#', are skipped.
+ * as comments starting with '#', are skipped. A file that cli_untrusted() rejects is not read.
  *
  * @return 0 when the file names a section, -ENOENT otherwise
  */
@@ -602,6 +720,7 @@ static int
 cli_extension_read(const char *name, char *section, size_t section_len, char *descr,
 		   size_t descr_len)
 {
+	char why[4096 + 256];
 	char path[4096];
 	char line[512];
 	FILE *fp;
@@ -613,6 +732,11 @@ cli_extension_read(const char *name, char *section, size_t section_len, char *de
 
 	fp = fopen(path, "r");
 	if (!fp) {
+		return -ENOENT;
+	}
+	if (cli_untrusted(path, why, sizeof(why))) {
+		fprintf(stderr, "xnvme: not reading '%s': %s\n", path, why);
+		fclose(fp);
 		return -ENOENT;
 	}
 	section[0] = '\0';
