@@ -125,7 +125,8 @@ of that run, and the ``CHANGELOG.rst`` section of the version as its notes,
 and starts a ``docgen`` run on the tag for the documentation of the release.
 The artifacts are used only when the pull-request's head has the tree main
 now has, which branch protection ensures by requiring it to be up to
-date with main; otherwise the release fails, see
+date with main; otherwise the release fails. ``publish-release`` uploads
+nothing to PyPI or crates.io; a maintainer does that after the release, see
 :ref:`sec-contributing-release`.
 
 Any job can be run by hand: start the ``verify`` workflow from the Actions tab,
