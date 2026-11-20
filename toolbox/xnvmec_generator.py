@@ -567,7 +567,7 @@ def find_binaries(folder):
     bins = []
 
     # These examples parse argv by hand, so their --help is not one to generate from
-    skip = ("dev", "enum", "hello", "single-")
+    skip = ("dev", "enum", "hello", "io-async", "single-")
     for path in sorted((builddir / folder).rglob("*")):
         if path.stem.startswith(tuple(f"xnvme-example-{name}" for name in skip)):
             continue
