@@ -919,6 +919,21 @@ endef
 contributors:
 	@python3 ./$(TOOLBOX_DIR)/xnvme_release.py --contributors
 
+define publish-help
+# Upload the release VERSION to PyPI and crates.io from the assets of its GitHub
+# release, as 'publish-release' does: make publish VERSION=x.y.z
+#
+# NOTE: This target requires gh, twine and cargo, logged in to GitHub, PyPI and
+# crates.io
+endef
+.PHONY: publish
+publish:
+	@echo "## xNVMe: make publish"
+	@test -n "$(VERSION)" || { echo "VERSION=x.y.z is required"; exit 1; }
+	python3 ./$(TOOLBOX_DIR)/xnvme_publish.py pypi $(VERSION)
+	python3 ./$(TOOLBOX_DIR)/xnvme_publish.py crate $(VERSION)
+	@echo "## xNVMe: make publish [DONE]"
+
 define gen-man-pages-help
 # Helper-target to produce man pages for tools (tools, examples, tests)
 #

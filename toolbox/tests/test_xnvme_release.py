@@ -1,7 +1,10 @@
 import importlib.util
+import io
 import re
 import shutil
 import subprocess
+import sys
+import tarfile
 from pathlib import Path
 
 import pytest
@@ -141,3 +144,180 @@ def test_contributors_without_a_release_tag(tmp_path):
     (tmp_path / "CONTRIBUTORS.md").write_text("")
     with pytest.raises(ValueError):
         release.missing_contributors(tmp_path)
+
+
+def archive(
+    tmp_path, tree, top="xnvme-1.2.3", extra=(), leave_out=(), vcs_tag=b"0123abc\n"
+):
+    """A source archive of 'tree' under the directory 'top', as meson dist
+    writes it, with 'vcs_tag' in .vcs_tag and the subproject upcie; 'extra' are
+    tarfile members, with their content, to add, and 'leave_out' the paths of
+    files to leave out"""
+
+    files = {
+        path: (tree / path).read_bytes()
+        for path in sorted({p for p, _ in release.VERSIONED} | {"CHANGELOG.rst"})
+    }
+    files[".vcs_tag"] = vcs_tag
+    files["subprojects/upcie/upcie.h"] = b"/* upcie */\n"
+    path = tmp_path / "xnvme-src.tar.gz"
+    with tarfile.open(path, "w:gz") as tar:
+        for name, content in files.items():
+            if name in leave_out:
+                continue
+            info = tarfile.TarInfo(f"{top}/{name}")
+            info.size = len(content)
+            tar.addfile(info, io.BytesIO(content))
+        for info, content in extra:
+            tar.addfile(info, io.BytesIO(content) if content is not None else None)
+
+    return path
+
+
+def member(name, content=b"", **attrs):
+    info = tarfile.TarInfo(name)
+    info.size = len(content)
+    for key, value in attrs.items():
+        setattr(info, key, value)
+    return info, content
+
+
+def link(name, target):
+    return member(name, type=tarfile.SYMTYPE, linkname=target)
+
+
+def test_an_archive_of_the_tree_has_no_problem(tree, tmp_path):
+    path = archive(tmp_path, tree, extra=[link("xnvme-1.2.3/COPY", "CHANGELOG.rst")])
+
+    assert release.archive_problems(path, "1.2.3", ["upcie"]) == []
+
+
+def test_git_metadata_in_an_archive_is_a_problem(tree, tmp_path):
+    gitlink = member("xnvme-1.2.3/subprojects/spdk/dpdk/.git", b"gitdir: ../x\n")
+    path = archive(tmp_path, tree, extra=[gitlink])
+
+    assert release.archive_problems(path, "1.2.3") == [
+        "xnvme-1.2.3/subprojects/spdk/dpdk/.git: git metadata"
+    ]
+
+
+def test_a_member_outside_the_directory_of_the_version_is_a_problem(tree, tmp_path):
+    outside = [member("xnvme-1.2.2/README.md"), member("xnvme-1.2.3/../x")]
+    path = archive(tmp_path, tree, extra=outside)
+
+    assert release.archive_problems(path, "1.2.3") == [
+        "xnvme-1.2.2/README.md: not under xnvme-1.2.3/",
+        "xnvme-1.2.3/../x: not under xnvme-1.2.3/",
+    ]
+
+
+def test_a_link_out_of_the_archive_or_to_nothing_is_a_problem(tree, tmp_path):
+    links = [
+        link("xnvme-1.2.3/up", "../../etc/passwd"),
+        link("xnvme-1.2.3/abs", "/etc/passwd"),
+        link("xnvme-1.2.3/gone", "missing.txt"),
+        member("xnvme-1.2.3/hard", type=tarfile.LNKTYPE, linkname="etc/passwd"),
+        member("xnvme-1.2.3/hardgone", type=tarfile.LNKTYPE, linkname="xnvme-1.2.3/no"),
+    ]
+    path = archive(tmp_path, tree, extra=links)
+
+    assert release.archive_problems(path, "1.2.3") == [
+        "xnvme-1.2.3/up: a link to ../../etc/passwd, outside xnvme-1.2.3/",
+        "xnvme-1.2.3/abs: a link to /etc/passwd, outside xnvme-1.2.3/",
+        "xnvme-1.2.3/gone: a link to missing.txt, which the archive does not hold",
+        "xnvme-1.2.3/hard: a link to etc/passwd, outside xnvme-1.2.3/",
+        "xnvme-1.2.3/hardgone: a link to xnvme-1.2.3/no, which the archive does not hold",
+    ]
+
+
+def test_an_archive_without_its_revision_or_a_subproject_has_problems(tree, tmp_path):
+    # A directory without files is no subproject
+    empty = member("xnvme-1.2.3/subprojects/spdk", type=tarfile.DIRTYPE)
+    path = archive(tmp_path, tree, leave_out=[".vcs_tag"], extra=[empty])
+
+    assert release.archive_problems(path, "1.2.3", ["upcie", "spdk"]) == [
+        "xnvme-1.2.3/.vcs_tag: missing, so a build of the archive reports no revision",
+        "xnvme-1.2.3/subprojects/spdk/: missing or without files",
+    ]
+
+
+def test_the_archive_of_a_release_records_the_tag_of_the_release(tree, tmp_path):
+    tagged = archive(tmp_path, tree, vcs_tag=b"v1.2.3\n")
+
+    assert release.archive_problems(tagged, "1.2.3", ["upcie"], release=True) == []
+
+    # A revision, the tag of a dirty tree, and the tag of another version
+    for stamp in ("0123abc", "v1.2.3+", "v1.2.30"):
+        other = archive(tmp_path, tree, vcs_tag=f"{stamp}\n".encode())
+
+        assert release.archive_problems(other, "1.2.3", ["upcie"]) == []
+        assert release.archive_problems(other, "1.2.3", ["upcie"], release=True) == [
+            f"xnvme-1.2.3/.vcs_tag: {stamp}, not the tag v1.2.3 of the release"
+        ]
+
+
+def test_an_archive_of_another_version_is_a_problem(tree, tmp_path):
+    bump(tree, "1.2.2")
+    path = archive(tmp_path, tree)
+
+    problems = release.archive_problems(path, "1.2.3")
+
+    assert len(problems) == 1
+    assert problems[0].startswith(
+        "the commit bumps to 1.2.3, but meson.build has 1.2.2"
+    )
+
+
+def test_an_archive_without_a_file_carrying_the_version_is_a_problem(tree, tmp_path):
+    path = archive(tmp_path, tree, leave_out=["cijoe/pyproject.toml"])
+
+    assert release.archive_problems(path, "1.2.3") == [
+        "xnvme-1.2.3/cijoe/pyproject.toml: missing"
+    ]
+
+
+def test_archive_checks_against_the_version_of_the_tree(tree, tmp_path):
+    path = archive(tmp_path, tree, top="xnvme-1.2.2")
+    run = subprocess.run(
+        [sys.executable, str(SCRIPT), "--archive", str(path), "--root", str(tree)],
+        capture_output=True,
+        text=True,
+    )
+
+    assert run.returncode == 1
+    assert "not under xnvme-1.2.3/" in run.stdout
+
+
+def test_archive_checks_the_subprojects_it_is_given(tree, tmp_path):
+    path = archive(tmp_path, tree)
+    command = [sys.executable, str(SCRIPT), "--archive", str(path)]
+    command += ["--root", str(tree), "--subprojects"]
+
+    passed = subprocess.run(command + ["upcie"], capture_output=True, text=True)
+    failed = subprocess.run(command + ["upcie,spdk"], capture_output=True, text=True)
+
+    assert passed.returncode == 0, passed.stdout
+    assert failed.returncode == 1
+    assert failed.stdout.splitlines() == [
+        "xnvme-1.2.3/subprojects/spdk/: missing or without files"
+    ]
+
+
+def test_archive_checks_the_tag_of_a_release(tree, tmp_path):
+    path = archive(tmp_path, tree)
+    run = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT),
+            "--archive",
+            str(path),
+            "--release",
+            "--root",
+            str(tree),
+        ],
+        capture_output=True,
+        text=True,
+    )
+
+    assert run.returncode == 1
+    assert "0123abc, not the tag v1.2.3 of the release" in run.stdout

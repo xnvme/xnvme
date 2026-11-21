@@ -8,8 +8,9 @@
     Removes '.git' and SPDK build artifacts from subprojects
 
     This script is intended to be added with 'meson.add_dist_script()', to cleanup the
-    subprojects, that is, remove the '.git' directories and SPDK build artifacts
-    (build/ directory and mk/config.mk) that contain host-specific absolute paths.
+    subprojects, that is, remove the '.git' directories, the '.git' files of the git
+    submodules, as those of SPDK, and SPDK build artifacts (build/ directory and
+    mk/config.mk) that contain host-specific absolute paths.
 """
 import argparse
 import os
@@ -61,7 +62,7 @@ def main(args):
             path = os.path.join(root, fname)
             if "builddir" not in path or "subprojects" not in path:
                 continue
-            if (
+            if fname == ".git" or (
                 fname == "config.mk"
                 and os.path.join(os.sep, "spdk", "mk", "config.mk") in path
             ):

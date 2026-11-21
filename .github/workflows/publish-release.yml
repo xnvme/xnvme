@@ -5,9 +5,15 @@ name: publish-release
 # releases, from the artifacts of the 'verify' run of the pull-request that was
 # merged, so neither main nor the tag runs the verification again, and starts a
 # 'docgen' run of 'verify' on the new tag for the documentation of the release.
-# The artifacts are used only when that pull-request's head has the tree main
-# now has, which branch protection's up-to-date rule makes the case for a
-# merge; otherwise the release fails. Any other push does nothing here.
+# The pull-request opened every gate, as it ended on the bump, and the release
+# requires that every gated job, the release checklist among them, and
+# 'ci-result' passed in that run. The artifacts are used only when that
+# pull-request's head has the tree main now has, which branch protection's
+# up-to-date rule makes the case for a merge; otherwise the release fails. Any
+# other push does nothing here. The 'pypi' job then fetches the sdist of the
+# release with toolbox/xnvme_publish.py and uploads it with
+# pypa/gh-action-pypi-publish, and the 'crates-io' job uploads xnvme-sys with
+# the script; a maintainer runs the script by 'make publish' when that fails.
 on:
   push:
     branches: [main]
@@ -24,11 +30,14 @@ defaults:
 
 jobs:
   release:
+    if: "startsWith(github.event.head_commit.message, 'ver: bump to v')"
     runs-on: ubuntu-24.04
     permissions:
       actions: write
       contents: write
       pull-requests: read
+    outputs:
+      version: ${{ steps.check.outputs.version }}
     env:
       GH_TOKEN: ${{ github.token }}
       REPO: ${{ github.repository }}
@@ -37,56 +46,34 @@ jobs:
     - name: Grab source
       uses: actions/checkout@v6
 
-    - name: Check whether this releases a version, and write the release notes
-      id: version
+    - name: Check the files carrying the version, and write the release notes
       run: |
-        subject=$(git log -1 --format=%s)
-        case "$subject" in
-        "ver: bump to v"*)
-          python3 toolbox/xnvme_release.py "$subject" > "$RUNNER_TEMP/notes.md"
-          echo "version=${subject#ver: bump to v}" >> "$GITHUB_OUTPUT"
-          ;;
-        *) echo "Not a version bump: $subject" ;;
-        esac
+        python3 toolbox/xnvme_release.py "$(git log -1 --format=%s)" > "$RUNNER_TEMP/notes.md"
+
+    - name: List the jobs that must have passed
+      id: jobs
+      run: |
+        {
+          echo 'jobs<<EOF'
+          echo 'verify.yml: ci-result'
+          python3 toolbox/gha_gates.py jobs | sed 's/^/verify.yml: /'
+          echo 'EOF'
+        } | tee -a "$GITHUB_OUTPUT"
 
     - name: Find the 'verify' run of the merged pull-request on this tree
-      id: pr
-      if: steps.version.outputs.version
-      env:
-        VERSION: ${{ steps.version.outputs.version }}
-      run: |
-        missing() {
-          echo "::error::$1; v$VERSION is not released"
-          exit 1
-        }
-        pr=$(gh api "repos/$REPO/commits/$GITHUB_SHA/pulls" \
-          --jq '[.[] | select(.merged_at != null)][0].number // empty')
-        [ -n "$pr" ] || missing "No pull-request merged $GITHUB_SHA"
-        git fetch --quiet --depth 1 origin "refs/pull/$pr/head"
-        if [ "$(git rev-parse 'FETCH_HEAD^{tree}')" != "$(git rev-parse 'HEAD^{tree}')" ]; then
-          missing "#$pr was behind main when merged, so its run tested another tree"
-        fi
-        # ci-result decides whether a pull-request may merge, so the run it
-        # passed is the one to publish from, whatever the run's own conclusion
-        run=""
-        for id in $(gh run list --repo "$REPO" --workflow verify.yml --event pull_request \
-          --commit "$(git rev-parse FETCH_HEAD)" --status completed --limit 20 \
-          --json databaseId --jq '.[].databaseId'); do
-          result=$(gh api --paginate "repos/$REPO/actions/runs/$id/jobs?per_page=100" \
-            --jq '.jobs[] | select(.name == "ci-result") | .conclusion')
-          if [ "$result" = success ]; then
-            run=$id
-            break
-          fi
-        done
-        [ -n "$run" ] || missing "#$pr has no 'verify' run of its head that ci-result passed"
-        echo "run=$run" >> "$GITHUB_OUTPUT"
+      id: check
+      uses: refenv/gha-project-auto-release/check@v1
+      with:
+        version-file: meson.build
+        version-pattern: "^\\s*version: '([^']+)',"
+        changelog: ''
+        workflows: verify.yml
+        jobs: ${{ steps.jobs.outputs.jobs }}
 
     - name: Collect the release assets from the pull-request's run
-      if: steps.version.outputs.version
       env:
-        RUN: ${{ steps.pr.outputs.run }}
-        VERSION: ${{ steps.version.outputs.version }}
+        RUN: ${{ fromJSON(steps.check.outputs.runs || '{}')['verify.yml'] }}
+        VERSION: ${{ steps.check.outputs.version }}
       run: |
         mkdir -p assets
         gh run download "$RUN" --repo "$REPO" --name xnvme-src-archive --dir src
@@ -100,18 +87,64 @@ jobs:
         tar czf "assets/test-results-v$VERSION.tar.gz" reports
         ls -lh assets
 
-    - name: Tag and create the release
-      if: steps.version.outputs.version
-      env:
-        VERSION: ${{ steps.version.outputs.version }}
-      run: |
-        gh release create "v$VERSION" --repo "$REPO" --target "$GITHUB_SHA" \
-          --title "Release Notes: v$VERSION" --notes-file "$RUNNER_TEMP/notes.md" \
-          --generate-notes assets/*
+    - name: Tag, create the release, and start the 'docgen' run on the tag
+      uses: refenv/gha-project-auto-release/release@v1
+      with:
+        version: ${{ steps.check.outputs.version }}
+        notes-file: ${{ runner.temp }}/notes.md
+        title: 'Release Notes: {tag}'
+        assets: assets/*
+        dispatch: verify.yml job=docgen
 
-    - name: Build and deploy the documentation of the release by a 'docgen' run
-      if: steps.version.outputs.version
+  # PyPI and crates.io accept the upload by trusted publishing: each is set up
+  # once to trust this workflow in its environment, so no token is kept as a
+  # secret. Each registry has a job of its own, so a failed upload is re-run
+  # alone, and an upload of the version done already is skipped
+  pypi:
+    needs: release
+    runs-on: ubuntu-24.04
+    environment: pypi
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      VERSION: ${{ needs.release.outputs.version }}
+
+    steps:
+    - name: Grab source
+      uses: actions/checkout@v6
+
+    - name: Retrieve the Python sdist of the release, by the name PyPI requires
       env:
-        VERSION: ${{ steps.version.outputs.version }}
-      run: |
-        gh workflow run verify.yml --repo "$REPO" --ref "v$VERSION" -f job=docgen
+        GH_TOKEN: ${{ github.token }}
+      run: python3 toolbox/xnvme_publish.py fetch "$VERSION" --dir publish
+
+    - name: Upload the sdist to PyPI
+      uses: pypa/gh-action-pypi-publish@v1.14.3
+      with:
+        packages-dir: publish/pypi/
+        skip-existing: true
+
+  crates-io:
+    needs: release
+    runs-on: ubuntu-24.04
+    environment: crates-io
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      VERSION: ${{ needs.release.outputs.version }}
+
+    steps:
+    - name: Grab source
+      uses: actions/checkout@v6
+
+    - name: Get a token of crates.io
+      id: auth
+      uses: rust-lang/crates-io-auth-action@v1.0.6
+
+    - name: Upload xnvme-sys from the source archive of the release
+      env:
+        GH_TOKEN: ${{ github.token }}
+        CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
+      run: python3 toolbox/xnvme_publish.py crate "$VERSION"
