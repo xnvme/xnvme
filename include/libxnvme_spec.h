@@ -83,8 +83,39 @@ enum xnvme_spec_status_code_type {
  */
 enum xnvme_spec_status_code {
 	// TODO: Add remaining status codes from spec
-	XNVME_STATUS_CODE_INVALID_OPCODE = 0x01, ///< Invalid Command Opcode
-	XNVME_STATUS_CODE_INVALID_FIELD  = 0x02, ///< Invalid Field
+	XNVME_STATUS_CODE_INVALID_OPCODE       = 0x01, ///< Invalid Command Opcode
+	XNVME_STATUS_CODE_INVALID_FIELD        = 0x02, ///< Invalid Field
+	XNVME_STATUS_CODE_INVALID_NS           = 0x0B, ///< Invalid Namespace or Format
+	XNVME_STATUS_CODE_CMD_INTERRUPTED      = 0x21, ///< Command Interrupted
+	XNVME_STATUS_CODE_LBA_RANGE            = 0x80, ///< LBA Out of Range
+	XNVME_STATUS_CODE_CAP_EXCEEDED         = 0x81, ///< Capacity Exceeded
+	XNVME_STATUS_CODE_NS_NOT_READY         = 0x82, ///< Namespace Not Ready
+	XNVME_STATUS_CODE_RESERVATION_CONFLICT = 0x83, ///< Reservation Conflict
+};
+
+/**
+ * NVMe Command Status Codes of the Media and Data Integrity Errors type
+ *
+ * @enum xnvme_spec_media_status_code
+ */
+enum xnvme_spec_media_status_code {
+	XNVME_SPEC_MEDIA_SC_WRITE_FAULT     = 0x80, ///< Write Fault
+	XNVME_SPEC_MEDIA_SC_READ_ERROR      = 0x81, ///< Unrecovered Read Error
+	XNVME_SPEC_MEDIA_SC_GUARD_CHECK     = 0x82, ///< End-to-end Guard Check Error
+	XNVME_SPEC_MEDIA_SC_APPTAG_CHECK    = 0x83, ///< End-to-end Application Tag Check Error
+	XNVME_SPEC_MEDIA_SC_REFTAG_CHECK    = 0x84, ///< End-to-end Reference Tag Check Error
+	XNVME_SPEC_MEDIA_SC_COMPARE_FAILED  = 0x85, ///< Compare Failure
+	XNVME_SPEC_MEDIA_SC_ACCESS_DENIED   = 0x86, ///< Access Denied
+	XNVME_SPEC_MEDIA_SC_UNWRITTEN_BLOCK = 0x87, ///< Deallocated or Unwritten Logical Block
+};
+
+/**
+ * NVMe Command Status Codes of the Path Related Status type
+ *
+ * @enum xnvme_spec_path_status_code
+ */
+enum xnvme_spec_path_status_code {
+	XNVME_SPEC_PATH_SC_HOST_PATH_ERROR = 0x70, ///< Host Pathing Error
 };
 
 /**
@@ -2053,6 +2084,8 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_nvm_write_zeroes) == 64, "Incorrect
  * @see Specification Section 6.TBD.1, figure 355
  */
 enum xnvme_spec_nvm_cmd_cpl_sc {
+	XNVME_SPEC_NVM_CMD_CPL_SC_BAD_ATTRIBUTES = 0x80, ///< Conflicting Attributes
+	XNVME_SPEC_NVM_CMD_CPL_SC_INVALID_PI     = 0x81, ///< Invalid Protection Information
 	/// Copy Command Specific Status Values
 	XNVME_SPEC_NVM_CMD_CPL_SC_WRITE_TO_RONLY =
 		0x82, ///< XNVME_SPEC_NVM_CMD_CPL_SC_WRITE_TO_RONLY
