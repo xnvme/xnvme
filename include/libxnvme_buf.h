@@ -181,12 +181,14 @@ xnvme_buf_register(const struct xnvme_dev *dev, void *vaddr, size_t nbytes);
  * @note Control plane: serialised with the other control-plane calls, not with I/O on the
  * same device, queue or buffer; see Thread Safety in the API documentation
  *
- * @param dev Device handle obtained with xnvme_dev_open()
+ * @param dev Device handle obtained with xnvme_dev_open_uri()
  * @param fd File descriptor of the dma-buf
  * @param vaddr The address the caller accesses the first byte of the dma-buf at
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned; `-ENOSYS` when the
  * device does not register dma-bufs.
+ *
+ * @errno
  */
 int
 xnvme_buf_register_dmabuf(const struct xnvme_dev *dev, int fd, void *vaddr);
