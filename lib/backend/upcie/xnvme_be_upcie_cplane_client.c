@@ -435,6 +435,42 @@ xnvme_be_upcie_cplane_unregister_client_mem(struct xnvme_be_upcie_ctrlr *ctrlr, 
 	return xnvme_be_upcie_cplane_ask_ctrlr(ctrlr, &msg, NULL, NULL);
 }
 
+/**
+ * Move the heap to the address the server maps it at, where that is free here
+ *
+ * Only then is memory of this process's own, mapped at its address, in one
+ * address space with the heap. The heap stays where it is otherwise.
+ *
+ * @return The heap's mapping, the one given when it could not move
+ */
+static void *
+cplane_client_heap_to_server_va(void *heap_base, uint64_t heap_nbytes, int heap_fd,
+				const struct hostmem_shared_desc *desc)
+{
+	void *at = (void *)desc->base_addr;
+	void *moved;
+
+	if ((desc->kind != HOSTMEM_SHARED_ARITHMETIC) || (heap_base == at)) {
+		return heap_base;
+	}
+
+	moved = mmap(at, heap_nbytes, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_FIXED_NOREPLACE,
+		     heap_fd, 0);
+	if (moved == MAP_FAILED) {
+		XNVME_DEBUG("INFO: the server's heap address is taken here; errno(%d)", errno);
+		return heap_base;
+	}
+	/* Kernels before MAP_FIXED_NOREPLACE take the address as a hint */
+	if (moved != at) {
+		munmap(moved, heap_nbytes);
+		return heap_base;
+	}
+
+	munmap(heap_base, heap_nbytes);
+
+	return moved;
+}
+
 int
 xnvme_be_upcie_cplane_init_connection(uint32_t cplane_id, const char *bdf,
 				      struct xnvme_be_upcie_ctrlr *ctrlr)
@@ -445,6 +481,7 @@ xnvme_be_upcie_cplane_init_connection(uint32_t cplane_id, const char *bdf,
 	uint32_t nfds = 0;
 	void *heap_base = MAP_FAILED;
 	void *bar0 = MAP_FAILED;
+	int iommu_fd = -1;
 	int index = 0;
 	int sock, err;
 
@@ -469,7 +506,7 @@ xnvme_be_upcie_cplane_init_connection(uint32_t cplane_id, const char *bdf,
 	msg.op = NVME_CPLANE_OP_INIT_CONNECTION;
 	msg.index = (uint32_t)index;
 	err = cplane_client_ask(sock, &msg, fds, &nfds);
-	if (err || (nfds != 2)) {
+	if (err || (nfds != (msg.u.init_connection.iommu ? 3U : 2U))) {
 		XNVME_DEBUG("FAILED: init-connection; err(%d) nfds(%u)", err, nfds);
 		/* Descriptors that arrived are this process's to close */
 		for (uint32_t i = 0; i < nfds; ++i) {
@@ -477,6 +514,9 @@ xnvme_be_upcie_cplane_init_connection(uint32_t cplane_id, const char *bdf,
 		}
 		err = err ? err : -EPROTO;
 		goto failed;
+	}
+	if (nfds == 3) {
+		iommu_fd = fds[2];
 	}
 
 	/* Every reply carries the heap; only the first controller maps it */
@@ -492,13 +532,23 @@ xnvme_be_upcie_cplane_init_connection(uint32_t cplane_id, const char *bdf,
 	} else {
 		heap_base = mmap(NULL, msg.u.init_connection.heap_nbytes, PROT_READ | PROT_WRITE,
 				 MAP_SHARED, fds[0], 0);
-		close(fds[0]);
 		if (heap_base == MAP_FAILED) {
 			XNVME_DEBUG("FAILED: mmap(heap); errno(%d)", errno);
 			err = -errno;
+			close(fds[0]);
 			close(fds[1]);
 			goto failed;
 		}
+		if ((iommu_fd >= 0) &&
+		    cplane_client_desc_fits(heap_base, msg.u.init_connection.heap_nbytes,
+					    msg.u.init_connection.desc_offset)) {
+			const char *at = (char *)heap_base + msg.u.init_connection.desc_offset;
+
+			desc = (const struct hostmem_shared_desc *)at;
+			heap_base = cplane_client_heap_to_server_va(
+				heap_base, msg.u.init_connection.heap_nbytes, fds[0], desc);
+		}
+		close(fds[0]);
 	}
 
 	bar0 = mmap(NULL, msg.u.init_connection.bar0_nbytes, PROT_READ | PROT_WRITE, MAP_SHARED,
@@ -539,6 +589,21 @@ xnvme_be_upcie_cplane_init_connection(uint32_t cplane_id, const char *bdf,
 		g_upcie_rte.connection.heap_base = heap_base;
 		g_upcie_rte.connection.heap_nbytes = msg.u.init_connection.heap_nbytes;
 		g_upcie_rte.connection.alive = 1;
+
+		/* Of use only with the heap at its IOVA; see xnvme_be_upcie_mem_map_iommu() */
+		if ((iommu_fd >= 0) &&
+		    (g_upcie_rte.mem.dmem.base_iova == (uint64_t)g_upcie_rte.mem.dmem.base_va) &&
+		    ((msg.u.init_connection.iommu == NVME_CPLANE_IOMMU_IOMMUFD) ||
+		     (msg.u.init_connection.iommu == NVME_CPLANE_IOMMU_TYPE1))) {
+			g_upcie_rte.connection.iommu.fd = iommu_fd;
+			g_upcie_rte.connection.iommu.ioas_id = msg.u.init_connection.ioas_id;
+			g_upcie_rte.connection.iommu.kind = msg.u.init_connection.iommu;
+			iommu_fd = -1;
+		}
+	}
+	if (iommu_fd >= 0) {
+		close(iommu_fd);
+		iommu_fd = -1;
 	}
 
 	/* Without a controller the caller wanted the heap alone; the socket stays */
@@ -561,6 +626,9 @@ xnvme_be_upcie_cplane_init_connection(uint32_t cplane_id, const char *bdf,
 	return 0;
 
 failed:
+	if (iommu_fd >= 0) {
+		close(iommu_fd);
+	}
 	if (bar0 != MAP_FAILED) {
 		munmap(bar0, msg.u.init_connection.bar0_nbytes);
 	}
@@ -1017,6 +1085,9 @@ xnvme_be_upcie_cplane_disconnect(void)
 	}
 	if (g_upcie_rte.connection.heap_base) {
 		munmap(g_upcie_rte.connection.heap_base, g_upcie_rte.connection.heap_nbytes);
+	}
+	if (g_upcie_rte.connection.iommu.kind != NVME_CPLANE_IOMMU_NONE) {
+		close(g_upcie_rte.connection.iommu.fd);
 	}
 	if (g_upcie_rte.connection.sock > 0) {
 		close(g_upcie_rte.connection.sock);

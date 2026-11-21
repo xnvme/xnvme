@@ -214,20 +214,39 @@ xnvme_be_upcie_type1_attach(struct xnvme_be_upcie_ctrlr *ctrlr, const char *bdf)
 	}
 	g_upcie_rte.type1.iommu_set = 1;
 
-	/* MAP_DMA the whole hugepage at a caller-chosen base_iova; the
-	 * dmamem sits on that mapping as ARITHMETIC (base_iova + offset).
-	 * At the host base, as type1 refuses a map over a reserved region of the device. */
-	if (xnvme_be_upcie_host_iova_base() + g_upcie_rte.mem.hp.size >
-	    xnvme_be_upcie_iova_base()) {
-		XNVME_DEBUG("FAILED: the heap at 0x%" PRIx64 " does not end below the "
-			    "device-memory window",
-			    xnvme_be_upcie_host_iova_base());
-		err = -ERANGE;
-		goto fail_group;
+	/* MAP_DMA the whole hugepage at an IOVA equal to its address; the dmamem
+	 * sits on that mapping as ARITHMETIC, as does memory mapped later. Where
+	 * the IOMMU cannot hold that address, or XNVME_UPCIE_HOST_IOVA_BASE says
+	 * otherwise, at the host base, and then nothing can be registered. */
+	err = -EINVAL;
+	if (xnvme_be_upcie_host_iova_at_va()) {
+		err = xnvme_be_upcie_iova_window_clear((uint64_t)g_upcie_rte.mem.hp.virt,
+						       g_upcie_rte.mem.hp.size);
+		if (!err) {
+			err = dmamem_from_hostmem_type1(
+				&g_upcie_rte.mem.dmem, &g_upcie_rte.type1.container,
+				(uint64_t)g_upcie_rte.mem.hp.virt, &g_upcie_rte.mem.hp);
+		}
+		if (err) {
+			XNVME_DEBUG("INFO: the heap cannot sit at its address; err(%d); "
+				    "mapping it at the host IOVA base",
+				    err);
+		}
 	}
+	if (err) {
+		if (xnvme_be_upcie_host_iova_base() + g_upcie_rte.mem.hp.size >
+		    xnvme_be_upcie_iova_base()) {
+			XNVME_DEBUG("FAILED: the heap at 0x%" PRIx64 " does not end below the "
+				    "device-memory window",
+				    xnvme_be_upcie_host_iova_base());
+			err = -ERANGE;
+			goto fail_group;
+		}
 
-	err = dmamem_from_hostmem_type1(&g_upcie_rte.mem.dmem, &g_upcie_rte.type1.container,
-					xnvme_be_upcie_host_iova_base(), &g_upcie_rte.mem.hp);
+		err = dmamem_from_hostmem_type1(
+			&g_upcie_rte.mem.dmem, &g_upcie_rte.type1.container,
+			xnvme_be_upcie_host_iova_base(), &g_upcie_rte.mem.hp);
+	}
 	if (err) {
 		XNVME_DEBUG("FAILED: dmamem_from_hostmem_type1(); err(%d)", err);
 		goto fail_group;

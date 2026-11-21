@@ -140,10 +140,11 @@ struct xnvme_be_upcie_rte_mem {
  * socket closes.
  */
 struct xnvme_be_upcie_rte_connection {
-	int alive;            ///< Whether this process is a client of a server
-	void *heap_base;      ///< This process's mapping of the server's heap
-	uint64_t heap_nbytes; ///< How much of it
-	int sock;             ///< To the server; 0 when not connected
+	int alive;                             ///< Whether this process is a client of a server
+	void *heap_base;                       ///< This process's mapping of the server's heap
+	uint64_t heap_nbytes;                  ///< How much of it
+	int sock;                              ///< To the server; 0 when not connected
+	struct nvme_cplane_iommu_handle iommu; ///< The server's, where the heap sits at its IOVA
 };
 
 /**
@@ -193,7 +194,7 @@ int
 xnvme_be_upcie_va_bits(void);
 
 /**
- * IOVA the host heap is mapped at on the vfio-pci paths
+ * IOVA the host heap is mapped at on the vfio-pci paths, where not at its address
  *
  * Read from XNVME_UPCIE_HOST_IOVA_BASE.
  */
@@ -201,12 +202,28 @@ uint64_t
 xnvme_be_upcie_host_iova_base(void);
 
 /**
- * IOVA the device-memory window starts at, which the host heap has to end below
+ * Whether the host heap is to be mapped at an IOVA equal to its address
+ *
+ * @return 1 unless XNVME_UPCIE_HOST_IOVA_BASE is set, then 0
+ */
+int
+xnvme_be_upcie_host_iova_at_va(void);
+
+/**
+ * IOVA the device-memory window starts at, which the host heap has to stay clear of
  *
  * Read from XNVME_UPCIE_IOVA_BASE.
  */
 uint64_t
 xnvme_be_upcie_iova_base(void);
+
+/**
+ * Whether host memory at an IOVA equal to its address stays clear of the device-memory window
+ *
+ * @return 0 when it does, -ERANGE when it does not
+ */
+int
+xnvme_be_upcie_iova_window_clear(uint64_t iova, uint64_t nbytes);
 
 int
 xnvme_be_upcie_iova_range_required(void);
@@ -281,6 +298,19 @@ xnvme_be_upcie_buf_reg_ref(struct dmamem *dmem, uint64_t heap, size_t heap_nbyte
 int
 xnvme_be_upcie_buf_reg_unref(struct dmamem *dmem, uint64_t heap, size_t heap_nbytes, void *vaddr,
 			     struct xnvme_buf_reg **last);
+
+/**
+ * The IOAS or container that memory of this process maps into, at an IOVA equal to its address
+ *
+ * @return 1 with iommu filled where the heap sits in it that way, through this process's
+ * IOAS or container or the server's, 0 otherwise
+ */
+int
+xnvme_be_upcie_mem_map_iommu(struct nvme_cplane_iommu_handle *iommu);
+
+/** Unregister what is still registered; the IOAS or the connection holding it is going away */
+void
+xnvme_be_upcie_buf_regs_term(void);
 
 int
 xnvme_be_upcie_queue_init(struct xnvme_queue *queue, int opts);
