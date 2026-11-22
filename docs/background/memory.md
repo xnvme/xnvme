@@ -40,9 +40,19 @@ The rules are the same on every backend that registers memory:
 | `spdk` over PCIe | {ref}`Host memory, depending on the IOMMU <sec-backends-spdk-memory>` | {ref}`spdk_mem_register() <sec-backends-spdk-memory>` | 2 MiB |
 | `spdk` over RDMA | Any host memory | {ref}`spdk_mem_register() <sec-backends-spdk-memory>` | 2 MiB |
 | `spdk` over TCP | Any host memory | Nothing | See {ref}`sec-background-memory-io-path` |
-| `upcie` | {ref}`Host memory, depending on the IOMMU <sec-backends-upcie-host-limitations>` | {ref}`An IOMMU mapping at an IOVA equal to its address; without an IOMMU, an entry in the heap's address table <sec-backends-upcie-host-limitations>` | Page, or the IOMMU's where larger; without an IOMMU, the heap's hugepage |
+| `upcie` | {ref}`Host memory, depending on the IOMMU <sec-backends-upcie-host-limitations>`; a dma-buf with `xnvme_buf_register_dmabuf()` | {ref}`An IOMMU mapping at an IOVA equal to its address; without an IOMMU, an entry in the heap's address table <sec-backends-upcie-host-limitations>`; a dma-buf, an IOMMU mapping of it, or served, the dma-buf registered with the server | Page, or the IOMMU's where larger; without an IOMMU, the heap's hugepage; a dma-buf, page |
 | `upcie-cuda`, `upcie-hip` | GPU memory | {ref}`An entry in the device's address table, and under vfio-pci an IOMMU mapping; served, a dma-buf export registered with the server <sec-backends-upcie-cuda-memory-register>` | GPU page |
 | `driverkit` (macOS) | Nothing, `-ENOSYS` | | |
+
+`xnvme_buf_register_dmabuf()` registers a dma-buf from any exporter under
+addresses the caller names, which the CPU need not be able to access. upcie
+and io_uring_dmabuf take one, and upcie-cuda and upcie-hip take one as clients
+of a homi server; upcie-cuda and upcie-hip without a server, and the other
+backends, return `-ENOSYS`. Only a registration at the same address is counted
+on a registered dma-buf; one at an address inside a registered range returns
+`-EBUSY`. `xnvme_buf_unregister()` gives it back. On upcie, a dma-buf that
+iommufd's `IOMMU_IOAS_MAP_FILE` does not take, such as a udmabuf, needs the
+`dmabuf_import` and `iommu_map_pa` modules.
 
 (sec-background-memory-io-path)=
 

@@ -49,12 +49,13 @@ nsid = 2
 labels = [ "hip", "meta_sep" ]
 driver_attachment = "userspace"
 
-# The second controller of the rig 'second-controller', which the homi server
-# for upcie-hip serves beside the first, for a buffer registered through both
+# The second controller of the rig 'second-controller', which the homi servers
+# for upcie-hip and upcie serve beside the first, for a buffer or a dma-buf
+# registered through both
 [[devices]]
 uri = "0000:05:00.0"
 nsid = 1
-labels = [ "hip", "second_ctrlr" ]
+labels = [ "hip", "pcie", "second_ctrlr" ]
 driver_attachment = "userspace"
 
 # The first controller on the kernel's driver, for io_uring_dmabuf; it has the

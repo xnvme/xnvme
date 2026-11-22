@@ -84,6 +84,8 @@ reserved regions.
     device goes on using the page the child now has. A process that forks
     while memory is registered should map it `MAP_SHARED`, or mark it
     `MADV_DONTFORK`.
+  - A dma-buf is registered with `xnvme_buf_register_dmabuf()` and given back
+    with `xnvme_buf_unregister()`.
 
   `xnvme_buf_get_alignment()` reports the alignment for the case at hand, and
   `ENOSYS` where registering is not possible.
