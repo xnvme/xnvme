@@ -16,7 +16,7 @@ Run I/O benchmarks against NVMe devices
 .TP
 .B
 \fBxnvme-perf-storage-run\fP(1)
-Run a time-bounded async IO benchmark against one or more NVMe devices. Devices are distributed across CPU threads pinned by \fB--cpumask\fP or \fB--cpulist\fP. With \fB--be\fP 'io_uring_dmabuf' the IO buffers are allocated on the GPU given by \fB--gpu-id\fP and exported as a dma-buf for the kernel to DMA into.
+Run a time-bounded async IO benchmark against one or more NVMe devices. Devices are distributed across CPU threads pinned by \fB--cpumask\fP or \fB--cpulist\fP. With \fB--be\fP 'io_uring_dmabuf' the IO buffers are allocated on the GPU given by \fB--gpu-id\fP and exported as a dma-buf for the kernel to DMA into. With \fB--dmabuf-fd\fP they are slices of a dma-buf the process inherited, from any exporter, which the CPU never reads or writes.
 .TP
 .B
 \fBxnvme-perf-storage-verify\fP(1)

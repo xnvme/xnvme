@@ -51,7 +51,7 @@ driver_attachment = "userspace"
 
 # The second controller of the rig 'second-controller', which the homi servers
 # for upcie-hip and upcie serve beside the first, for a buffer or a dma-buf
-# registered through both
+# registered through both, and for payloads of one 512-byte LBA
 [[devices]]
 uri = "0000:05:00.0"
 nsid = 1

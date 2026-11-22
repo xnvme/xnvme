@@ -9,6 +9,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <unistd.h>
+#ifdef __linux__
+#include <sys/mman.h>
+#endif
 
 #include <libxnvme.h>
 #include <xnvme_util.h>
@@ -521,12 +525,35 @@ setup_job(struct xnvmeperf_job *job, struct xnvme_dev *dev, struct xnvmeperf_arg
 	return 0;
 }
 
+/* The number of slices of --dmabuf-fd's dma-buf that jobs have taken */
+static uint64_t g_dmabuf_slices;
+
+static uint64_t
+dmabuf_slice_nbytes(const struct xnvmeperf_args *args)
+{
+	return ((uint64_t)args->iosize + 4095) & ~(uint64_t)4095;
+}
+
 static void *
 io_buf_alloc(struct xnvme_dev *dev, const struct xnvmeperf_args *args)
 {
 	void *buf;
 	int err;
 
+	if (args->dmabuf_va) {
+		uint64_t nslices = args->dmabuf_nbytes / dmabuf_slice_nbytes(args);
+		uint64_t slice = g_dmabuf_slices++ % nslices;
+
+		// Each job registers the whole dma-buf; the library counts the registrations
+		err = xnvme_buf_register_dmabuf(dev, args->dmabuf_fd, args->dmabuf_va);
+		if (err) {
+			xnvme_cli_perr("Failed: xnvme_buf_register_dmabuf()", err);
+			errno = -err;
+			return NULL;
+		}
+
+		return (char *)args->dmabuf_va + slice * dmabuf_slice_nbytes(args);
+	}
 	if (!args->gpu_buf) {
 		return xnvme_buf_alloc(dev, args->iosize);
 	}
@@ -550,6 +577,10 @@ io_buf_alloc(struct xnvme_dev *dev, const struct xnvmeperf_args *args)
 static void
 io_buf_free(struct xnvme_dev *dev, const struct xnvmeperf_args *args, void *buf)
 {
+	if (args->dmabuf_va) {
+		xnvme_buf_unregister(dev, args->dmabuf_va);
+		return;
+	}
 	if (args->gpu_buf) {
 		xnvme_buf_unregister(dev, buf);
 		xnvmeperf_gpu_buf_free(buf);
@@ -709,8 +740,9 @@ thread_fn(void *arg)
 	// Fill each job buffer with a known pattern. io_buf_alloc() allocated it with
 	// xnvme_buf_alloc() or registered it with xnvme_buf_register(), so xnvme_buf_fill()
 	// reaches GPU memory through the runtime the backend recorded. The bounce ring is read
-	// into, so there is nothing to pre-fill.
-	if (!args->buf_host_bounce) {
+	// into, so there is nothing to pre-fill. A dma-buf is not filled either: the CPU may be
+	// unable to access it.
+	if (!args->buf_host_bounce && !args->dmabuf_va) {
 		for (int i = 0; i < thread->ndevs; i++) {
 			struct xnvmeperf_job *job = &thread->jobs[i];
 
@@ -832,6 +864,10 @@ print_run_args(struct xnvmeperf_args *args, const char *pattern)
 	       args->completion == XNVMEPERF_COMPLETION_REAP ? "reap" : "cb");
 	if (args->opts.homi_id) {
 		printf("- served by homi: %u\n", args->opts.homi_id);
+	}
+	if (args->dmabuf_va) {
+		printf("- payloads in dma-buf: fd %d, %zu bytes, slices of %" PRIu64 " bytes\n",
+		       args->dmabuf_fd, args->dmabuf_nbytes, dmabuf_slice_nbytes(args));
 	}
 	printf("- io size: %u\n", args->iosize);
 	printf("- runtime: %u\n", args->time);
@@ -1737,6 +1773,52 @@ parse_run_args(struct xnvme_cli *cli, struct xnvmeperf_args *args)
 
 	args->gpu_buf = args->opts.be && (!strcmp(args->opts.be, "io_uring_dmabuf"));
 
+	args->dmabuf_fd = -1;
+	if (cli->given[XNVME_CLI_OPT_DMABUF_FD]) {
+#ifdef __linux__
+		off_t nbytes;
+
+		if (args->gpu_buf || cli->given[XNVME_CLI_OPT_BUF_HOST_BOUNCE]) {
+			err = -EINVAL;
+			xnvme_cli_perr("Error: --dmabuf-fd is the payloads' memory, as "
+				       "--buf-host-bounce and io_uring_dmabuf's are",
+				       err);
+			return err;
+		}
+		args->dmabuf_fd = cli->args.dmabuf_fd;
+		nbytes = lseek(args->dmabuf_fd, 0, SEEK_END);
+		if (nbytes <= 0) {
+			err = nbytes < 0 ? -errno : -EINVAL;
+			xnvme_cli_perr("Error: --dmabuf-fd is no dma-buf this process holds", err);
+			return err;
+		}
+		args->dmabuf_nbytes = (size_t)nbytes;
+		if ((args->dmabuf_nbytes % 4096) ||
+		    (args->dmabuf_nbytes < dmabuf_slice_nbytes(args))) {
+			err = -EINVAL;
+			xnvme_cli_perr(
+				"Error: --dmabuf-fd takes a dma-buf of whole pages, at least "
+				"--iosize rounded up to a page",
+				err);
+			return err;
+		}
+		// addresses for the payloads to be named by, which nothing reads or writes
+		args->dmabuf_va = mmap(NULL, args->dmabuf_nbytes, PROT_NONE,
+				       MAP_PRIVATE | MAP_ANONYMOUS | MAP_NORESERVE, -1, 0);
+		if (args->dmabuf_va == MAP_FAILED) {
+			err = -errno;
+			args->dmabuf_va = NULL;
+			xnvme_cli_perr("Error: no addresses for the dma-buf", err);
+			return err;
+		}
+#else
+		err = -ENOTSUP;
+		xnvme_cli_perr("Error: --dmabuf-fd takes a dma-buf, which is a Linux interface",
+			       err);
+		return err;
+#endif
+	}
+
 	if (!cli->args.iopattern) {
 		err = -EINVAL;
 		xnvme_cli_perr("Error: --iopattern is required", err);
@@ -1953,7 +2035,9 @@ static struct xnvme_cli_sub g_subs[] = {
 		"Run a time-bounded async IO benchmark against one or more NVMe devices. "
 		"Devices are distributed across CPU threads pinned by --cpumask or --cpulist. "
 		"With --be 'io_uring_dmabuf' the IO buffers are allocated on the GPU given by "
-		"--gpu-id and exported as a dma-buf for the kernel to DMA into.",
+		"--gpu-id and exported as a dma-buf for the kernel to DMA into. With "
+		"--dmabuf-fd they are slices of a dma-buf the process inherited, from any "
+		"exporter, which the CPU never reads or writes.",
 		sub_run,
 		{
 			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
@@ -1977,6 +2061,7 @@ static struct xnvme_cli_sub g_subs[] = {
 			{XNVME_CLI_OPT_REPORT_FREQ, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_P2P_CQ_MIRROR, XNVME_CLI_LFLG},
 			{XNVME_CLI_OPT_BUF_HOST_BOUNCE, XNVME_CLI_LFLG},
+			{XNVME_CLI_OPT_DMABUF_FD, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_COMPLETION, XNVME_CLI_LOPT},
 		},
 	},

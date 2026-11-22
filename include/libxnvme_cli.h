@@ -137,6 +137,7 @@ struct xnvme_cli_args {
 	const char *iova_mode;
 
 	uint32_t gpu_id; ///< upcie-cuda/upcie-hip: GPU ordinal to use
+	int dmabuf_fd;   ///< A dma-buf the process inherited, for the payloads; see given[]
 
 	struct xnvme_opts_css css; ///< SPDK controller-setup: do command-set-selection
 
@@ -407,7 +408,9 @@ enum xnvme_cli_opt {
 
 	XNVME_CLI_OPT_COMPLETION = 145, ///< XNVME_CLI_OPT_COMPLETION
 
-	XNVME_CLI_OPT_END = 146, ///< XNVME_CLI_OPT_END
+	XNVME_CLI_OPT_DMABUF_FD = 146, ///< XNVME_CLI_OPT_DMABUF_FD
+
+	XNVME_CLI_OPT_END = 147, ///< XNVME_CLI_OPT_END
 };
 
 /**

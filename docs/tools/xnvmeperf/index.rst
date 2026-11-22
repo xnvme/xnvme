@@ -111,6 +111,22 @@ devices::
 
    xnvme perf-xfer htod --iosize 4096 --qdepth 64 --runtime 10 --gpu-id 0
 
+``--dmabuf-fd`` puts the payloads in a dma-buf that the process inherited as
+that descriptor, from any exporter: a GPU's memory exported by a program that
+allocates it, a vfio-pci BAR, or host memory through ``/dev/udmabuf``. Each job
+registers the dma-buf with its device using ``xnvme_buf_register_dmabuf()``,
+named by addresses reserved with ``PROT_NONE``, and takes a slice of it as its
+payload, ``--iosize`` rounded up to whole pages. When there are more jobs than
+slices, jobs share slices. Neither the library nor the CPU accesses the memory,
+so ``run`` does not fill it first. The dma-buf must be whole pages and at least
+one slice. On the upcie interface, a dma-buf that iommufd's
+``IOMMU_IOAS_MAP_FILE`` does not take, such as a udmabuf, needs the
+``dmabuf_import`` and ``iommu_map_pa`` modules. The program that exports the
+dma-buf starts the run, for example with the dma-buf as descriptor 3::
+
+   xnvme perf-storage run --iopattern randread --qdepth 32 --iosize 4096 \
+       --runtime 10 --cpumask 0x1 --be upcie --dmabuf-fd 3 0000:01:00.0
+
 ``verify`` — Data integrity check
 ==================================
 

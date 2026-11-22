@@ -674,6 +674,12 @@ static struct xnvme_cli_opt_attr xnvme_cli_opts[] = {
 		.descr = "For be={upcie-cuda,upcie-hip}, GPU ordinal to use",
 	},
 	{
+		.opt = XNVME_CLI_OPT_DMABUF_FD,
+		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
+		.name = "dmabuf-fd",
+		.descr = "A dma-buf the process inherited as this fd",
+	},
+	{
 		.opt = XNVME_CLI_OPT_USE_CMB_SQS,
 		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
 		.name = "use_cmb_sqs",
@@ -1766,6 +1772,15 @@ xnvme_cli_assign_arg(struct xnvme_cli *cli, struct xnvme_cli_opt_attr *opt_attr,
 		break;
 	case XNVME_CLI_OPT_GPU_ID:
 		args->gpu_id = num;
+		break;
+	case XNVME_CLI_OPT_DMABUF_FD:
+		if (num > INT_MAX) {
+			errno = EINVAL;
+			xnvme_cli_perr("--dmabuf-fd is a file descriptor, at most INT_MAX",
+				       -EINVAL);
+			return -1;
+		}
+		args->dmabuf_fd = (int)num;
 		break;
 	case XNVME_CLI_OPT_USE_CMB_SQS:
 		args->use_cmb_sqs = arg ? num : 0;
