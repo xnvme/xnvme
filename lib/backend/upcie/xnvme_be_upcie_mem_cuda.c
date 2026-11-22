@@ -143,8 +143,20 @@ xnvme_be_upcie_cuda_buf_register_dmabuf(const struct xnvme_dev *dev, int fd, voi
 	}
 	nbytes = (size_t)size;
 
-	err = xnvme_be_upcie_buf_reg_ref(state->dmem, 0, 0, vaddr, nbytes);
+	err = xnvme_be_upcie_dmabuf_check_base(state->dmem, vaddr, nbytes);
+	err = err ? err : xnvme_be_upcie_buf_reg_ref(state->dmem, 0, 0, vaddr, nbytes);
 	if (err != -ENOENT) {
+		struct xnvme_buf_reg *reg;
+
+		if (err || xnvme_be_upcie_served_mem_reaches(state->ctrlr, vaddr)) {
+			return err;
+		}
+		err = xnvme_be_upcie_served_mem_map(
+			state->dmem, state->ctrlr, fd, vaddr, nbytes,
+			(uint32_t)g_upcie_cuda_rte.cuda_config.device_pagesize);
+		if (err && !xnvme_buf_reg_find(state->dmem, vaddr, nbytes, &reg)) {
+			reg->refs -= 1;
+		}
 		return err;
 	}
 
