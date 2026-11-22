@@ -42,6 +42,7 @@ tests = {
     ['alloc', ['buf_alloc_free', '1GB', '--count', '31']],
     ['virt_alloc', ['buf_virt_alloc_free', '1GB', '--count', '31']],
     ['alloc_threads', ['buf_alloc_free_threads', '1GB', '--count', '5000']],
+    ['props', ['buf_props', '1GB']],
   ],
   'cli.c': [
     ['optional', ['optional']],

@@ -384,6 +384,19 @@ xnvme_buf_get_alignment(const struct xnvme_dev *dev, size_t *align)
 }
 
 int
+xnvme_buf_get_props(const void *vaddr, size_t nbytes, struct xnvme_buf_props *props)
+{
+	if (!props || !nbytes || (nbytes > UINTPTR_MAX - (uintptr_t)vaddr)) {
+		return -EINVAL;
+	}
+
+	memset(props, 0, sizeof(*props));
+	props->numa_node = -1;
+
+	return xnvme_host_buf_get_props(vaddr, nbytes, props);
+}
+
+int
 xnvme_buf_noreg_register(const struct xnvme_dev *XNVME_UNUSED(dev), void *vaddr, size_t nbytes)
 {
 	if (!vaddr || !nbytes) {

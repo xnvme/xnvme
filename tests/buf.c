@@ -6,6 +6,11 @@
 #include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef __linux__
+#include <sys/mman.h>
+#include <sys/syscall.h>
+#include <unistd.h>
+#endif
 #include <libxnvme.h>
 
 #define THREADS 16
@@ -227,6 +232,227 @@ test_buf_vtophys(struct xnvme_cli *cli)
 	return 0;
 }
 
+static void
+pr_props(const char *name, const struct xnvme_buf_props *props)
+{
+	xnvme_cli_pinf("%s: {cpu_access: %u, numa_node: %d, page_nbytes: %" PRIu64 "}", name,
+		       props->cpu_access, props->numa_node, props->page_nbytes);
+}
+
+#ifdef __linux__
+static int
+props_of_mappings(void)
+{
+	long pagesize = sysconf(_SC_PAGESIZE);
+	size_t nbytes = 4 * (size_t)pagesize;
+	struct xnvme_buf_props props;
+	unsigned char present[4] = {0};
+	// A container's default seccomp profile denies move_pages(); the node is then unknown
+	bool numa = !access("/sys/devices/system/node/node0", F_OK) &&
+		    !syscall(SYS_move_pages, 0, 0, NULL, NULL, NULL, 0);
+	char *map;
+	int err;
+
+	map = mmap(NULL, nbytes, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+	if (map == MAP_FAILED) {
+		xnvme_cli_perr("mmap()", -errno);
+		return -errno;
+	}
+
+	err = xnvme_buf_get_props(map, nbytes, &props);
+	pr_props("untouched", &props);
+	if (err || (props.cpu_access != XNVME_BUF_PROP_YES) ||
+	    (props.page_nbytes < (uint64_t)pagesize) || (props.numa_node != -1)) {
+		xnvme_cli_pinf("FAILED: untouched pages are accessible and on no NUMA node");
+		err = err ? err : -EINVAL;
+		goto exit;
+	}
+	if (mincore(map, nbytes, present) || present[0] || present[1] || present[2] ||
+	    present[3]) {
+		xnvme_cli_pinf("FAILED: the inspection made pages present");
+		err = -EINVAL;
+		goto exit;
+	}
+
+	memset(map, 0xAB, nbytes);
+	err = xnvme_buf_get_props(map, nbytes, &props);
+	pr_props("touched", &props);
+	if (err || (props.cpu_access != XNVME_BUF_PROP_YES) || (numa && props.numa_node < 0)) {
+		xnvme_cli_pinf("FAILED: touched pages are accessible and on a NUMA node");
+		err = err ? err : -EINVAL;
+		goto exit;
+	}
+
+	// MADV_DONTFORK splits the mapping in three without changing its access
+	if (madvise(map + pagesize, pagesize, MADV_DONTFORK)) {
+		err = -errno;
+		xnvme_cli_perr("madvise()", err);
+		goto exit;
+	}
+	err = xnvme_buf_get_props(map, nbytes, &props);
+	pr_props("three mappings", &props);
+	if (err || (props.cpu_access != XNVME_BUF_PROP_YES)) {
+		xnvme_cli_pinf("FAILED: a range over three accessible mappings is accessible");
+		err = err ? err : -EINVAL;
+		goto exit;
+	}
+	if (mprotect(map + pagesize, pagesize, PROT_READ)) {
+		err = -errno;
+		xnvme_cli_perr("mprotect()", err);
+		goto exit;
+	}
+	err = xnvme_buf_get_props(map, nbytes, &props);
+	pr_props("a read-only page in the middle", &props);
+	if (err || (props.cpu_access != XNVME_BUF_PROP_NO)) {
+		xnvme_cli_pinf("FAILED: a range with a read-only page is not accessible");
+		err = err ? err : -EINVAL;
+		goto exit;
+	}
+	if (mprotect(map + pagesize, pagesize, PROT_READ | PROT_WRITE)) {
+		err = -errno;
+		xnvme_cli_perr("mprotect()", err);
+		goto exit;
+	}
+
+	if (mprotect(map + 3 * pagesize, pagesize, PROT_NONE)) {
+		err = -errno;
+		xnvme_cli_perr("mprotect()", err);
+		goto exit;
+	}
+	err = xnvme_buf_get_props(map, nbytes, &props);
+	pr_props("partly PROT_NONE", &props);
+	if (err || (props.cpu_access != XNVME_BUF_PROP_NO) || (props.numa_node != -1)) {
+		xnvme_cli_pinf("FAILED: a range with a PROT_NONE page is not accessible");
+		err = err ? err : -EINVAL;
+		goto exit;
+	}
+	err = xnvme_buf_get_props(map, 3 * (size_t)pagesize, &props);
+	pr_props("accessible part", &props);
+	if (err || (props.cpu_access != XNVME_BUF_PROP_YES)) {
+		xnvme_cli_pinf("FAILED: the pages before the PROT_NONE one are accessible");
+		err = err ? err : -EINVAL;
+		goto exit;
+	}
+
+exit:
+	munmap(map, nbytes);
+
+	return err;
+}
+
+static int
+props_of_hugetlb(void)
+{
+	long pagesize = sysconf(_SC_PAGESIZE);
+	size_t nbytes = 2 * 1024 * 1024;
+	struct xnvme_buf_props props;
+	void *map;
+	int err;
+
+	map = mmap(NULL, nbytes, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_HUGETLB,
+		   -1, 0);
+	if (map == MAP_FAILED) {
+		xnvme_cli_pinf("SKIP: no hugetlb pages reserved; errno: %d", errno);
+		return 0;
+	}
+
+	err = xnvme_buf_get_props(map, nbytes, &props);
+	pr_props("hugetlb", &props);
+	munmap(map, nbytes);
+	if (err || (props.cpu_access != XNVME_BUF_PROP_YES) ||
+	    (props.page_nbytes <= (uint64_t)pagesize)) {
+		xnvme_cli_pinf("FAILED: hugetlb pages are accessible and larger than base pages");
+		return err ? err : -EINVAL;
+	}
+
+	return 0;
+}
+
+static int
+props_of_unmapped(void)
+{
+	long pagesize = sysconf(_SC_PAGESIZE);
+	struct xnvme_buf_props props;
+	void *map;
+	int err;
+
+	map = mmap(NULL, (size_t)pagesize, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1,
+		   0);
+	if (map == MAP_FAILED) {
+		xnvme_cli_perr("mmap()", -errno);
+		return -errno;
+	}
+	munmap(map, (size_t)pagesize);
+
+	err = xnvme_buf_get_props(map, (size_t)pagesize, &props);
+	pr_props("unmapped", &props);
+	if (err || (props.cpu_access != XNVME_BUF_PROP_NO) || props.page_nbytes ||
+	    (props.numa_node != -1)) {
+		xnvme_cli_pinf("FAILED: an unmapped range is not accessible and has no page size");
+		return err ? err : -EINVAL;
+	}
+
+	return 0;
+}
+#endif
+
+static int
+test_buf_props(struct xnvme_cli *cli)
+{
+	struct xnvme_dev *dev = cli->args.dev;
+	struct xnvme_buf_props props = {0};
+	size_t buf_nbytes = 4096;
+	void *buf;
+	int err;
+
+	if ((xnvme_buf_get_props(&props, sizeof(props), NULL) != -EINVAL) ||
+	    (xnvme_buf_get_props(&props, 0, &props) != -EINVAL) ||
+	    (xnvme_buf_get_props((void *)UINTPTR_MAX, 2, &props) != -EINVAL)) {
+		xnvme_cli_pinf(
+			"FAILED: no -EINVAL for a NULL props, an empty range, or one running "
+			"past the address space");
+		return -EINVAL;
+	}
+
+#ifdef __linux__
+	err = props_of_mappings();
+	err = err ? err : props_of_unmapped();
+	err = err ? err : props_of_hugetlb();
+	if (err) {
+		return err;
+	}
+#endif
+
+	buf = xnvme_buf_alloc(dev, buf_nbytes);
+	if (!buf) {
+		xnvme_cli_perr("xnvme_buf_alloc()", -errno);
+		return -errno;
+	}
+	err = xnvme_buf_get_props(buf, buf_nbytes, &props);
+	pr_props("xnvme_buf_alloc()", &props);
+	xnvme_buf_free(dev, buf);
+	if (err) {
+		xnvme_cli_perr("xnvme_buf_get_props()", err);
+		return err;
+	}
+#ifdef __linux__
+	if (props.cpu_access == XNVME_BUF_PROP_UNKNOWN) {
+		xnvme_cli_pinf("FAILED: Linux tells whether the CPU accesses memory");
+		return -EINVAL;
+	}
+#else
+	if ((props.cpu_access != XNVME_BUF_PROP_UNKNOWN) || (props.numa_node != -1) ||
+	    props.page_nbytes) {
+		xnvme_cli_pinf("FAILED: only Linux is inspected");
+		return -EINVAL;
+	}
+#endif
+
+	xnvme_cli_pinf("LGTM: xnvme_buf_get_props");
+
+	return 0;
+}
+
 static int
 test_virt_buf_alloc_free(struct xnvme_cli *cli)
 {
@@ -303,6 +529,22 @@ static struct xnvme_cli_sub g_subs[] = {
 		"Allocate a buffer and resolve its physical address",
 		"Allocate a buffer and resolve its physical address",
 		test_buf_vtophys,
+		{
+			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
+
+			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
+
+			XNVME_CLI_ADMIN_OPTS,
+		},
+	},
+	{
+		"buf_props",
+		"Inspect the properties of memory with xnvme_buf_get_props()",
+		"Check what xnvme_buf_get_props() reports for a buffer from xnvme_buf_alloc() "
+		"and, on Linux, for untouched, touched, read-only, PROT_NONE, hugetlb and "
+		"unmapped ranges",
+		test_buf_props,
 		{
 			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
 			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},

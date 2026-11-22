@@ -54,6 +54,33 @@ on a registered dma-buf; one at an address inside a registered range returns
 iommufd's `IOMMU_IOAS_MAP_FILE` does not take, such as a udmabuf, needs the
 `dmabuf_import` and `iommu_map_pa` modules.
 
+(sec-background-memory-props)=
+
+## Properties of memory
+
+`xnvme_buf_get_props()` reports three properties of a range of memory: whether
+the CPU can read and write the range, the smallest page size of the mappings
+that cover it, and the NUMA node of its pages. The library reads the mappings
+of the process on each call, so the range need not be allocated by or
+registered with xNVMe.
+
+```c
+struct xnvme_buf_props props;
+int err;
+
+err = xnvme_buf_get_props(buf, nbytes, &props);
+if (!err && (props.cpu_access == XNVME_BUF_PROP_YES)) {
+	/* ... the CPU may fill or check buf ... */
+}
+```
+
+For a range that the process maps without read and write access, such as
+addresses reserved with `PROT_NONE` to name a dma-buf, `cpu_access` is
+`XNVME_BUF_PROP_NO`: a load or store there faults. An untouched page is on no
+NUMA node, so `numa_node` is -1 until a page of the range is present. On
+platforms other than Linux, `cpu_access` is `XNVME_BUF_PROP_UNKNOWN`,
+`page_nbytes` is 0 and `numa_node` is -1.
+
 (sec-background-memory-io-path)=
 
 ## Alignment of the I/O path

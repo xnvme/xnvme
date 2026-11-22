@@ -221,6 +221,56 @@ int
 xnvme_buf_get_alignment(const struct xnvme_dev *dev, size_t *align);
 
 /**
+ * Whether a property of memory holds, as xnvme_buf_get_props() reports it
+ *
+ * @enum xnvme_buf_prop
+ */
+enum xnvme_buf_prop {
+	XNVME_BUF_PROP_UNKNOWN = 0x0, ///< The platform does not report the property
+	XNVME_BUF_PROP_NO      = 0x1, ///< The property does not hold
+	XNVME_BUF_PROP_YES     = 0x2, ///< The property holds
+};
+
+/**
+ * Properties of a range of memory, as xnvme_buf_get_props() reports them
+ *
+ * cpu_access is XNVME_BUF_PROP_YES when the process maps every byte of the range readable and
+ * writable, and XNVME_BUF_PROP_NO when a load or store in the range faults, as in a range reserved
+ * with PROT_NONE to name a dma-buf. page_nbytes is the smallest page size of the mappings that
+ * cover the range, and 0 when the process does not map all of it. numa_node is the NUMA node of
+ * the present pages of the range, and -1 when the CPU cannot access the range, no page is present,
+ * the pages are on more than one node, or move_pages() fails, as under a seccomp filter.
+ *
+ * @struct xnvme_buf_props
+ */
+struct xnvme_buf_props {
+	uint32_t cpu_access;  ///< See enum xnvme_buf_prop
+	int32_t numa_node;    ///< -1 when not on one node, or not known
+	uint64_t page_nbytes; ///< 0 when not mapped, or not known
+	uint8_t _rsvd[48];    ///< Zero; for properties to come
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_buf_props) == 64, "Incorrect size")
+
+/**
+ * Retrieve the properties of a range of memory from how the process maps it
+ *
+ * The range need not be allocated by or registered with xNVMe. The call does not access the
+ * memory and does not make its pages present. On platforms other than Linux, cpu_access is
+ * XNVME_BUF_PROP_UNKNOWN, page_nbytes is 0 and numa_node is -1.
+ *
+ * @note The cost grows with the number of mappings of the process; do not call in the I/O path
+ *
+ * @param vaddr Start of the range
+ * @param nbytes Length of the range
+ * @param props Set to the properties of the range, on success
+ *
+ * @return On success, 0 is returned. On error, negative `errno` is returned; `-EINVAL` when props
+ * is NULL, nbytes is 0, or the range runs past the end of the address space.
+ */
+int
+xnvme_buf_get_props(const void *vaddr, size_t nbytes, struct xnvme_buf_props *props);
+
+/**
  * Allocate a buffer of virtual memory of the given `alignment` and `nbytes`
  *
  * @note You must use xnvme_buf_virt_free() to de-allocate the buffer
