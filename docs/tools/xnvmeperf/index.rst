@@ -8,9 +8,10 @@ devices. It runs a time-bounded async I/O loop and reports per-device and
 aggregate IOPS and throughput. A ``verify`` subcommand checks data integrity by
 writing a known per-LBA pattern and reading it back.
 
-**xnvme perf-xfer** measures transfers between memories, without NVMe devices:
-``htod`` gives the host-to-device copy bandwidth of a GPU, the ceiling of the
-bounce path described below.
+**xnvme perf-xfer** measures transfers between memories and what setting them
+up costs: ``htod`` gives the host-to-device copy bandwidth of a GPU, the ceiling
+of the bounce path described below, and ``register`` times registering a
+dma-buf with a device.
 
 Two subcommands of **xnvme perf-storage**, ``cuda-run`` and ``cuda-verify``,
 need a build with CUDA support (``XNVME_BE_UPCIE_CUDA_ENABLED``); without it
@@ -126,6 +127,17 @@ dma-buf starts the run, for example with the dma-buf as descriptor 3::
 
    xnvme perf-storage run --iopattern randread --qdepth 32 --iosize 4096 \
        --runtime 10 --cpumask 0x1 --be upcie --dmabuf-fd 3 0000:01:00.0
+
+``xnvme perf-xfer register`` times what such a run pays before its first
+I/O: it registers the dma-buf of ``--dmabuf-fd`` with the device and
+unregisters it, once and then ``--count`` times. It prints, as YAML, the
+microseconds of the first registration and unregistering, and the minimum,
+median and maximum of each call over the ``--count`` after them, so that a
+cost only the first call pays does not count in those. It registers the whole
+dma-buf, so the exporter decides the size. With ``--homi-id`` the registrations
+go through the server::
+
+   xnvme perf-xfer register 0000:01:00.0 --be upcie --dmabuf-fd 3 --count 100
 
 ``verify`` — Data integrity check
 ==================================

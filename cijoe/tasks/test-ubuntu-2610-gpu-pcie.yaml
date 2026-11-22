@@ -68,11 +68,11 @@ steps:
 - name: test_dmabuf_upcie
   uses: core.testrunner
   with:
-    args: '-k "dmabuf and upcie and not hip" tests --timeout=1800 --timeout-method=thread'
+    args: '-k "(dmabuf or xfer) and upcie and not hip" tests --timeout=1800 --timeout-method=thread'
     random_order: false
 
 - name: test_dmabuf_upcie_homi
   uses: core.testrunner
   with:
-    args: '-k "dmabuf and upcie and not hip" tests --homi-id 42 --timeout=1800 --timeout-method=thread'
+    args: '-k "(dmabuf or xfer) and upcie and not hip" tests --homi-id 42 --timeout=1800 --timeout-method=thread'
     random_order: false

@@ -1,6 +1,7 @@
 import base64
 
 import pytest
+import yaml
 
 from ..conftest import (
     cijoe_config_inactive_nsid,
@@ -415,3 +416,49 @@ def test_run_dmabuf_fd_lba(cijoe, device, be_opts, cli_args, iopattern):
 
     _run_dmabuf_fd(cijoe, device, be_opts, iopattern, "lba")
 
+
+@pytest.mark.parametrize("count", ["0", "4294967296"])
+@xnvme_parametrize(labels=["nvm"], opts=["be"])
+def test_xfer_register_count_zero(cijoe, device, be_opts, cli_args, count):
+    """'perf-xfer register' fails for a --count of 0 or above UINT32_MAX"""
+
+    err, state = cijoe.run(
+        f"xnvme perf-xfer register {device['uri']} --be {be_opts['be']}"
+        f" --dmabuf-fd 999 --count {count}"
+    )
+    assert err, f"timed --count {count} registrations"
+    assert "--count" in state.output()
+
+
+@xnvme_parametrize(labels=["pcie"], opts=["be"])
+def test_xfer_register(cijoe, device, be_opts, cli_args):
+    """'perf-xfer register' times registering an inherited dma-buf and unregistering it
+
+    Host memory through udmabuf, as for test_run_dmabuf_fd.
+    """
+
+    if be_opts["be"] != "upcie":
+        pytest.skip(reason="xnvme_buf_register_dmabuf() of host memory is upcie's")
+
+    err, _ = cijoe.run("test -c /dev/udmabuf && test -c /dev/dmabuf_import")
+    if err:
+        pytest.skip(reason="Requires /dev/udmabuf and the dmabuf_import module")
+
+    homi_id = get_homi_id()
+    homi_arg = f"--homi-id {homi_id}" if homi_id else ""
+    script = base64.b64encode(_UDMABUF_RUN_PY.encode()).decode()
+    err, state = cijoe.run(
+        f"echo {script} | base64 -d > /tmp/xnvme-perf-udmabuf.py"
+        f" && python3 /tmp/xnvme-perf-udmabuf.py xnvme perf-xfer register {device['uri']}"
+        f" --be {be_opts['be']} {homi_arg} --dmabuf-fd @FD@ --count 16"
+    )
+    assert not err, state.output()
+
+    result = yaml.safe_load(state.output())["xnvme_perf_xfer_register"]
+    assert result["count"] == 16, state.output()
+    assert result["dmabuf_nbytes"] == 2 * 1024 * 1024, state.output()
+    assert result["first_register_usecs"] > 0, state.output()
+    assert result["first_unregister_usecs"] > 0, state.output()
+    for name in ("register_usecs", "unregister_usecs"):
+        usecs = result[name]
+        assert 0 < usecs["min"] <= usecs["median"] <= usecs["max"], state.output()

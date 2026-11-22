@@ -21,11 +21,12 @@ xnvme info 0000:03:00.0 --be upcie --homi-id 1
 ```
 
 The identifier is `--homi-id`: the number a server listens under and a client
-asks for. **homi** and **xnvme perf-storage** take that spelling and no other.
-Tools that are not about sharing still accept `--shm_id`, which named this
-before there was a control plane, and it goes on meaning a segment identifier
-for {ref}`sec-backends-spdk`, which hands the value to DPDK. Either spelling
-sets both, so a value given once reaches whichever backend reads it.
+asks for. **homi**, **xnvme perf-storage** and **xnvme perf-xfer register**
+take that spelling and no other. Tools that are not about sharing still accept
+`--shm_id`, which named this before there was a control plane, and it goes on
+meaning a segment identifier for {ref}`sec-backends-spdk`, which hands the
+value to DPDK. Either spelling sets both, so a value given once reaches
+whichever backend reads it.
 
 (sec-backends-upcie-cplane-model)=
 ## Process model
