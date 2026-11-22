@@ -9,7 +9,7 @@ def test_run_read(cijoe, device, be_opts, cli_args):
     homi_arg = f"--homi-id {homi_id}" if homi_id else ""
 
     err, _ = cijoe.run(
-        f"xnvme perf run --iopattern read --qdepth 32 --iosize 4096 --runtime 3"
+        f"xnvme perf-storage run --iopattern read --qdepth 32 --iosize 4096 --runtime 3"
         f" --cpumask 0x1 --be {be_opts['be']} {homi_arg} {device['uri']}"
     )
     assert not err
@@ -21,7 +21,7 @@ def test_run_write(cijoe, device, be_opts, cli_args):
     homi_arg = f"--homi-id {homi_id}" if homi_id else ""
 
     err, _ = cijoe.run(
-        f"xnvme perf run --iopattern write --qdepth 32 --iosize 4096 --runtime 3"
+        f"xnvme perf-storage run --iopattern write --qdepth 32 --iosize 4096 --runtime 3"
         f" --cpumask 0x1 --be {be_opts['be']} {homi_arg} {device['uri']}"
     )
     assert not err
@@ -33,7 +33,7 @@ def test_run_randread(cijoe, device, be_opts, cli_args):
     homi_arg = f"--homi-id {homi_id}" if homi_id else ""
 
     err, _ = cijoe.run(
-        f"xnvme perf run --iopattern randread --qdepth 32 --iosize 4096 --runtime 3"
+        f"xnvme perf-storage run --iopattern randread --qdepth 32 --iosize 4096 --runtime 3"
         f" --cpumask 0x1 --be {be_opts['be']} {homi_arg} {device['uri']}"
     )
     assert not err
@@ -45,7 +45,7 @@ def test_run_randwrite(cijoe, device, be_opts, cli_args):
     homi_arg = f"--homi-id {homi_id}" if homi_id else ""
 
     err, _ = cijoe.run(
-        f"xnvme perf run --iopattern randwrite --qdepth 32 --iosize 4096 --runtime 3"
+        f"xnvme perf-storage run --iopattern randwrite --qdepth 32 --iosize 4096 --runtime 3"
         f" --cpumask 0x1 --be {be_opts['be']} {homi_arg} {device['uri']}"
     )
     assert not err
@@ -59,7 +59,7 @@ def test_run_randread_reap(cijoe, device, be_opts, cli_args):
     homi_arg = f"--homi-id {homi_id}" if homi_id else ""
 
     err, state = cijoe.run(
-        f"xnvme perf run --iopattern randread --qdepth 32 --iosize 4096 --runtime 3"
+        f"xnvme perf-storage run --iopattern randread --qdepth 32 --iosize 4096 --runtime 3"
         f" --cpumask 0x1 --completion reap --be {be_opts['be']} {homi_arg}"
         f" {device['uri']}"
     )
@@ -76,7 +76,7 @@ def test_run_completion_unknown(cijoe, device, be_opts, cli_args):
     """--completion takes 'cb' or 'reap', and the run fails for anything else"""
 
     err, state = cijoe.run(
-        f"xnvme perf run --iopattern randread --qdepth 32 --iosize 4096 --runtime 1"
+        f"xnvme perf-storage run --iopattern randread --qdepth 32 --iosize 4096 --runtime 1"
         f" --cpumask 0x1 --completion nosuch --be {be_opts['be']} {device['uri']}"
     )
     assert err, "an unknown --completion was accepted"
@@ -94,7 +94,7 @@ def test_verify(cijoe, device, be_opts, cli_args):
     homi_arg = f"--homi-id {homi_id}" if homi_id else ""
 
     err, _ = cijoe.run(
-        f"xnvme perf verify --iosize 4096 --count 64"
+        f"xnvme perf-storage verify --iosize 4096 --count 64"
         f" --be {be_opts['be']} {homi_arg} {device['uri']}"
     )
     assert not err
@@ -113,7 +113,7 @@ def test_verify_reap(cijoe, device, be_opts, cli_args):
     homi_arg = f"--homi-id {homi_id}" if homi_id else ""
 
     err, _ = cijoe.run(
-        f"xnvme perf verify --iosize 4096 --count 64 --completion reap"
+        f"xnvme perf-storage verify --iosize 4096 --count 64 --completion reap"
         f" --be {be_opts['be']} {homi_arg} {device['uri']}"
     )
     assert not err
@@ -132,7 +132,7 @@ def test_verify_separate_metadata(cijoe, device, be_opts, cli_args):
     homi_arg = f"--homi-id {homi_id}" if homi_id else ""
 
     err, state = cijoe.run(
-        f"xnvme perf verify --iosize 4096 --count 16"
+        f"xnvme perf-storage verify --iosize 4096 --count 16"
         f" --be {be_opts['be']} {homi_arg} '{device['uri']}/?nsid={device['nsid']}'"
     )
     assert not err, state.output()
@@ -153,7 +153,7 @@ def _verify_gpu(cijoe, device, be_opts, iosize, extra=""):
     homi_arg = f"--homi-id {homi_id}" if homi_id else ""
 
     err, state = cijoe.run(
-        f"xnvme perf verify --iosize {iosize} --count 16 {extra}"
+        f"xnvme perf-storage verify --iosize {iosize} --count 16 {extra}"
         f" --be {be_opts['be']} {homi_arg} '{device['uri']}/?nsid={device['nsid']}'"
     )
     assert not err, state.output()
@@ -200,7 +200,7 @@ def test_run_qdepth_past_the_pool_is_refused(cijoe, device, be_opts, cli_args):
     homi_arg = f"--homi-id {homi_id}" if homi_id else ""
 
     err, _ = cijoe.run(
-        f"xnvme perf run --iopattern read --qdepth 2048 --iosize 4096 --runtime 1"
+        f"xnvme perf-storage run --iopattern read --qdepth 2048 --iosize 4096 --runtime 1"
         f" --cpumask 0x1 --be {be_opts['be']} {homi_arg} {device['uri']}"
     )
     assert err, "a queue deeper than the backend tracks was accepted"
@@ -213,7 +213,7 @@ def test_run_uri_nsid(cijoe, device, be_opts, cli_args):
     homi_id = get_homi_id()
     homi_arg = f"--homi-id {homi_id}" if homi_id else ""
     err, _ = cijoe.run(
-        f"xnvme perf run --iopattern read --qdepth 32 --iosize 4096 --runtime 3"
+        f"xnvme perf-storage run --iopattern read --qdepth 32 --iosize 4096 --runtime 3"
         f" --cpumask 0x1 --be {be_opts['be']} {homi_arg}"
         f" '{device['uri']}/?nsid={device['nsid']}'"
     )
@@ -228,7 +228,7 @@ def test_run_uri_nsid_inactive(cijoe, device, be_opts, cli_args):
     homi_arg = f"--homi-id {homi_id}" if homi_id else ""
     nsid = cijoe_config_inactive_nsid(device)
     err, state = cijoe.run(
-        f"xnvme perf run --iopattern read --qdepth 32 --iosize 4096 --runtime 3"
+        f"xnvme perf-storage run --iopattern read --qdepth 32 --iosize 4096 --runtime 3"
         f" --cpumask 0x1 --be {be_opts['be']} {homi_arg}"
         f" '{device['uri']}/?nsid={nsid}'"
     )
@@ -250,7 +250,7 @@ def test_run_polled_stop_continue(cijoe, device, be_opts, cli_args, completion):
         pytest.skip(reason="Only io_uring polls for completions with --poll_io")
 
     err, state = cijoe.run(
-        f"xnvme perf run --iopattern randread --qdepth 32 --iosize 4096 --runtime 3"
+        f"xnvme perf-storage run --iopattern randread --qdepth 32 --iosize 4096 --runtime 3"
         f" --cpumask 0x1 --poll_io 1 --direct --completion {completion}"
         f" --be {be_opts['be']} {device['uri']}"
         " > /tmp/xnvme-perf-polled.out 2>&1 & pid=$!;"

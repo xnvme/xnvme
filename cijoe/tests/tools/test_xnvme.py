@@ -408,7 +408,7 @@ def test_frontend_help_describes(cijoe):
     """--help says what the program is for, under its usage; its man page takes NAME
     from it"""
 
-    err, state = cijoe.run("xnvme perf --help")
+    err, state = cijoe.run("xnvme perf-storage --help")
     assert not err
     assert re.search(r"^Usage: .*\n\n(?!Where)\S", state.output(), re.MULTILINE)
 
@@ -475,9 +475,10 @@ def test_frontend_examples_help(cijoe):
 def test_frontend_perf_program(cijoe):
     err, state = cijoe.run("xnvme")
     assert not err
-    assert "xnvme perf" in state.output()
+    assert "xnvme perf-storage" in state.output()
+    assert "xnvme perf-xfer" in state.output()
 
-    err, _ = cijoe.run("xnvme perf --help")
+    err, _ = cijoe.run("xnvme perf-storage --help")
     assert not err
 
 

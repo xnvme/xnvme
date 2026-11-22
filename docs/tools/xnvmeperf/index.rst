@@ -1,19 +1,27 @@
 .. _sec-tools-xnvmeperf:
 
-xnvmeperf
-#########
+xnvme perf-storage and perf-xfer
+################################
 
-**xnvmeperf** is a multi-threaded async I/O benchmark for NVMe devices. It
-runs a time-bounded async I/O loop and reports per-device and aggregate IOPS
-and throughput. A ``verify`` subcommand checks data integrity by writing a known
-per-LBA pattern and reading it back.
+**xnvme perf-storage** is a multi-threaded async I/O benchmark for NVMe
+devices. It runs a time-bounded async I/O loop and reports per-device and
+aggregate IOPS and throughput. A ``verify`` subcommand checks data integrity by
+writing a known per-LBA pattern and reading it back.
 
-When built with CUDA support (``XNVME_BE_UPCIE_CUDA_ENABLED``), two additional
-subcommands are available: ``cuda-run`` and ``cuda-verify``. These run NVMe I/O
-directly from CUDA kernels via the :ref:`sec-backends-upcie-cuda` backend, bypassing
-the host I/O path entirely.
+**xnvme perf-xfer** measures transfers between memories, without NVMe devices:
+``htod`` gives the host-to-device copy bandwidth of a GPU, the ceiling of the
+bounce path described below.
+
+Two subcommands of **xnvme perf-storage**, ``cuda-run`` and ``cuda-verify``,
+need a build with CUDA support (``XNVME_BE_UPCIE_CUDA_ENABLED``); without it
+they are listed but return ``-ENOSYS``. They run NVMe I/O directly from CUDA
+kernels via the :ref:`sec-backends-upcie-cuda` backend, bypassing the host I/O
+path entirely.
 
 .. literalinclude:: xnvmeperf_usage.out
+   :language: bash
+
+.. literalinclude:: xnvmeperf_xfer_usage.out
    :language: bash
 
 ``run`` — Benchmark
@@ -41,12 +49,12 @@ A copy of the sources with neither git metadata nor that stamp shows
 
 Example — sequential read on a single device::
 
-   xnvme perf run --iopattern read --qdepth 32 --iosize 4096 \
+   xnvme perf-storage run --iopattern read --qdepth 32 --iosize 4096 \
        --runtime 10 --cpumask 0x1 /dev/nvme0n1
 
 Example — random write across two devices on two CPUs::
 
-   xnvme perf run --iopattern randwrite --qdepth 64 --iosize 4096 \
+   xnvme perf-storage run --iopattern randwrite --qdepth 64 --iosize 4096 \
        --runtime 10 --cpumask 0x3 /dev/nvme0n1 /dev/nvme1n1
 
 With ``--be upcie-cuda`` or ``--be upcie-hip`` the payloads land in GPU memory
@@ -55,7 +63,7 @@ queues there as well, so the controller's completion writes no longer queue
 behind its data writes; see :ref:`sec-backends-upcie-cuda-p2p-cq-mirror` for when
 that matters. Example::
 
-   xnvme perf run --iopattern randread --qdepth 128 --iosize 512 \
+   xnvme perf-storage run --iopattern randread --qdepth 128 --iosize 512 \
        --runtime 10 --cpulist 0 --be upcie-cuda --p2p-cq-mirror 0000:01:00.0
 
 For ``cuda-run`` and ``cuda-verify``, where the GPU issues the I/O, the queue
@@ -76,7 +84,7 @@ which is what caps the usable ``--iosize``. A buffer the runtime refuses to
 page-lock is copied at the pageable rate, which the report then shows.
 Example::
 
-   xnvme perf run --iopattern randread --qdepth 64 --iosize 4096 \
+   xnvme perf-storage run --iopattern randread --qdepth 64 --iosize 4096 \
        --runtime 10 --be upcie --buf-host-bounce --gpu-id 0 0000:01:00.0
 
 ``--completion`` selects how a job takes its completed I/Os from the queue:
@@ -93,15 +101,15 @@ when ``xnvme_queue_reap()`` returns ``-EINTR``, ``-EAGAIN`` or ``-EBUSY``; for
 any other error it stops using its queue, and the command exits non-zero.
 ``verify`` takes the option as well. Example::
 
-   xnvme perf run --iopattern randread --qdepth 32 --iosize 4096 \
+   xnvme perf-storage run --iopattern randread --qdepth 32 --iosize 4096 \
        --runtime 10 --cpumask 0x1 --completion reap /dev/nvme0n1
 
-``htod-roofline`` measures what that copy delivers on its own: it keeps
+``xnvme perf-xfer htod`` measures what that copy delivers on its own: it keeps
 ``--qdepth`` page-locked copies of ``--iosize`` in flight to the GPU for
 ``--runtime`` seconds and reports the host-to-device GB/s, taking no
 devices::
 
-   xnvme perf htod-roofline --iosize 4096 --qdepth 64 --runtime 10 --gpu-id 0
+   xnvme perf-xfer htod --iosize 4096 --qdepth 64 --runtime 10 --gpu-id 0
 
 ``verify`` — Data integrity check
 ==================================
@@ -117,7 +125,7 @@ is written and compared too, unless the backend takes no metadata buffer.
 
 Example::
 
-   xnvme perf verify --iosize 4096 --count 256 /dev/nvme0n1
+   xnvme perf-storage verify --iosize 4096 --count 256 /dev/nvme0n1
 
 ``cuda-run`` — GPU benchmark
 ============================
@@ -167,12 +175,12 @@ Both ``--qdepth`` and ``--iosize`` must be powers of 2. Supported patterns are
 
 Example — sequential read, four queues of depth 32 on two devices::
 
-   xnvme perf cuda-run --iopattern read --nqueues 4 --qdepth 32 --iosize 4096 \
+   xnvme perf-storage cuda-run --iopattern read --nqueues 4 --qdepth 32 --iosize 4096 \
        --runtime 10 --be upcie-cuda 0000:01:00.0 0000:02:00.0
 
 Example — random write, single queue::
 
-   xnvme perf cuda-run --iopattern randwrite --qdepth 64 --iosize 4096 \
+   xnvme perf-storage cuda-run --iopattern randwrite --qdepth 64 --iosize 4096 \
        --runtime 10 --be upcie-cuda 0000:01:00.0
 
 ``cuda-verify`` — GPU data integrity check
@@ -188,4 +196,4 @@ compares against the expected data. This is intended to confirm that
 
 Example::
 
-   xnvme perf cuda-verify --iosize 4096 --qdepth 32 --be upcie-cuda 0000:01:00.0
+   xnvme perf-storage cuda-verify --iosize 4096 --qdepth 32 --be upcie-cuda 0000:01:00.0

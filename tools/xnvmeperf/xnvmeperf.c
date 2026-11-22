@@ -809,7 +809,7 @@ thread_fn(void *arg)
 static void
 print_run_args(struct xnvmeperf_args *args, const char *pattern)
 {
-	printf("Running xnvme perf with arguments:\n");
+	printf("Running xnvme perf-storage with arguments:\n");
 	printf("- Devices: [");
 	for (int i = 0; i < args->ndevs; i++) {
 		if (i) {
@@ -851,7 +851,7 @@ print_run_args(struct xnvmeperf_args *args, const char *pattern)
 /**
  * Print a performance results table.
  *
- * @param title    Header string (e.g. "xnvme perf run" or "xnvme perf cuda-run")
+ * @param title    Header string (e.g. "xnvme perf-storage run" or "xnvme perf-storage cuda-run")
  * @param elapsed  Elapsed time in seconds
  * @param uris     Device URI strings
  * @param ndevs    Number of devices
@@ -1006,8 +1006,8 @@ print_results(struct xnvmeperf_thread *threads, struct xnvmeperf_args *args)
 		cpus[d] = cpus_bufs[d];
 	}
 
-	print_perf_results("xnvme perf run", elapsed, args->dev_uris, args->ndevs, iops, mibps,
-			   failed, cpus);
+	print_perf_results("xnvme perf-storage run", elapsed, args->dev_uris, args->ndevs, iops,
+			   mibps, failed, cpus);
 
 done:
 	if (cpus_bufs) {
@@ -1262,7 +1262,7 @@ xnvmeperf_verify(struct xnvmeperf_args *args)
 	int unverified = 0, first_err = 0;
 	int err;
 
-	printf("\nxnvme perf verify: iosize=%u, nios=%d\n", args->iosize, nios);
+	printf("\nxnvme perf-storage verify: iosize=%u, nios=%d\n", args->iosize, nios);
 	printf("====================================================================\n");
 
 	err = xnvmeperf_open_devs(args, &devs);
@@ -1586,8 +1586,8 @@ xnvmeperf_cuda_run(struct xnvmeperf_args *args)
 			iops[i] = total_ios / elapsed_s;
 			mibps[i] = (total_ios * args->iosize) / (elapsed_s * 1024.0 * 1024.0);
 		}
-		print_perf_results("xnvme perf cuda-run", elapsed_s, args->dev_uris, args->ndevs,
-				   iops, mibps, failed_per_dev, NULL);
+		print_perf_results("xnvme perf-storage cuda-run", elapsed_s, args->dev_uris,
+				   args->ndevs, iops, mibps, failed_per_dev, NULL);
 	}
 
 	free(completed_per_dev);
@@ -1629,8 +1629,8 @@ xnvmeperf_cuda_verify(struct xnvmeperf_args *args)
 		goto close_devs;
 	}
 
-	printf("\nxnvme perf cuda-verify: iosize: %u, qdepth: %u, nqueues: %u\n", args->iosize,
-	       args->qdepth, args->nqueues);
+	printf("\nxnvme perf-storage cuda-verify: iosize: %u, qdepth: %u, nqueues: %u\n",
+	       args->iosize, args->qdepth, args->nqueues);
 	printf("====================================================================\n");
 
 	err = xnvmeperf_cuda_verify_io(devs, args);
@@ -1946,46 +1946,13 @@ sub_cuda_verify(struct xnvme_cli *cli)
 	return xnvmeperf_cuda_verify(&args);
 }
 
-static int
-sub_htod_roofline(struct xnvme_cli *cli)
-{
-	struct xnvme_opts opts = {0};
-	uint32_t iosize = cli->args.iosize;
-	uint32_t nslots = cli->args.qdepth ? cli->args.qdepth : 1;
-	uint32_t seconds = cli->args.runtime ? cli->args.runtime : 5;
-	double gbps = 0.0;
-	int err;
-
-	xnvme_opts_set_defaults(&opts);
-
-	xnvme_cli_to_opts(cli, &opts);
-
-	if (!iosize || !xnvme_is_pow2(iosize)) {
-		err = -EINVAL;
-		xnvme_cli_perr("Error: --iosize must be a power of 2", err);
-		return err;
-	}
-
-	printf("xnvmeperf htod-roofline: iosize %u, in-flight %u, runtime %u s, gpu %u\n", iosize,
-	       nslots, seconds, opts.gpu_id);
-
-	err = xnvmeperf_htod_roofline(opts.gpu_id, iosize, nslots, seconds, &gbps);
-	if (err) {
-		xnvme_cli_perr("Failed: xnvmeperf_htod_roofline()", err);
-		return err;
-	}
-
-	printf("\nhost-to-device copy: %.2f GB/s\n", gbps);
-	return 0;
-}
-
 static struct xnvme_cli_sub g_subs[] = {
 	{
 		"run",
 		"Run a benchmark against the given devices",
-		"Run a time-bounded async IO benchmark against one or more NVMe devices.\n"
-		"Devices are distributed across CPU threads pinned by --cpumask or --cpulist.\n"
-		"With --be 'io_uring_dmabuf' the IO buffers are allocated on the GPU given by\n"
+		"Run a time-bounded async IO benchmark against one or more NVMe devices. "
+		"Devices are distributed across CPU threads pinned by --cpumask or --cpulist. "
+		"With --be 'io_uring_dmabuf' the IO buffers are allocated on the GPU given by "
 		"--gpu-id and exported as a dma-buf for the kernel to DMA into.",
 		sub_run,
 		{
@@ -2016,7 +1983,7 @@ static struct xnvme_cli_sub g_subs[] = {
 	{
 		"verify",
 		"Verify data integrity by writing and reading back a known pattern",
-		"For each device: writes --count sequential IOs with a per-LBA pattern,\n"
+		"For each device: writes --count sequential IOs with a per-LBA pattern, "
 		"then reads them back and compares against the expected data.",
 		sub_verify,
 		{
@@ -2040,8 +2007,8 @@ static struct xnvme_cli_sub g_subs[] = {
 	{
 		"cuda-run",
 		"Run a GPU benchmark against the given devices (requires upcie-cuda backend)",
-		"Run a time-bounded GPU NVMe I/O benchmark against one or more devices.\n"
-		"All devices run in parallel: one CUDA block per queue, all queues launched\n"
+		"Run a time-bounded GPU NVMe I/O benchmark against one or more devices. "
+		"All devices run in parallel: one CUDA block per queue, all queues launched "
 		"in a single kernel. All devices must use the same LBA size.",
 		sub_cuda_run,
 		{
@@ -2064,8 +2031,8 @@ static struct xnvme_cli_sub g_subs[] = {
 	{
 		"cuda-verify",
 		"Verify GPU NVMe I/O data integrity (requires upcie-cuda backend)",
-		"Write an LBA-stamped pattern to each device through GPU queues and read\n"
-		"it back, verifying that the data matches. Uses the same queue topology\n"
+		"Write an LBA-stamped pattern to each device through GPU queues and read "
+		"it back, verifying that the data matches. Uses the same queue topology "
 		"as cuda-run so results are directly comparable.",
 		sub_cuda_verify,
 		{
@@ -2082,33 +2049,13 @@ static struct xnvme_cli_sub g_subs[] = {
 			{XNVME_CLI_OPT_SQ_HOSTMEM, XNVME_CLI_LFLG},
 		},
 	},
-	{
-		"htod-roofline",
-		"Host-to-device copy bandwidth ceiling (requires a GPU backend build)",
-		"Keep --qdepth pinned copies of --iosize in flight to one GPU for --runtime\n"
-		"seconds and report the delivered host-to-device GB/s. Takes no NVMe devices.",
-		sub_htod_roofline,
-		{
-			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
-			{XNVME_CLI_OPT_IOSIZE, XNVME_CLI_LREQ},
-			{XNVME_CLI_OPT_QDEPTH, XNVME_CLI_LREQ},
-			{XNVME_CLI_OPT_RUNTIME, XNVME_CLI_LREQ},
-			{XNVME_CLI_OPT_GPU_ID, XNVME_CLI_LOPT},
-		},
-	},
 };
 
-static struct xnvme_cli g_cli = {
-	.title = "xnvme perf - IO benchmarks against xNVMe devices",
+struct xnvme_cli g_xnvmeperf_storage_cli = {
+	.title = "xnvme perf-storage - I/O benchmarks against NVMe devices",
 	.vcs = XNVME_VCS_TAG,
-	.descr_short = "Run IO benchmarks against xNVMe devices",
+	.descr_short = "Run I/O benchmarks against NVMe devices",
 	.descr_long = "",
 	.subs = g_subs,
 	.nsubs = sizeof g_subs / sizeof(*g_subs),
 };
-
-int
-main(int argc, char **argv)
-{
-	return xnvme_cli_run(&g_cli, argc, argv, XNVME_CLI_INIT_NONE);
-}

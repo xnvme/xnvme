@@ -124,8 +124,9 @@ frontend_tests = [
 ]
 if thread_dep.found()
   frontend_tests += [
-    ['--help on a program', ['perf', '--help'], false],
-    ['run a program', ['perf'], false],
+    ['--help on a program', ['perf-storage', '--help'], false],
+    ['run a program', ['perf-storage'], false],
+    ['run a program, transfers', ['perf-xfer'], false],
   ]
 endif
 if get_option('tests')
