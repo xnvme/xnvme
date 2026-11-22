@@ -454,6 +454,72 @@ test_buf_props(struct xnvme_cli *cli)
 }
 
 static int
+test_buf_helpers(struct xnvme_cli *cli)
+{
+	struct xnvme_dev *dev = cli->args.dev;
+	size_t nbytes = 4096 * 4, diff = 0;
+	char *buf, *expected = NULL, *copy = NULL;
+	int err;
+
+	buf = xnvme_buf_alloc(dev, nbytes);
+	if (!buf) {
+		xnvme_cli_perr("xnvme_buf_alloc()", -errno);
+		return -errno;
+	}
+	expected = xnvme_buf_virt_alloc(4096, nbytes);
+	copy = xnvme_buf_virt_alloc(4096, nbytes);
+	if (!expected || !copy) {
+		err = -ENOMEM;
+		goto exit;
+	}
+
+	err = xnvme_buf_fill(expected, nbytes, "anum");
+	err = err ? err : xnvme_buf_fill(buf, nbytes, "anum");
+	diff = 0; // xnvme_buf_diff() adds to it
+	err = err ? err : xnvme_buf_diff(expected, buf, nbytes, &diff);
+	if (err || diff) {
+		xnvme_cli_pinf("FAILED: xnvme_buf_fill(); err: %d, diff: %zu", err, diff);
+		err = err ? err : -EIO;
+		goto exit;
+	}
+
+	err = xnvme_buf_memcpy(copy, buf, nbytes);
+	if (err || memcmp(copy, expected, nbytes)) {
+		xnvme_cli_pinf("FAILED: xnvme_buf_memcpy() into host memory; err: %d", err);
+		err = err ? err : -EIO;
+		goto exit;
+	}
+
+	// The "anum" pattern has no zero byte, so a cleared buffer differs in every byte
+	err = xnvme_buf_clear(buf, nbytes);
+	diff = 0; // xnvme_buf_diff() adds to it
+	err = err ? err : xnvme_buf_diff(expected, buf, nbytes, &diff);
+	if (err || (diff != nbytes)) {
+		xnvme_cli_pinf("FAILED: xnvme_buf_clear(); err: %d, diff: %zu", err, diff);
+		err = err ? err : -EIO;
+		goto exit;
+	}
+
+	err = xnvme_buf_memcpy(buf, expected, nbytes);
+	diff = 0; // xnvme_buf_diff() adds to it
+	err = err ? err : xnvme_buf_diff(expected, buf, nbytes, &diff);
+	if (err || diff) {
+		xnvme_cli_pinf("FAILED: xnvme_buf_memcpy() from host memory; err: %d", err);
+		err = err ? err : -EIO;
+		goto exit;
+	}
+
+	xnvme_cli_pinf("LGTM: the buffer helpers on memory from xnvme_buf_alloc()");
+
+exit:
+	xnvme_buf_virt_free(copy);
+	xnvme_buf_virt_free(expected);
+	xnvme_buf_free(dev, buf);
+
+	return err;
+}
+
+static int
 test_virt_buf_alloc_free(struct xnvme_cli *cli)
 {
 	uint64_t count = cli->args.count;
@@ -545,6 +611,22 @@ static struct xnvme_cli_sub g_subs[] = {
 		"and, on Linux, for untouched, touched, read-only, PROT_NONE, hugetlb and "
 		"unmapped ranges",
 		test_buf_props,
+		{
+			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
+
+			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
+
+			XNVME_CLI_ADMIN_OPTS,
+		},
+	},
+	{
+		"buf_helpers",
+		"Fill, copy, compare and clear memory from xnvme_buf_alloc()",
+		"Fill, copy, compare and clear memory from xnvme_buf_alloc() with the buffer "
+		"helpers, which call the CUDA or HIP runtime for memory of the heap of a GPU "
+		"backend and use the CPU for other memory",
+		test_buf_helpers,
 		{
 			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
 			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},

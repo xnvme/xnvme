@@ -15,6 +15,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <xnvme_buf.h>
 #include <xnvme_dev.h>
 #include <xnvme_queue.h>
 #include <xnvme_be_linux.h>
@@ -211,6 +212,11 @@ _iommu_unmap(uint64_t handle)
 static void
 _entry_release(struct xnvme_be_liburing_dmabuf_entry *entry)
 {
+	struct xnvme_buf_reg *reg = xnvme_buf_reg_any(entry);
+
+	if (reg) {
+		xnvme_buf_reg_remove(reg);
+	}
 	if (entry->map_handle) {
 		_iommu_unmap(entry->map_handle);
 		dmabuf_import_detach(&entry->import);
@@ -482,7 +488,8 @@ exit:
 }
 
 int
-xnvme_be_liburing_dmabuf_add(const struct xnvme_dev *dev, void *vaddr, size_t nbytes, int fd)
+xnvme_be_liburing_dmabuf_add(const struct xnvme_dev *dev, void *vaddr, size_t nbytes, int fd,
+			     enum xnvme_buf_xfer xfer)
 {
 	struct xnvme_be_liburing_dmabuf_entry *entry;
 	struct xnvme_be_liburing_dmabuf *registry;
@@ -519,6 +526,14 @@ xnvme_be_liburing_dmabuf_add(const struct xnvme_dev *dev, void *vaddr, size_t nb
 		XNVME_DEBUG("FAILED: _registry_add(), err: %d", index);
 		err = index;
 		goto exit;
+	}
+	if (xfer != XNVME_BUF_XFER_CPU) {
+		err = xnvme_buf_reg_add_xfer(&registry->entries[index], vaddr, nbytes, 0, xfer);
+		if (err) {
+			registry->entries[index].fd = -1;
+			_entry_release(&registry->entries[index]);
+			goto exit;
+		}
 	}
 
 	err = 0;

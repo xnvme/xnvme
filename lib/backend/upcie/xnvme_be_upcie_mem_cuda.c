@@ -110,12 +110,12 @@ _reach(const struct xnvme_dev *dev, void *vaddr, size_t nbytes)
 }
 
 static int
-_add(const struct xnvme_dev *dev, void *vaddr, size_t nbytes)
+_add(const struct xnvme_dev *dev, void *vaddr, size_t nbytes, enum xnvme_buf_xfer xfer)
 {
 	const struct xnvme_be_upcie_state *state = &xnvme_be_state(dev)->upcie_state;
 	int err;
 
-	err = xnvme_buf_reg_add(state->dmem, vaddr, nbytes, 0);
+	err = xnvme_buf_reg_add_xfer(state->dmem, vaddr, nbytes, 0, xfer);
 	if (err) {
 		_unmap(dev, vaddr);
 	}
@@ -167,7 +167,8 @@ xnvme_be_upcie_cuda_buf_register_dmabuf(const struct xnvme_dev *dev, int fd, voi
 		return err;
 	}
 
-	return _add(dev, vaddr, nbytes);
+	// vaddr may name memory of the runtime, which then moves data in it
+	return _add(dev, vaddr, nbytes, xnvme_buf_xfer_probe(vaddr));
 }
 
 static int
@@ -187,7 +188,7 @@ xnvme_be_upcie_cuda_buf_register(const struct xnvme_dev *dev, void *vaddr, size_
 		return err;
 	}
 
-	return _add(dev, vaddr, nbytes);
+	return _add(dev, vaddr, nbytes, XNVME_BUF_XFER_CUDA);
 }
 
 static int

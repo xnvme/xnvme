@@ -706,10 +706,10 @@ thread_fn(void *arg)
 		return NULL;
 	}
 
-	// Fill each job buffer with a known pattern. xnvme_buf_fill() routes
-	// transparently to device memory (CUDA/HIP) when the buffer is GPU VRAM,
-	// so the GPU-backend P2P path needs no special-casing here. The bounce
-	// ring is read into, so there is nothing to pre-fill.
+	// Fill each job buffer with a known pattern. io_buf_alloc() allocated it with
+	// xnvme_buf_alloc() or registered it with xnvme_buf_register(), so xnvme_buf_fill()
+	// reaches GPU memory through the runtime the backend recorded. The bounce ring is read
+	// into, so there is nothing to pre-fill.
 	if (!args->buf_host_bounce) {
 		for (int i = 0; i < thread->ndevs; i++) {
 			struct xnvmeperf_job *job = &thread->jobs[i];

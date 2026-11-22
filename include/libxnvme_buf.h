@@ -312,6 +312,9 @@ xnvme_buf_virt_free(void *buf);
  * If content == "rand-t", the buffer will be filled with ASCII characters
  * randomly sampled with `srand(0)`
  *
+ * @note CUDA or HIP memory that a backend allocated with xnvme_buf_alloc() or registered is
+ * reached through its runtime; any other memory is reached by the CPU
+ *
  * @param buf Pointer to the buffer to fill
  * @param content A single character, name of a file, or special "zero", "anum", "rand-k", "rand-t"
  * @param nbytes Amount of bytes to fill in buf
@@ -324,6 +327,9 @@ xnvme_buf_fill(void *buf, size_t nbytes, const char *content);
 /**
  * Write zeroes to the first 'nbytes' of 'buf'
  *
+ * @note CUDA or HIP memory that a backend allocated with xnvme_buf_alloc() or registered is
+ * reached through its runtime; any other memory is reached by the CPU
+ *
  * @param buf Pointer to the buffer to fill with zeroes
  * @param nbytes Amount of bytes to fill with zeroes in buf
  *
@@ -334,6 +340,9 @@ xnvme_buf_clear(void *buf, size_t nbytes);
 
 /**
  * Copy 'nbytes' from 'src' to 'dst'
+ *
+ * @note CUDA or HIP memory that a backend allocated with xnvme_buf_alloc() or registered is
+ * reached through its runtime; any other memory is reached by the CPU
  *
  * @param dst Pointer to the destination buffer
  * @param src Pointer to the source buffer
@@ -346,6 +355,9 @@ xnvme_buf_memcpy(void *dst, const void *src, size_t nbytes);
 
 /**
  * Compare two buffers and count the number of differing bytes.
+ *
+ * @note CUDA or HIP memory that a backend allocated with xnvme_buf_alloc() or registered is
+ * reached through its runtime; any other memory is reached by the CPU
  *
  * @param expected Pointer to buffer containing the expected data
  * @param actual Pointer to buffer to compare against the expected data

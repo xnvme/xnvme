@@ -15,6 +15,7 @@
 static int
 buf_register(const struct xnvme_dev *dev, void *vaddr, size_t nbytes)
 {
+	enum xnvme_buf_xfer xfer;
 	size_t alloc_nbytes;
 	void *base;
 	int fd, err;
@@ -28,16 +29,17 @@ buf_register(const struct xnvme_dev *dev, void *vaddr, size_t nbytes)
 	if (err != -ENOENT) {
 		return err;
 	}
-	if (xnvme_buf_is_host(vaddr)) {
+	xfer = xnvme_buf_xfer_probe(vaddr);
+	if (xfer == XNVME_BUF_XFER_CPU) {
 		return xnvme_buf_noreg_register(dev, vaddr, nbytes);
 	}
 
-	err = xnvme_buf_export_dmabuf(vaddr, &base, &alloc_nbytes, &fd);
+	err = xnvme_buf_export_dmabuf(vaddr, xfer, &base, &alloc_nbytes, &fd);
 	if (err) {
 		return err;
 	}
 
-	err = xnvme_be_liburing_dmabuf_add(dev, base, alloc_nbytes, fd);
+	err = xnvme_be_liburing_dmabuf_add(dev, base, alloc_nbytes, fd, xfer);
 	if (err) {
 		close(fd);
 		// On -EEXIST, another thread registered it first and this call took a reference
@@ -73,7 +75,8 @@ buf_register_dmabuf(const struct xnvme_dev *dev, int fd, void *vaddr)
 		return -errno;
 	}
 
-	err = xnvme_be_liburing_dmabuf_add(dev, vaddr, nbytes, own);
+	// vaddr may name the memory of a runtime, which then moves data in it
+	err = xnvme_be_liburing_dmabuf_add(dev, vaddr, nbytes, own, xnvme_buf_xfer_probe(vaddr));
 	if (err) {
 		close(own);
 		// On -EEXIST, another thread registered it first and this call took a reference
@@ -89,7 +92,7 @@ buf_unregister(const struct xnvme_dev *dev, void *vaddr)
 	int err;
 
 	err = xnvme_be_liburing_dmabuf_unref(dev, vaddr);
-	if ((err == -ENOENT) && xnvme_buf_is_host(vaddr)) {
+	if ((err == -ENOENT) && (xnvme_buf_xfer_probe(vaddr) == XNVME_BUF_XFER_CPU)) {
 		return xnvme_buf_noreg_unregister(dev, vaddr);
 	}
 

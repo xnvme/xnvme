@@ -756,7 +756,8 @@ xnvme_be_upcie_buf_register_dmabuf(const struct xnvme_dev *dev, int fd, void *va
 	if (err) {
 		return err;
 	}
-	err = xnvme_buf_reg_add(&g_dmabuf_dmem, vaddr, nbytes, 0);
+	err = xnvme_buf_reg_add_xfer(&g_dmabuf_dmem, vaddr, nbytes, 0,
+				     xnvme_buf_xfer_probe(vaddr));
 	if (err) {
 		_dmabuf_unmap(vaddr);
 	}

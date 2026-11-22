@@ -81,6 +81,15 @@ NUMA node, so `numa_node` is -1 until a page of the range is present. On
 platforms other than Linux, `cpu_access` is `XNVME_BUF_PROP_UNKNOWN`,
 `page_nbytes` is 0 and `numa_node` is -1.
 
+The buffer helpers, `xnvme_buf_fill()`, `xnvme_buf_clear()`,
+`xnvme_buf_memcpy()` and `xnvme_buf_diff()`, reach CUDA or HIP memory through
+its runtime. A backend records the runtime of the memory it allocates with
+`xnvme_buf_alloc()` and of the memory it registers: upcie-cuda and upcie-hip
+for their heaps, io_uring_dmabuf for each allocation it exports, and the upcie
+backends for the memory and dma-bufs registered with them. Memory without a
+record, such as GPU memory that was neither allocated with `xnvme_buf_alloc()`
+nor registered, is reached by the CPU.
+
 (sec-background-memory-io-path)=
 
 ## Alignment of the I/O path
