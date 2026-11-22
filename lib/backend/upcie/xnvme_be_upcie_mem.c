@@ -416,6 +416,20 @@ xnvme_be_upcie_buf_reg_ref(struct dmamem *dmem, uint64_t heap, size_t heap_nbyte
 }
 
 int
+xnvme_be_upcie_dmabuf_check_base(struct dmamem *dmem, void *vaddr, size_t nbytes)
+{
+	struct xnvme_buf_reg *reg;
+
+	if (!xnvme_buf_reg_find(dmem, vaddr, nbytes, &reg) && (reg->vaddr != vaddr)) {
+		XNVME_DEBUG("FAILED: vaddr(%p) is inside the range registered at %p", vaddr,
+			    reg->vaddr);
+		return -EBUSY;
+	}
+
+	return 0;
+}
+
+int
 xnvme_be_upcie_buf_reg_unref(struct dmamem *dmem, uint64_t heap, size_t heap_nbytes, void *vaddr,
 			     struct xnvme_buf_reg **last)
 {

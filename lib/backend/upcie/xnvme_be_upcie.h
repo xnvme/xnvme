@@ -276,6 +276,11 @@ int
 xnvme_be_upcie_buf_reg_ref(struct dmamem *dmem, uint64_t heap, size_t heap_nbytes, void *vaddr,
 			   size_t nbytes);
 
+/** -EBUSY when a registration of `dmem` holds the range but starts below `vaddr`; a dma-buf is
+ * registered whole, so such a `vaddr` names another dma-buf */
+int
+xnvme_be_upcie_dmabuf_check_base(struct dmamem *dmem, void *vaddr, size_t nbytes);
+
 /** Give back a reference of the registration holding `vaddr`; `last` is set to the registration
  * when that was its last, to unregister and remove, and to NULL otherwise */
 int
