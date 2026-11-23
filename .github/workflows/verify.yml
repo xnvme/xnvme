@@ -236,9 +236,10 @@ jobs:
         if-no-files-found: error
 
   #
-  # Check source-format using pre-commit
+  # pre-commit, the tests of the cijoe scripts and the toolbox, and the
+  # version files of a bump
   #
-  source-format-check:
+  source-checks:
     if: github.event.pull_request.draft != true && github.event.inputs.job != 'docgen'
     runs-on: ubuntu-24.04
     container: ghcr.io/xnvme/xnvme-devenv/host:v0.15.0
@@ -473,20 +474,20 @@ jobs:
     secrets: inherit
 
   build:
-    needs: [changes-to-docs, source-archive, source-format-check, ffi-python, docgen-shallow, matrices]
+    needs: [changes-to-docs, source-archive, source-checks, ffi-python, docgen-shallow, matrices]
     if: needs.changes-to-docs.outputs.docs_prose_only != 'true'
     uses: ./.github/workflows/build.yml
     with:
       build_linux: ${{ needs.matrices.outputs.build_linux }}
 
   perf:
-    needs: [gates, source-archive, source-format-check, ffi-python]
+    needs: [gates, source-archive, source-checks, ffi-python]
     if: (github.event_name == 'schedule' || (github.event_name == 'pull_request' && needs.gates.outputs.perf == 'true') ||
       (github.event_name == 'workflow_dispatch' && (github.event.inputs.job == 'perf' || github.event.inputs.job == 'all')))
     uses: ./.github/workflows/perf.yml
 
   verify-gpu-emulated:
-    needs: [source-archive, source-format-check, ffi-python, gates]
+    needs: [source-archive, source-checks, ffi-python, gates]
     if: (github.event.inputs.job == 'all' || (github.event_name == 'pull_request' && needs.gates.outputs.gpu == 'true') ||
       (github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'verify'))
     uses: ./.github/workflows/verify-gpu-emulated.yml
@@ -498,7 +499,7 @@ jobs:
     uses: ./.github/workflows/verify-makefile.yml
 
   verify-nvme-pcie-emulated:
-    needs: [matrices, source-archive, source-format-check, ffi-python, gates]
+    needs: [matrices, source-archive, source-checks, ffi-python, gates]
     if: github.event.inputs.job == 'all' || (github.event_name == 'pull_request' && needs.gates.outputs.emulated == 'true')
       || (github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'verify')
     uses: ./.github/workflows/verify-emulated.yml
@@ -506,19 +507,19 @@ jobs:
       matrix: ${{ needs.matrices.outputs.nvme }}
 
   verify-nvme-pcie-hardware:
-    needs: [gates, source-archive, source-format-check, ffi-python]
+    needs: [gates, source-archive, source-checks, ffi-python]
     if: (github.event.inputs.job == 'all' || (github.event_name == 'pull_request' && needs.gates.outputs.hardware == 'true')
       || (github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'verify'))
     uses: ./.github/workflows/verify-nvme-pcie-hardware.yml
 
   verify-nvme-rdma-emulated:
-    needs: [source-archive, source-format-check, ffi-python, gates]
+    needs: [source-archive, source-checks, ffi-python, gates]
     if: (github.event.inputs.job == 'all' || (github.event_name == 'pull_request' && needs.gates.outputs.rdma == 'true') ||
       (github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'verify'))
     uses: ./.github/workflows/verify-nvme-rdma-emulated.yml
 
   verify-nvme-tcp-emulated:
-    needs: [matrices, source-archive, source-format-check, ffi-python, gates]
+    needs: [matrices, source-archive, source-checks, ffi-python, gates]
     if: github.event.inputs.job == 'all' || (github.event_name == 'pull_request' && needs.gates.outputs.emulated == 'true')
       || (github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'verify')
     uses: ./.github/workflows/verify-emulated.yml
@@ -526,7 +527,7 @@ jobs:
       matrix: ${{ needs.matrices.outputs.tcp }}
 
   verify-packaging:
-    needs: [changes-to-docs, source-archive, source-format-check, ffi-python, docgen-shallow]
+    needs: [changes-to-docs, source-archive, source-checks, ffi-python, docgen-shallow]
     if: needs.changes-to-docs.outputs.docs_prose_only != 'true' && (github.event_name == 'pull_request' || github.event.inputs.job
       == 'all')
     uses: ./.github/workflows/verify-packaging.yml
@@ -592,7 +593,7 @@ jobs:
   # unless every job passed.
   #
   ci-result:
-    needs: [changes-to-docs, gates, source-archive, source-format-check, ffi-python, ffi-rust, matrices, docgen-shallow, build,
+    needs: [changes-to-docs, gates, source-archive, source-checks, ffi-python, ffi-rust, matrices, docgen-shallow, build,
       verify-makefile, verify-nvme-pcie-emulated, verify-nvme-pcie-hardware, verify-nvme-rdma-emulated, verify-nvme-tcp-emulated,
       verify-packaging, verify-gpu-emulated, perf, docgen-full, release-checklist]
     runs-on: ubuntu-24.04

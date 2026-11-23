@@ -62,7 +62,7 @@ GATES = {
 
 # The fixed jobs a pull-request must pass, as a documentation-only change skips
 # the other fixed jobs
-REQUIRED = ["source-format-check", "docgen-shallow"]
+REQUIRED = ["source-checks", "docgen-shallow"]
 
 # Job results, the worst first; a gate gives the worst of its jobs'
 WORST = ["failure", "cancelled", "timed_out", "action_required", "success", "skipped"]
