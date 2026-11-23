@@ -10,12 +10,19 @@ The following people have contributed to the implementation of xNVMe.
 
 ## Contributors to the current release
 
-* Ankit Kumar <ankit.kumar@samsung.com>
+* Alex Docauer <alex@docauer.net>
+* DenizYil <denizyil@outlook.dk>
+* Frederik Madsen <frederik.meisner@gmail.com>
+* Jaeyoon Choi <j_yoon.choi@samsung.com>
+* James Swaro <j.swaro@samsung.com>
+* Jesper Wendel Devantier <j.devantier@samsung.com>
 * Karl Bonde Torp <k.torp@samsung.com>
-* Liad Oz <liadozil@gmail.com>
-* Morten B. Rasmussen <m.rasmussen@samsung.com>
+* Mads Ynddal <m.ynddal@samsung.com>
 * Nadja Brix Koch <n.koch@samsung.com>
+* Simon A. F. Lund <os@safl.dk>
 * Simon A. F. Lund <simon.lund@samsung.com>
+* Vikram Khurana <vikramkhurana@Vikrams-MacBook-Pro.local>
+* Yonggil Song <yonggil.song@samsung.com>
 
 ## Contributors to previous releases
 
@@ -39,6 +46,7 @@ The following people have contributed to the implementation of xNVMe.
 * Michael Bang <mi.bang@samsung.com>
 * Minsik Jeon <hmi.jeon@samsung.com>
 * Morten B. Rasmussen <m.rasmussen@samsung.com>
+* Nadja Brix Koch <n.koch@samsung.com>
 * Niclas Hedam <niclas@hed.am> 
 * Pierre Labat <plabat@micron.com>
 * Rishabh Shukla <rishabh.sh@samsung.com> 
