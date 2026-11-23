@@ -15,9 +15,12 @@ import argparse
 import logging
 import os
 import re
+import shlex
 import sys
 from pathlib import Path
 from subprocess import PIPE, Popen
+
+from xnvme_ver import xnvme_ver
 
 MESON_MAN_INSTALL = "install_man('{manpage}')"
 
@@ -89,6 +92,13 @@ def expand_path(path):
     return os.path.abspath(os.path.expanduser(os.path.expandvars(path)))
 
 
+def release():
+    """The release that the header of each man page names, 'xNVMe vX.Y.Z' of
+    meson.build; the bump check of xnvme_release.py requires it"""
+
+    return f"xNVMe v{xnvme_ver(str(Path(__file__).parent.parent / 'meson.build'))}"
+
+
 def run(cmd, cmd_input=None, cwd=None, exec_path=None):
     """
     Run the given 'cmd' and return (stdout, stderr, returncode); the xnvme front-end looks
@@ -96,7 +106,7 @@ def run(cmd, cmd_input=None, cwd=None, exec_path=None):
     """
 
     with Popen(
-        " ".join(cmd),
+        shlex.join(cmd),
         stdin=PIPE,
         stdout=PIPE,
         stderr=PIPE,
@@ -398,7 +408,7 @@ def emit_manpage_sub(tool, sub):
             "-s",
             "1",
             "-r",
-            "xNVMe",
+            release(),
         ],
         txtpage,
     )
@@ -449,7 +459,7 @@ def emit_manpage_main(tool):
             "-s",
             "1",
             "-r",
-            "xNVMe",
+            release(),
         ],
         txtpage,
     )
@@ -486,7 +496,7 @@ def emit_manpage_group(tool, group):
 
     title = "-".join([tool["name"].upper(), name.upper()])
     manpage, err, rcode = run(
-        ["txt2man", "-t", title, "-v", "xNVMe", "-s", "1", "-r", "xNVMe"], txtpage
+        ["txt2man", "-t", title, "-v", "xNVMe", "-s", "1", "-r", release()], txtpage
     )
     if rcode:
         logging.error("FAILED: txt2man; '%s', rcode:%s", err, rcode)

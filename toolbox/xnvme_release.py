@@ -8,8 +8,9 @@
 Whether a commit releases a version, and the notes to release it with
 
 Given the subject of the commit, 'ver: bump to vX.Y.Z', this checks that every
-file carrying the version carries X.Y.Z and that CHANGELOG.rst has a section
-for vX.Y.Z, and writes that section to stdout as the release notes. It exits
+file carrying the version carries X.Y.Z, that every man page under man/ names
+xNVMe vX.Y.Z, and that CHANGELOG.rst has a section for vX.Y.Z, and writes that
+section to stdout as the release notes. It exits
 non-zero, saying why, when any of that is not so.
 
 With --bump X.Y.Z it instead writes X.Y.Z into every file carrying the
@@ -53,6 +54,21 @@ def notes_for(changelog: str, version: str) -> str:
     return section.group(1).strip() if section else ""
 
 
+# The release that a man page names in its header, as txt2man writes it
+MAN_RELEASE = re.compile(r'^\.TH \S+ \S+ "[^"]*" "([^"]*)"', re.M)
+
+
+def man_pages_of_another_release(root: Path, version: str):
+    """The man pages under 'root'/man whose header does not name xNVMe v'version'"""
+
+    wrong = []
+    for page in sorted((root / "man").rglob("*.1")):
+        found = MAN_RELEASE.search(page.read_text())
+        if not found or found.group(1) != f"xNVMe v{version}":
+            wrong.append(page.relative_to(root))
+    return wrong
+
+
 def check(subject: str, root: Path):
     """The version and its notes; raises ValueError saying what is wrong"""
 
@@ -68,6 +84,13 @@ def check(subject: str, root: Path):
             wrong.append(f"{path} has {found.group(1) if found else 'none'}")
     if wrong:
         raise ValueError(f"the commit bumps to {version}, but " + ", ".join(wrong))
+
+    pages = man_pages_of_another_release(root, version)
+    if pages:
+        raise ValueError(
+            f"{len(pages)} man pages do not name xNVMe v{version}, such as "
+            f"{pages[0]}; run 'make gen-man-pages'"
+        )
 
     notes = notes_for((root / "CHANGELOG.rst").read_text(), version)
     if not notes:
