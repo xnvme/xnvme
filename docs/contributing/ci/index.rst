@@ -122,7 +122,8 @@ merged and the ``verify`` run the pull-request started on its head, in which
 ``ci-result`` and every gated job passed. It tags main ``vX.Y.Z`` and creates
 the release, with the source archives, the Python sdist and the test results
 of that run, and the ``CHANGELOG.rst`` section of the version as its notes,
-and starts a ``docgen`` run on the tag for the documentation of the release.
+and deploys the documentation that the run's ``docgen-full`` built as that of
+the tag.
 The artifacts are used only when the pull-request's head has the tree main
 now has, which branch protection ensures by requiring it to be up to
 date with main; otherwise the release fails. ``publish-release`` uploads

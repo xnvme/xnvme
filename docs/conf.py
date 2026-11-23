@@ -37,10 +37,12 @@ copyright = "2024, xNVMe"
 version = "v" + xnvme_ver(str(project_root / "meson.build"))
 release = version
 
-# Drive the PyData version-switcher off GITHUB_REF_NAME so a build of
-# ``main`` reports ``version_match = "main"`` and a tag build reports
-# the tag, falling back to the meson version locally.
-_ref_name = os.environ.get("GITHUB_REF_NAME", "")
+# The version-switcher entry: the name of the branch or tag that GitHub builds,
+# otherwise the meson version. A pull-request whose last commit is the bump thus
+# names the tag of its release, which deploys the documentation it built.
+_ref = os.environ.get("GITHUB_REF", "")
+_on_ref = _ref.startswith(("refs/heads/", "refs/tags/"))
+_ref_name = os.environ.get("GITHUB_REF_NAME", "") if _on_ref else ""
 _version_match = _ref_name if _ref_name else version
 
 # MyST configuration
