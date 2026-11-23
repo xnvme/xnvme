@@ -3,8 +3,9 @@ name: publish-release
 
 # A push to main whose head commit is 'ver: bump to vX.Y.Z' tags main and
 # releases, from the artifacts of the 'verify' run of the pull-request that was
-# merged, so neither main nor the tag runs the verification again, and starts a
-# 'docgen' run of 'verify' on the new tag for the documentation of the release.
+# merged, so neither main nor the tag runs the verification again. The 'docs'
+# job deploys the documentation that run's 'docgen-full' built as that of the
+# tag.
 # A pull-request that ends on the bump runs every job of 'verify', the gated
 # jobs and the release checklist included, and the release requires that all
 # of them and 'ci-result' passed in its run. The artifacts are used only when
@@ -31,9 +32,12 @@ jobs:
     if: "startsWith(github.event.head_commit.message, 'ver: bump to v')"
     runs-on: ubuntu-24.04
     permissions:
-      actions: write
+      actions: read
       contents: write
       pull-requests: read
+    outputs:
+      run: ${{ fromJSON(steps.check.outputs.runs || '{}')['verify.yml'] }}
+      version: ${{ steps.check.outputs.version }}
     env:
       GH_TOKEN: ${{ github.token }}
       REPO: ${{ github.repository }}
@@ -83,12 +87,47 @@ jobs:
         tar czf "assets/test-results-v$VERSION.tar.gz" reports
         ls -lh assets
 
-    - name: Tag, create the release, and start the 'docgen' run on the tag
+    - name: Tag and create the release
       uses: refenv/gha-project-auto-release/release@v1
       with:
         version: ${{ steps.check.outputs.version }}
         notes-file: ${{ runner.temp }}/notes.md
         title: 'Release Notes: {tag}'
         assets: assets/*
-        dispatch: verify.yml job=docgen
 
+  # Re-run alone when it fails; the release is made already
+  docs:
+    needs: release
+    runs-on: ubuntu-24.04
+    permissions:
+      actions: read
+      contents: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      RUN: ${{ needs.release.outputs.run }}
+      VERSION: ${{ needs.release.outputs.version }}
+
+    steps:
+    - name: Grab source
+      uses: actions/checkout@v6
+
+    - name: Retrieve the documentation that the pull-request's run built
+      run: |
+        gh run download "$RUN" --repo "$REPO" --pattern 'docgen-full-*-reports' --dir docgen
+        found=$(find docgen -path '*-docs/artifacts/docs.tar.gz')
+        test "$(wc -l <<< "$found")" -eq 1 && test -n "$found"
+        mv "$found" docs.tar.gz
+
+    - name: Checkout site
+      uses: actions/checkout@v6
+      with:
+        repository: "xnvme/xnvme.github.io"
+        token: ${{ secrets.DOCS_PAT }}
+        path: site
+
+    - name: Install the documentation tooling
+      run: pipx install docs/tooling
+
+    - name: Deploy the documentation of the tag
+      run: toolbox/ci/deploy-docs.sh docs.tar.gz site "refs/tags/v$VERSION"

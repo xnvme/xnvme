@@ -9,8 +9,8 @@ A release goes through four phases:
    bumps the version, and it is reviewed and merged like any other.
 2. **Release**, automated: when the bump is merged to ``main``, the
    ``publish-release`` workflow tags ``main``, creates the release on GitHub
-   with its assets, and starts the run that deploys the documentation of the
-   tag. Nothing else is automated.
+   with its assets, and deploys the documentation that the pull-request's run
+   built as that of the tag. Nothing else is automated.
 3. **Publish**, by hand: a maintainer uploads the Python package to PyPI and
    the Rust crate to crates.io from the assets of the release on GitHub. An
    upload to a registry cannot be undone, so no workflow does it.
@@ -105,10 +105,13 @@ The release
     uploads the assets, so a failed upload leaves the release published with
     assets missing; re-running the job uploads them
   - Double-check the generated docs at https://xnvme.io/ and
-    https://xnvme.io/en/vX.Y.Z. They are built by ``docgen`` runs of
-    ``verify`` apart from the release, on ``main`` and on the tag, so a release
-    can exist while its documentation failed; then re-run the failed run, or
-    start ``verify`` on the tag with ``job`` set to ``docgen``
+    https://xnvme.io/en/vX.Y.Z. The ``docs`` job of ``publish-release``
+    deploys the documentation that the pull-request's ``docgen-full`` job
+    built as that of the tag, after the release is made, and the ``docgen``
+    run that ``publish-docs`` starts deploys that of ``main``. So a release can
+    exist while its documentation failed; then re-run the failed job or run,
+    or start ``verify`` on the tag with ``job`` set to ``docgen``, which builds
+    the documentation again and deploys it
   - When the ``publish-release`` run failed or was cancelled, re-run it from the
     Actions tab; it releases from the same commit and artifacts. Do not tag
     by hand
@@ -199,8 +202,8 @@ Files of the release
   ``CONTRIBUTORS.md``, and ``ci-result`` fails unless every job passed
 * ``.github/workflows/publish-release.yml``: on the bump's push to ``main``,
   tags ``main``, creates the release from the artifacts of the merged
-  pull-request's ``verify`` run without building again, and starts the
-  documentation run of the tag
+  pull-request's ``verify`` run without building again, and deploys the
+  documentation that run built as that of the tag
 * ``.github/labeler.yml``: the files whose change adds the label
   ``gate:release``, which runs ``release-checklist`` on a pull-request that
   does not release

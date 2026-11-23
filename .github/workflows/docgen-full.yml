@@ -17,7 +17,8 @@ jobs:
   # This runs on pull-requests with 'gate:docgen', so we catch whether one breaks
   # the documentation. A manual run with 'job' set to 'docgen' builds and
   # deploys it, as the 'publish-docs' workflow starts on main after every
-  # merge, and 'publish-release' on the tag of a release, to:
+  # merge. 'publish-release' deploys what this job built on the pull-request
+  # of a release as the documentation of its tag. Both deploy to:
   #
   #   githubpages/en/<ref>
   #
@@ -134,38 +135,13 @@ jobs:
       run: |
         git config --global --add safe.directory $(pwd)/site
 
-    - name: Extract the website
+    - name: Install the documentation tooling
       if: github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'docgen'
-      run: |
-        find cijoe
-        cp cijoe/${{ github.job }}-${{ matrix.os }}-${{ matrix.ver }}-docs/artifacts/docs.tar.gz .
-        tar xzf docs.tar.gz
+      run: pipx install docs/tooling
 
-    - name: Update site repository
+    - name: Deploy the documentation
       if: github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'docgen'
       run: |
-        pipx install docs/tooling
-        xnvme-docs-dest --docs html --site site --ref "${{ github.ref }}"
-
-    - name: Push site-changes
-      if: github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'docgen'
-      run: |
-        cd site
-        git config --global user.name 'GitHUB Service'
-        git config --global user.email 'ghs@safl.dk'
-        git add .
-        if git diff --cached --quiet; then
-          echo "The site has these docs already"
-          exit 0
-        fi
-        git commit -m "Auto-deployed update of 'docs/' for '${{ github.ref }}'"
-        # A release deploys main and its tag by two runs at once; the one that
-        # pushes second takes the other's commit and tries again
-        for attempt in 1 2 3 4 5; do
-          if git push; then
-            exit 0
-          fi
-          sleep $((attempt * 10))
-          git pull --rebase
-        done
-        exit 1
+        toolbox/ci/deploy-docs.sh \
+          "cijoe/${{ github.job }}-${{ matrix.os }}-${{ matrix.ver }}-docs/artifacts/docs.tar.gz" \
+          site "${{ github.ref }}"

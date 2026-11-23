@@ -1,8 +1,10 @@
+import fnmatch
 import hashlib
 import importlib.util
 import json
 import os
 import re
+import runpy
 import shutil
 import subprocess
 import sys
@@ -35,11 +37,14 @@ CONTEXTS = {
     "${{ github.event.pull_request.number }}": "1",
     "${{ steps.check.outputs.version }}": "1.2.3",
     "${{ fromJSON(steps.check.outputs.runs || '{}')['verify.yml'] }}": "42",
+    "${{ needs.release.outputs.run }}": "42",
+    "${{ needs.release.outputs.version }}": "1.2.3",
 }
 
 # A gh that downloads, for --name, the files the upload-artifact step of that
-# name in verify.yml uploads, as STUB_ARTIFACTS lists them, and for --pattern
-# '*-reports', one artifact of reports
+# name in verify.yml uploads, as STUB_ARTIFACTS lists them, for --pattern
+# '*-reports', one artifact of reports, and for 'docgen-full-*-reports', the
+# artifact of docgen-full laid out as a run uploads it
 GH = f"""#!{sys.executable}
 import json, os, sys
 from pathlib import Path
@@ -58,6 +63,11 @@ if "--name" in opts:
 elif opts.get("--pattern") == "*-reports":
     (directory / "verify-reports").mkdir(parents=True)
     (directory / "verify-reports" / "report.txt").write_text("report")
+elif opts.get("--pattern") == "docgen-full-*-reports":
+    name = "docgen-full-debian-trixie-iommu_enabled"
+    docs = directory / f"{{name}}-reports" / f"{{name}}-docs" / "artifacts"
+    docs.mkdir(parents=True)
+    (docs / "docs.tar.gz").write_text("docs")
 else:
     sys.exit(f"no artifact matches {{opts.get('--pattern')}}")
 """
@@ -149,14 +159,75 @@ def action_steps(workflow, job, action):
     return [step for step in steps(workflow, job) if step.get("uses") == uses]
 
 
-def test_a_release_builds_the_documentation_of_its_tag():
-    found = action_steps("publish-release.yml", "release", "release")
+def test_a_release_deploys_the_documentation_its_pull_request_built():
+    """The tag's documentation is the one the run's docgen-full built from the
+    tree the tag names, so it is not built again"""
+    content = workflow("publish-release.yml")
+    release, docs = content["jobs"]["release"], content["jobs"]["docs"]
+    (action,) = action_steps("publish-release.yml", "release", "release")
 
-    assert len(found) == 1
-    assert found[0]["with"]["dispatch"] == "verify.yml job=docgen"
-    # The token of the job starts the run
-    release = workflow("publish-release.yml")["jobs"]["release"]
-    assert release["permissions"]["actions"] == "write"
+    assert "dispatch" not in action["with"]
+    assert release["permissions"]["actions"] == "read"
+    assert release["outputs"] == {
+        "run": "${{ fromJSON(steps.check.outputs.runs || '{}')['verify.yml'] }}",
+        "version": "${{ steps.check.outputs.version }}",
+    }
+    assert docs["needs"] == "release"
+    # Only the job that deploys holds the token of the site
+    assert "DOCS_PAT" not in yaml.safe_dump(release)
+    site = step_named("publish-release.yml", "docs", "Checkout site")
+    assert site["with"]["token"] == "${{ secrets.DOCS_PAT }}"
+    assert docs["env"]["RUN"] == "${{ needs.release.outputs.run }}"
+    assert docs["env"]["VERSION"] == "${{ needs.release.outputs.version }}"
+    # The release requires that docgen-full passed in the run
+    assert "docgen-full" in [job for jobs in gha_gates.GATES.values() for job in jobs]
+    deploy = step_named(
+        "publish-release.yml", "docs", "Deploy the documentation of the tag"
+    )
+    assert (
+        deploy["run"]
+        == 'toolbox/ci/deploy-docs.sh docs.tar.gz site "refs/tags/v$VERSION"'
+    )
+    # docgen-full deploys main and a tag started by hand with the same script
+    docgen = step_named("docgen-full.yml", "docgen-full", "Deploy the documentation")
+    assert docgen["run"].startswith("toolbox/ci/deploy-docs.sh")
+    assert docgen["run"].rstrip().endswith('site "${{ github.ref }}"')
+
+
+def test_the_docs_job_takes_the_documentation_of_the_runs_docgen_full(tmp_path):
+    upload = step_named("docgen-full.yml", "docgen-full", "CIJOE, upload report-docgen")
+    name = upload["with"]["name"].replace("${{ github.job }}", "docgen-full")
+    name = name.replace(
+        "${{ matrix.os }}-${{ matrix.ver }}", "debian-trixie-iommu_enabled"
+    )
+    retrieve = "Retrieve the documentation that the pull-request's run built"
+
+    assert fnmatch.fnmatch(name, "docgen-full-*-reports")
+    run = run_step("publish-release.yml", "docs", retrieve, tmp_path)
+    assert run.returncode == 0, run.stderr
+    assert (tmp_path / "docs.tar.gz").read_text() == "docs"
+
+
+@pytest.mark.parametrize(
+    "ref, name, expected",
+    [
+        ("refs/heads/main", "main", "main"),
+        ("refs/tags/v1.2.3", "v1.2.3", "v1.2.3"),
+        ("refs/pull/1/merge", "1/merge", None),
+        ("", "", None),
+    ],
+)
+def test_the_version_switcher_names_the_branch_or_tag_built(
+    monkeypatch, ref, name, expected
+):
+    """Any other build names the version in meson.build, which on the
+    pull-request of a release is the tag that deploys its documentation"""
+    monkeypatch.setenv("GITHUB_REF", ref)
+    monkeypatch.setenv("GITHUB_REF_NAME", name)
+    conf = runpy.run_path(str(ROOT / "docs" / "conf.py"))
+
+    switcher = conf["html_theme_options"]["switcher"]
+    assert switcher["version_match"] == (expected or conf["version"])
 
 
 def test_the_release_has_the_title_and_notes_the_checklist_names(tmp_path):
@@ -490,9 +561,8 @@ def test_the_actions_read_the_version_as_xnvme_release_does():
         assert step["with"]["changelog"] == ""
 
 
-@pytest.mark.parametrize("workflow", ["publish-docs.yml", "publish-release.yml"])
-def test_publishing_deploys_no_documentation_itself(workflow):
-    text = (WORKFLOWS / workflow).read_text()
+def test_publish_docs_deploys_no_documentation_itself():
+    text = (WORKFLOWS / "publish-docs.yml").read_text()
 
     assert "DOCS_PAT" not in text
     assert "xnvme-docs-dest" not in text
@@ -509,7 +579,7 @@ def test_no_workflow_uploads_to_a_registry():
     """An upload to PyPI or crates.io cannot be undone, so a maintainer makes it"""
     content = yaml.safe_load((WORKFLOWS / "publish-release.yml").read_text())
 
-    assert list(content["jobs"]) == ["release"]
+    assert list(content["jobs"]) == ["release", "docs"]
     for workflow in WORKFLOWS.glob("*.yml"):
         text = workflow.read_text()
         for upload in ["xnvme_publish.py", "pypi-publish", "crates-io-auth", "twine"]:
@@ -522,17 +592,6 @@ def test_make_publish_uploads_to_pypi_and_crates_io():
 
     assert "xnvme_publish.py pypi $(VERSION)" in recipe
     assert "xnvme_publish.py crate $(VERSION)" in recipe
-
-
-def test_the_docgen_deploy_retries_a_rejected_push():
-    push = [
-        step
-        for step in steps("docgen-full.yml", "docgen-full")
-        if step.get("name") == "Push site-changes"
-    ]
-
-    assert len(push) == 1
-    assert "git pull --rebase" in push[0]["run"]
 
 
 def test_a_docgen_run_runs_only_what_the_documentation_needs():
