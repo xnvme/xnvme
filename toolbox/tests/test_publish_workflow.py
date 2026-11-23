@@ -606,10 +606,10 @@ def test_a_docgen_run_runs_only_what_the_documentation_needs():
     )
     for name in ("ffi-rust", "verify-makefile", "verify-packaging"):
         assert jobs[name]["if"] == only, name
-    assert jobs["source-format-check"]["if"] == (
+    assert jobs["source-checks"]["if"] == (
         "github.event.pull_request.draft != true && github.event.inputs.job != 'docgen'"
     )
-    assert "source-format-check" not in jobs["docgen-full"]["needs"]
+    assert "source-checks" not in jobs["docgen-full"]["needs"]
 
     # ci-result requires the source checks of a pull-request only, or every
     # docgen run, which skips them, would fail

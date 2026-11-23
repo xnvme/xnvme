@@ -63,7 +63,7 @@ The fixed set
 
    * - Job
      - Runs
-   * - ``source-format-check``
+   * - ``source-checks``
      - pre-commit over the whole tree, the tests of the cijoe scripts and the
        toolbox, and the version files of a bump
    * - ``source-archive``, ``build``

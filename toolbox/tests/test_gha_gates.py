@@ -327,3 +327,13 @@ def test_verdict_prints_the_results_and_fails_with_why():
     assert run.stdout.splitlines()[-1] == (
         "::error::v1.2.3 is released only when every job passed; did not: perf"
     )
+
+
+def test_ci_result_needs_every_job_it_requires():
+    """A job that ci-result requires and does not need is missing from its
+    results, and ci-result then fails every pull-request"""
+    jobs = yaml.safe_load(VERIFY)["jobs"]
+
+    for job in gates.REQUIRED:
+        assert job in jobs, job
+        assert job in jobs["ci-result"]["needs"], job
