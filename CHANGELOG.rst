@@ -18,6 +18,222 @@ Known Issues
 
 See the file named ``ISSUES.rst`` in the root of the repository.
 
+v0.8.0
+------
+
+v0.8.0 comes more than two years and more than 900 commits after v0.7.5. xNVMe
+promises no stability of its API before v1.0, and little of the API is as it
+was in v0.7.5; the command line is redesigned. The changes that code and
+scripts written for v0.7.5 are most likely to meet come first; the commit
+messages and the documentation describe the rest.
+
+* API changes
+
+  ``libxnvme_compat.h`` keeps the names marked *(compat)*, as inline functions
+  that call their replacement or as macros, so that code written for v0.7.5,
+  such as the xNVMe engine of fio, builds unchanged.
+
+  - ``xnvme_cmd_ctx_from_dev()`` and ``xnvme_file_get_cmd_ctx()``: use
+    ``xnvme_dev_get_cmd_ctx()`` *(compat)*
+  - ``xnvme_cmd_ctx_from_queue()``: use ``xnvme_queue_get_cmd_ctx()`` *(compat)*
+  - ``xnvme_cmd_passv()``: use ``xnvme_cmd_pass_iov()``, which takes the
+    meta-payload as a single buffer *(compat)*
+  - ``xnvme_queue_wait()``: use ``xnvme_queue_drain()`` *(compat)*
+  - ``xnvme_mem_map()`` and ``xnvme_mem_unmap()``: use ``xnvme_buf_register()``
+    and ``xnvme_buf_unregister()`` *(compat)*
+  - ``xnvme_opts_default()``: use ``xnvme_opts_set_defaults()`` on
+    zero-initialized options *(compat)*
+  - ``xnvme_libconf``: the extern array is replaced by ``struct xnvme_libconf``,
+    returned by ``xnvme_libconf_get()``
+  - ``xnvme_be_attr_list()`` and ``xnvme_be_attr_list_bundled()`` are removed;
+    ``xnvme_be_attr_get()`` returns the attributes of a backend configuration
+    by index
+  - ``libxnvme_lba.h`` is removed, with ``struct xnvme_lba_range`` and its
+    functions and printers
+  - The macros of the zoned report are replaced by getters, such as
+    ``xnvme_znd_report_get_descr()``; ``XNVME_ZND_REPORT_DESCR`` *(compat)*
+  - ``xnvme_file_pread()`` and ``xnvme_file_pwrite()`` take the offset as
+    ``uint64_t`` instead of ``off_t``
+  - ``libxnvme_mem.h`` and ``libxnvme_spec_pp.h`` are removed; ``libxnvme.h``
+    declares what remains of them
+  - ``xnvme_buf_diff()`` returns 0 or a negative errno, and gives the number of
+    differing bytes through its new ``diff`` parameter; ``xnvme_buf_clear()``
+    and ``xnvme_buf_diff_pr()`` return an ``int``
+  - ``xnvme_libconf_fpr()`` and ``xnvme_libconf_pr()`` take the
+    ``struct xnvme_libconf`` to print; ``xnvme_be_attr_list_fpr()`` and
+    ``xnvme_be_attr_list_pr()`` take no list
+  - ``struct xnvme_be_attr`` holds a ``descr`` and the ``caps`` of a backend
+    configuration instead of ``enabled``
+  - The parameters that took an enum in ``xnvme_pi_ctx_init()``,
+    ``xnvme_pi_size()``, ``xnvme_nvm_scopy()`` and the functions of
+    ``libxnvme_znd.h`` take a ``uint32_t``
+  - ``XNVME_ZND_REPORT_DEXT``, ``union xnvme_spec_vs_register`` and the
+    ``XNVME_IDENT_*`` macros other than ``XNVME_IDENT_URI_LEN`` are removed
+  - The printers, the ``_fpr``, ``_pr`` and ``_str`` functions, are declared in
+    ``libxnvme_pp.h`` only, which ``libxnvme.h`` includes.
+    ``xnvme_spec_feat_fpr()``, ``xnvme_spec_feat_pr()``,
+    ``xnvme_spec_feat_fdp_events_pr()`` and ``xnvme_spec_drecv_sar_pr()`` take
+    their records by pointer
+  - The structs of the specification carry integers instead of C bit-fields,
+    read and written through masks with ``xnvme_bits_get()`` and
+    ``xnvme_bits_set()``. Code reading ``ns->flbas.format`` now reads
+    ``xnvme_bits_get(ns->flbas, XNVME_SPEC_IDFY_NS_FLBAS_FORMAT)``
+
+    - ``struct xnvme_spec_cmd`` is ``union xnvme_spec_sqe``, printed by
+      ``xnvme_spec_sqe_fpr()`` and ``xnvme_spec_sqe_pr()``;
+      ``xnvme_spec_cmd_fpr()`` and ``xnvme_spec_cmd_pr()`` *(compat)*
+    - ``struct xnvme_spec_cpl`` is ``struct xnvme_spec_cqe`` *(compat)*
+    - ``struct xnvme_spec_status`` is the integer ``status`` of the completion
+      queue entry and of the Error Information log entry, read through
+      ``XNVME_SPEC_CQE_STATUS_*`` and ``XNVME_SPEC_LOG_ERRI_ENTRY_STATUS_*``
+    - The opcode is a byte, FUSE and PSDT are in ``flags`` behind
+      ``XNVME_SPEC_CMD_COMMON_FLAGS_*``, and the data pointer is
+      ``union xnvme_spec_dptr``
+    - The fields of the identify, get log page, LBA format and power state
+      structs are integers and masks. ``union xnvme_spec_idfy``, the bytes of
+      the identify data and its views, replaces ``struct xnvme_spec_idfy`` in
+      ``xnvme_adm_idfy()`` and the other identify functions
+    - ``XNVME_SPEC_IDFY_NSDSCR`` is ``XNVME_SPEC_IDFY_NS_DESC`` *(compat)*
+
+* API extensions
+
+  - ``xnvme_queue_reap()`` stores the completed commands of a queue in an array
+    that the caller passes, so one call retrieves many completions without a
+    callback. Every backend implements it. ``xnvme_cmd_ctx_set_data()`` and
+    ``xnvme_cmd_ctx_get_data()`` attach the caller's data to a command
+  - ``xnvme_scan()``, in ``libxnvme_scan.h``, lists the NVMe controllers on
+    Linux, FreeBSD, macOS and Windows, with the kernel driver of each, and on
+    Linux its IOMMU group
+  - ``xnvme_driver_attach()``, ``xnvme_driver_detach()``,
+    ``xnvme_driver_default()`` and ``xnvme_driver_for_be()``, in
+    ``libxnvme_driver.h``, bind a controller to the driver that a backend
+    needs, on Linux and FreeBSD
+  - ``xnvme_buf_register()``, ``xnvme_buf_unregister()``,
+    ``xnvme_buf_get_alignment()`` and ``xnvme_buf_memcpy()``
+  - ``xnvme_cplane_serve()``, ``xnvme_cplane_get_info()``,
+    ``xnvme_cplane_get_ctrlr_info()`` and ``xnvme_cplane_server_alive()``, in
+    ``libxnvme_cplane.h``, share a controller between processes over a socket
+  - ``xnvme_cuda_queue_create()`` and ``xnvme_cuda_queue_destroy()``, in
+    ``libxnvme_cuda.h``, place NVMe queues in GPU memory for I/O that the GPU
+    issues
+  - ``xnvme_adm_gfeat_nqueues()``, and the Sanitize Status log page as
+    ``struct xnvme_spec_log_sanitize_entry``
+  - ``xnvme_cli_dev_open_multi()``, ``xnvme_cli_dev_close_multi()`` and
+    ``xnvme_cli_uri_parse()``; a device URI names its namespace with ``?nsid=``
+  - ``xnvme_ver_vcs()`` returns the revision that the library was built from
+
+* Backends
+
+  - Each backend configuration has a name of its own, which ``--be`` and
+    ``xnvme_opts.be`` take, such as ``io_uring`` or ``libaio_bdev``. The name
+    of the platform, such as ``linux``, with ``--async``, ``--sync`` and
+    ``--admin``, still selects one. ``fbsd`` is now ``freebsd``, ``vfio`` is
+    now ``libvfn``, and the admin interface ``ramdisk_as_ns`` is now
+    ``ramdisk``
+  - ``upcie``, the uPCIe userspace NVMe driver, carried as a subproject, with
+    asynchronous I/O, metadata, iovec payloads and a multi-process mode. A
+    controller named by its PCIe address and no backend is now opened with
+    ``upcie``; SPDK and libvfn are used when named
+  - ``upcie-cuda``, for I/O into the memory of NVIDIA GPUs, issued by the CPU
+    or by the GPU, and ``upcie-hip``, for I/O into the memory of AMD GPUs
+  - ``io_uring_dmabuf``, io_uring with memory registered from a dma-buf
+  - ``driverkit`` on macOS, through the MacVFN DriverKit driver
+  - io_uring and libaio send Flush, and honour FUA on writes
+  - SPDK v26.05, with ``iova_mode`` in ``xnvme_opts`` and on the command line,
+    memory registration, and ``delay_cmd_submit`` enabled by default
+  - libvfn v5.1.0
+  - A controller opens without a namespace with ``nsid=0``
+  - The ramdisk backend runs on Windows
+
+* Command line
+
+  - ``xnvme`` is the one program on ``PATH``. The tools, tests and examples
+    install into ``libexecdir/xnvme`` as ``xnvme-<command>``,
+    ``xnvme-test-<name>`` and ``xnvme-example-<name>``, and ``xnvme <name>``
+    runs them. Bare ``xnvme`` shows the commands a level at a time, and the
+    shell completion asks ``xnvme`` what to complete
+  - ``xnvme driver --be <backend>`` binds the driver that a backend needs and
+    replaces ``xnvme-driver``. The hugepages that ``xnvme-driver`` reserved are
+    reserved with the ``hugepages`` tool, and the ``iommu`` tool shows and
+    switches the IOMMU configuration on Linux; both install with ``pipx``, and
+    ``xnvme env`` reports whether they are installed
+  - The NVMe admin subcommands of ``xnvme``, such as ``idfy``, ``log-health``,
+    ``feature-get`` and ``format``, are now ``xnvme test adm``. ``padc``,
+    ``pioc`` and ``library-info`` are removed; ``xnvme cmd-admin``,
+    ``xnvme cmd-io`` and ``xnvme env library`` replace them
+  - The tools ``lblk``, ``zoned``, ``kvs``, ``xdd`` and ``xnvme_file`` are now
+    the test programs ``nvm``, ``zns``, ``kv``, ``dd`` and ``file``, run as
+    ``xnvme test <name>``
+  - New commands: ``xnvme perf``, a benchmark, also of I/O into GPU memory;
+    ``xnvme homi``, which holds controllers open and shares them with client
+    processes, and exposes each as a CUSE device under ``/dev/xnvme/<bdf>``
+    that answers the NVMe driver's ``ioctl()`` interface; ``xnvme qublk``, a
+    ublk server that serves xNVMe devices, zoned ones included, as Linux block
+    devices; ``xnvme env``; ``xnvme cmd-iov``. The systemd units
+    ``xnvme-homi@`` and ``xnvme-qublk@`` run the two servers
+  - A project outside xNVMe adds a command by installing ``xnvme-<name>`` into
+    the ``libexecdir`` and a ``<name>.extension`` into the ``extensiondir`` that
+    ``xnvme.pc`` names
+
+* Library and build
+
+  - Device open, close and enumeration, buffer allocation and queue setup and
+    teardown hold one process-wide recursive lock
+  - Hugepage memory comes from the uPCIe host-memory heap, backed by
+    ``memfd_create(MFD_HUGETLB)``, and needs no mounted hugetlbfs.
+    ``XNVME_HUGETLB_PATH`` is no longer required; when set, the heap is placed
+    in the hugetlbfs it names. ``XNVME_HUGEPAGE_BACKEND`` chooses ``memfd`` or
+    ``hugetlbfs``, and ``XNVME_HUGEPAGE_HEAP_SIZE`` sets the size of the heap
+  - The build options ``be_ramdisk`` and ``cbi_*`` are replaced by
+    ``with-ramdisk``, ``with-shim``, ``with-emu``, ``with-nil``, ``with-posix``
+    and ``with-thrpool``. ``with-upcie``, ``with-cuda``, ``with-hip``,
+    ``with-cuse``, ``with-driverkit``, ``with-iocp``, ``with-ioring`` and
+    ``with-spdk-rdma`` are added, and ``systemd`` installs the systemd units
+  - The build needs meson 0.63 or later, instead of 0.58
+  - The CUSE devices of ``xnvme homi`` use ufuse v0.4.0, carried as a
+    subproject
+  - ``XNVME_EXEC_PATH`` and ``XNVME_EXTENSION_DIR`` replace the directories in
+    which ``xnvme`` looks up its programs and extensions.
+    ``XNVME_SPDK_IOVA_MODE`` sets the IOVA mode of SPDK when ``xnvme_opts``
+    does not. The documentation of the upcie backend describes
+    ``XNVME_UPCIE_VFIO_MODE``, ``XNVME_UPCIE_VA_BITS`` and
+    ``XNVME_UPCIE_CUDA_DOORBELL_SHARE``
+  - Release builds define ``NDEBUG``
+  - ``xnvme --version`` prints the revision that the program was built from;
+    a source archive records it in ``.vcs_tag``, and the archive of a release
+    records its tag
+  - The source archives carry no git metadata
+
+* Packaging
+
+  - Debian is now Trixie and Forky; Ubuntu is now 24.04, 26.04 and 26.10;
+    Fedora is now 43 and 44; CentOS Stream is now 10; Rocky Linux is now 9.7
+    and 10.1; Oracle Linux 9 is dropped
+  - FreeBSD is now 14 and 15, and macOS is now 14, 15 and 26
+  - xNVMe builds on NixOS as its Nix package
+  - The RHEL-based distributions enable EPEL
+  - The Debian packages are built from the source archive of the release
+
+* Infrastructure
+
+  - The CI jobs that need a guest, a drive or a GPU run when the pull-request
+    has their ``gate:`` label, and ``ci-result`` decides whether a
+    pull-request may merge. The guests run Debian Trixie instead of Debian
+    Bullseye
+  - A pull-request whose last commit is the version bump runs every CI job.
+    When it is merged, ``publish-release`` tags ``main``, creates the GitHub
+    release from that pull-request's run, and deploys its documentation;
+    ``make publish`` uploads to PyPI and crates.io. v0.8.0 is the first release
+    made this way
+
+* Documentation
+
+  - The command line and the API are described as they are now, with man
+    pages for the command groups
+  - The man pages name the version of xNVMe that they describe, and the bump
+    check fails a release whose man pages name another
+  - The documentation is written in reStructuredText and MyST Markdown
+
 v0.7.5
 ------
 
