@@ -76,6 +76,25 @@ def test_a_file_not_bumped(tree):
         release.check("ver: bump to v1.2.3", tree)
 
 
+def man_page(tree, release):
+    page = tree / "man" / "tools" / "xnvme.1"
+    page.parent.mkdir(parents=True, exist_ok=True)
+    page.write_text(f'.\\" Text\n.TH XNVME 1 "23 November 2026" "{release}" "xNVMe"\n')
+
+
+def test_a_man_page_of_another_release(tree):
+    man_page(tree, "xNVMe v1.2.2")
+
+    with pytest.raises(ValueError, match=r"1 man pages do not name xNVMe v1\.2\.3"):
+        release.check("ver: bump to v1.2.3", tree)
+
+
+def test_man_pages_of_the_release(tree):
+    man_page(tree, "xNVMe v1.2.3")
+
+    assert release.check("ver: bump to v1.2.3", tree)[0] == "1.2.3"
+
+
 def test_no_changelog_section(tree):
     bump(tree, "1.2.4")
     with pytest.raises(ValueError, match="no 'v1.2.4' section"):
