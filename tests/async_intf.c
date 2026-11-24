@@ -899,12 +899,12 @@ check_errno_status(struct xnvme_cmd_ctx *ctx)
 		xnvme_bits_get(ctx->cpl.status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SCT);
 	int sc = xnvme_bits_get(ctx->cpl.status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SC);
 
-	if (sct == XNVME_STATUS_CODE_TYPE_VENDOR && sc == ENOSYS) {
+	if (sct == XNVME_SPEC_BASE_STATUS_CODE_TYPE_VENDOR_SPECIFIC && sc == ENOSYS) {
 		return 0;
 	}
 
 	xnvme_cli_pinf("FAILED: sct: 0x%x, sc: 0x%x, expected sct: 0x%x, sc: ENOSYS (0x%x)", sct,
-		       sc, XNVME_STATUS_CODE_TYPE_VENDOR, ENOSYS);
+		       sc, XNVME_SPEC_BASE_STATUS_CODE_TYPE_VENDOR_SPECIFIC, ENOSYS);
 	xnvme_cmd_ctx_pr(ctx, XNVME_PR_DEF);
 
 	return -EIO;
@@ -932,9 +932,9 @@ submit_nosys(struct xnvme_cmd_ctx *ctx, uint32_t nsid, int round)
 	int err;
 
 	if (round == 2) {
-		ctx->cpl.status =
-			xnvme_bits_set(0, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SC,
-				       XNVME_STATUS_CODE_INVALID_FIELD);
+		ctx->cpl.status = xnvme_bits_set(
+			0, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SC,
+			XNVME_SPEC_BASE_GENERIC_COMMAND_STATUS_INVALID_FIELD_IN_COMMAND);
 	}
 
 	err = xnvme_cmd_prep_nvm_write_uncorrectable(&ctx->cmd, &wu);

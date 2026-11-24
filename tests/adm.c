@@ -1067,7 +1067,7 @@ static int
 sub_dsm(struct xnvme_cli *cli)
 {
 	// We can only define one range in CLI
-	struct xnvme_spec_dsm_range *dsm_range;
+	struct xnvme_spec_nvm_range *dsm_range;
 
 	struct xnvme_dev *dev = cli->args.dev;
 	struct xnvme_cmd_ctx ctx = {0};

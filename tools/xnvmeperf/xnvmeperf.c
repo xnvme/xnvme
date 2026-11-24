@@ -201,7 +201,7 @@ refuses_metadata(uint16_t status)
 	uint64_t sct = xnvme_bits_get(status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SCT);
 	uint64_t sc = xnvme_bits_get(status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SC);
 
-	if (sct == XNVME_STATUS_CODE_TYPE_VENDOR) {
+	if (sct == XNVME_SPEC_BASE_STATUS_CODE_TYPE_VENDOR_SPECIFIC) {
 		return sc == ENOTSUP || sc == ENOSYS;
 	}
 

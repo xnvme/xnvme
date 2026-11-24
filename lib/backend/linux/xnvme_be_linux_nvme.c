@@ -151,7 +151,7 @@ xnvme_be_linux_nvme_map_errno(struct xnvme_cmd_ctx *ctx, int err)
 		ctx->cpl.status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SC, err & 0xFF);
 	ctx->cpl.status =
 		xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SCT,
-			       XNVME_STATUS_CODE_TYPE_VENDOR);
+			       XNVME_SPEC_BASE_STATUS_CODE_TYPE_VENDOR_SPECIFIC);
 }
 
 int

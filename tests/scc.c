@@ -129,7 +129,7 @@ _scopy_helper(struct xnvme_cli *cli, uint64_t tlbas)
 	char *dbuf = NULL, *vbuf = NULL;
 	size_t buf_nbytes;
 	uint64_t sdlba;
-	struct xnvme_spec_nvm_scopy_source_range *range = NULL;
+	struct xnvme_spec_nvm_source_range *range = NULL;
 	uint8_t nr;
 	int err;
 
@@ -172,14 +172,14 @@ _scopy_helper(struct xnvme_cli *cli, uint64_t tlbas)
 	}
 
 	// Buffer for source-range
-	range = xnvme_buf_alloc(dev, sizeof(*range));
+	range = xnvme_buf_alloc(dev, tlbas * sizeof(*range));
 	if (!range) {
 		err = -errno;
 		xnvme_cli_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
 
-	err = xnvme_buf_clear(range, sizeof(*range));
+	err = xnvme_buf_clear(range, tlbas * sizeof(*range));
 	if (err) {
 		xnvme_cli_perr("xnvme_buf_clear()", err);
 		goto exit;
@@ -216,11 +216,13 @@ _scopy_helper(struct xnvme_cli *cli, uint64_t tlbas)
 	// range in fancier ways, that is, distributed different over the
 	// device, in variations of entries, in variations of entry-lengths.
 	for (uint64_t ridx = 0; ridx < tlbas; ++ridx) {
-		range->entry[ridx].slba = ridx;
-		range->entry[ridx].nlb = 0;
+		range[ridx].slba = ridx;
+		range[ridx].rpars = xnvme_bits_set(range[ridx].rpars,
+						   XNVME_SPEC_NVM_SOURCE_RANGE_RPARS_NLB, 0);
 	}
 	nr = tlbas - 1;
-	sdlba = range->entry[nr].slba + range->entry[nr].nlb + 1;
+	sdlba = range[nr].slba +
+		xnvme_bits_get(range[nr].rpars, XNVME_SPEC_NVM_SOURCE_RANGE_RPARS_NLB) + 1;
 
 	// Write the dbuf to source LBAs
 	for (uint64_t i = 0; i < tlbas; ++i) {
@@ -231,16 +233,20 @@ _scopy_helper(struct xnvme_cli *cli, uint64_t tlbas)
 
 		struct xnvme_cmd_prep_nvm_write_args wr = {
 			.nsid = nsid,
-			.slba = range->entry[i].slba,
-			.nlb = range->entry[i].nlb,
+			.slba = range[i].slba,
+			.nlb = xnvme_bits_get(range[i].rpars,
+					      XNVME_SPEC_NVM_SOURCE_RANGE_RPARS_NLB),
 		};
 
 		err = xnvme_cmd_prep_nvm_write(&ctx.cmd, &wr);
 		if (!err) {
-			err = xnvme_cmd_pass(&ctx, dbuf + ofz,
-					     (size_t)xnvme_dev_get_geo(ctx.dev)->lba_nbytes *
-						     (range->entry[i].nlb + 1),
-					     NULL, 0);
+			err = xnvme_cmd_pass(
+				&ctx, dbuf + ofz,
+				(size_t)xnvme_dev_get_geo(ctx.dev)->lba_nbytes *
+					(xnvme_bits_get(range[i].rpars,
+							XNVME_SPEC_NVM_SOURCE_RANGE_RPARS_NLB) +
+					 1),
+				NULL, 0);
 		}
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 			xnvme_cli_perr("write", err);
@@ -288,7 +294,7 @@ _scopy_helper(struct xnvme_cli *cli, uint64_t tlbas)
 		.sdlba = sdlba,
 		.nr = nr,
 	};
-	size_t ranges_nbytes = (size_t)(nr + 1) * sizeof(range->entry[0]);
+	size_t ranges_nbytes = (size_t)(nr + 1) * sizeof(range[0]);
 
 	if (cli->args.clear) {
 		struct xnvme_cmd_ctx ctx = {0};
@@ -298,7 +304,7 @@ _scopy_helper(struct xnvme_cli *cli, uint64_t tlbas)
 		xnvme_cli_pinf("Using XNVME_CMD_SYNC mode");
 		err = xnvme_cmd_prep_nvm_copy(&ctx.cmd, &cp);
 		if (!err) {
-			err = xnvme_cmd_pass(&ctx, range->entry, ranges_nbytes, NULL, 0);
+			err = xnvme_cmd_pass(&ctx, range, ranges_nbytes, NULL, 0);
 		}
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 			xnvme_cli_perr("copy", err);
@@ -323,7 +329,7 @@ _scopy_helper(struct xnvme_cli *cli, uint64_t tlbas)
 
 		err = xnvme_cmd_prep_nvm_copy(&ctx->cmd, &cp);
 		if (!err) {
-			err = xnvme_cmd_pass(ctx, range->entry, ranges_nbytes, NULL, 0);
+			err = xnvme_cmd_pass(ctx, range, ranges_nbytes, NULL, 0);
 		}
 		if (err) {
 			xnvme_cli_perr("copy", err);

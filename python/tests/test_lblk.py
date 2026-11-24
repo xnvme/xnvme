@@ -192,7 +192,8 @@ class TestLBLK:
     #  */
     @pytest.mark.skipif(True, reason="Unfinished")
     def test_scopy(self, boilerplate):
-        # struct xnvme_spec_nvm_scopy_source_range *sranges = NULL # For the copy-payload
+        # The copy-payload, entries of struct
+        # xnvme_spec_nvm_source_range
         sranges = []
 
         (
@@ -218,7 +219,7 @@ class TestLBLK:
             xfer_naddr = min(min(nvm.msrc + 1, xfer_naddr), nvm.mcl)
         buf_nbytes = xfer_naddr * geo.nbytes
 
-        # sranges = xnvme_buf_alloc(dev, xnvme_spec_nvm_scopy_source_range().sizeof)
+        # sranges = xnvme_buf_alloc(dev, (nr + 1) * sizeof(*sranges))
         # memset(sranges, 0, sizeof(*sranges))
 
         # Copy to the end of [slba,elba]

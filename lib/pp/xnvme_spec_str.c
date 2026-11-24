@@ -207,14 +207,14 @@ xnvme_spec_znd_log_lid_str(int eval)
 }
 
 const char *
-xnvme_spec_nvm_cmd_cpl_sc_str(enum xnvme_spec_nvm_cmd_cpl_sc eval)
+xnvme_spec_nvm_cmd_cpl_sc_str(int eval)
 {
 	switch (eval) {
-	case XNVME_SPEC_NVM_CMD_CPL_SC_BAD_ATTRIBUTES:
+	case XNVME_SPEC_NVM_COMMAND_SPECIFIC_STATUS_CONFLICTING_ATTRIBUTES:
 		return "NVM_CMD_CPL_SC_BAD_ATTRIBUTES";
-	case XNVME_SPEC_NVM_CMD_CPL_SC_INVALID_PI:
+	case XNVME_SPEC_NVM_COMMAND_SPECIFIC_STATUS_INVALID_PROTECTION_INFORMATION:
 		return "NVM_CMD_CPL_SC_INVALID_PI";
-	case XNVME_SPEC_NVM_CMD_CPL_SC_WRITE_TO_RONLY:
+	case XNVME_SPEC_NVM_COMMAND_SPECIFIC_STATUS_ATTEMPTED_WRITE_TO_READ_ONLY_RANGE:
 		return "NVM_CMD_CPL_SC_WRITE_TO_RONLY";
 	}
 
@@ -255,14 +255,14 @@ xnvme_spec_nvm_opc_str(int eval)
 }
 
 const char *
-xnvme_spec_psdt_str(enum xnvme_spec_psdt eval)
+xnvme_spec_psdt_str(enum xnvme_spec_base_psdt eval)
 {
 	switch (eval) {
-	case XNVME_SPEC_PSDT_PRP:
+	case XNVME_SPEC_BASE_PSDT_PRPS_USED:
 		return "PSDT_PRP";
-	case XNVME_SPEC_PSDT_SGL_MPTR_CONTIGUOUS:
+	case XNVME_SPEC_BASE_PSDT_SGLS_USED_MPTR_ADDRESS:
 		return "PSDT_SGL_MPTR_CONTIGUOUS";
-	case XNVME_SPEC_PSDT_SGL_MPTR_SGL:
+	case XNVME_SPEC_BASE_PSDT_SGLS_USED_MPTR_SGL_SEGMENT:
 		return "PSDT_SGL_MPTR_SGL";
 	}
 
@@ -270,12 +270,12 @@ xnvme_spec_psdt_str(enum xnvme_spec_psdt eval)
 }
 
 const char *
-xnvme_spec_sgl_descriptor_subtype_str(enum xnvme_spec_sgl_descriptor_subtype eval)
+xnvme_spec_sgl_descriptor_subtype_str(enum xnvme_spec_base_sgldst eval)
 {
 	switch (eval) {
-	case XNVME_SPEC_SGL_DESCR_SUBTYPE_ADDRESS:
+	case XNVME_SPEC_BASE_SGLDST_ADDRESS:
 		return "SGL_DESCR_SUBTYPE_ADDRESS";
-	case XNVME_SPEC_SGL_DESCR_SUBTYPE_OFFSET:
+	case XNVME_SPEC_BASE_SGLDST_OFFSET:
 		return "SGL_DESCR_SUBTYPE_OFFSET";
 	}
 
@@ -370,8 +370,6 @@ xnvme_spec_znd_status_code_str(int eval)
 		return "XNVME_SPEC_ZND_SC_NOZRWA";
 	case XNVME_SPEC_ZNS_COMMAND_SPECIFIC_STATUS_ZONE_BOUNDARY_ERROR:
 		return "ZND_SC_BOUNDARY_ERROR";
-	case XNVME_SPEC_ZND_SC_INVALID_FORMAT:
-		return "ZND_SC_INVALID_FORMAT";
 	case XNVME_SPEC_ZNS_COMMAND_SPECIFIC_STATUS_INVALID_ZONE_STATE_TRANSITION:
 		return "ZND_SC_INVALID_TRANS";
 	case XNVME_SPEC_ZNS_COMMAND_SPECIFIC_STATUS_ZONE_INVALID_WRITE:

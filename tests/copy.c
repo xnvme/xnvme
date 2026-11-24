@@ -28,7 +28,7 @@ test_copy(struct xnvme_cli *cli)
 	struct xnvme_cmd_ctx ctx = {0};
 
 	char *wbuf = NULL, *rbuf = NULL;
-	struct xnvme_spec_nvm_scopy_fmt_zero *source_range = NULL;
+	struct xnvme_spec_nvm_source_range *source_range = NULL;
 	uint64_t nlb, nbytes, sdlba, slba;
 	size_t diff = 0;
 	int err;
@@ -116,7 +116,8 @@ test_copy(struct xnvme_cli *cli)
 		goto exit;
 	}
 	source_range->slba = slba;
-	source_range->nlb = nlb - 1;
+	source_range->rpars = xnvme_bits_set(source_range->rpars,
+					     XNVME_SPEC_NVM_SOURCE_RANGE_RPARS_NLB, nlb - 1);
 
 	// Write data to the buffer
 	nsid = xnvme_dev_get_nsid(dev);

@@ -461,11 +461,12 @@ int
 xnvme_spec_drecv_sar_pr(uint32_t dw0, int opts);
 
 int
-xnvme_spec_nvm_scopy_fmt_zero_fpr(FILE *stream, const struct xnvme_spec_nvm_scopy_fmt_zero *entry,
+xnvme_spec_nvm_scopy_fmt_zero_fpr(FILE *stream, const struct xnvme_spec_nvm_source_range *entry,
 				  int opts);
 
 /**
- * Prints the given ::xnvme_spec_nvm_scopy_fmt_zero to stdout
+ * Prints the given ::xnvme_spec_nvm_source_range
+ * to stdout
  *
  * @param entry pointer to structure to print
  * @param opts printer options, see ::xnvme_pr
@@ -473,36 +474,35 @@ xnvme_spec_nvm_scopy_fmt_zero_fpr(FILE *stream, const struct xnvme_spec_nvm_scop
  * @return On success, the number of characters printed is returned
  */
 int
-xnvme_spec_nvm_scopy_fmt_zero_pr(const struct xnvme_spec_nvm_scopy_fmt_zero *entry, int opts);
+xnvme_spec_nvm_scopy_fmt_zero_pr(const struct xnvme_spec_nvm_source_range *entry, int opts);
 
 /**
- * Prints the given ::xnvme_spec_nvm_scopy_source_range to the given output stream
+ * Prints the given Source Range entries of Copy to the given output stream
  *
  * @param stream output stream used for printing
- * @param srange pointer to structure to print
- * @param nr zero-based number of entries, at most ::XNVME_SPEC_NVM_SCOPY_NENTRY_MAX -1
+ * @param srange pointer to the first of the entries to print
+ * @param nr zero-based number of entries, as the NR field of Copy
  * @param opts printer options, see ::xnvme_pr
  *
  * @return On success, the number of characters printed is returned
  */
 int
 xnvme_spec_nvm_scopy_source_range_fpr(FILE *stream,
-				      const struct xnvme_spec_nvm_scopy_source_range *srange,
-				      uint8_t nr, int opts);
+				      const struct xnvme_spec_nvm_source_range *srange, uint8_t nr,
+				      int opts);
 
 /**
- * Prints the given ::xnvme_spec_nvm_scopy_source_range to stdout
+ * Prints the given Source Range entries of Copy to stdout
  *
- * @param srange pointer to structure to print
- * @param nr nr=0: print ::XNVME_SPEC_NVM_SCOPY_NENTRY_MAX entries from the given , nr>0:
- * print no more than nr
+ * @param srange pointer to the first of the entries to print
+ * @param nr zero-based number of entries, as the NR field of Copy
  * @param opts printer options, see ::xnvme_pr
  *
  * @return On success, the number of characters printed is returned
  */
 int
-xnvme_spec_nvm_scopy_source_range_pr(const struct xnvme_spec_nvm_scopy_source_range *srange,
-				     uint8_t nr, int opts);
+xnvme_spec_nvm_scopy_source_range_pr(const struct xnvme_spec_nvm_source_range *srange, uint8_t nr,
+				     int opts);
 
 /**
  * Prints the given ::xnvme_spec_nvm_io_command_set_specific_identify_controller to the given
@@ -816,14 +816,14 @@ const char *
 xnvme_spec_znd_log_lid_str(int eval);
 
 /**
- * Produces a string representation of the given ::xnvme_spec_nvm_cmd_cpl_sc
+ * Produces a string representation of the given ::xnvme_spec_nvm_command_specific_status
  *
  * @param eval the enum value to produce a string representation of
  * @return On success, a string representation is returned. On error, the string
  * "ENOSYS" is returned.
  */
 const char *
-xnvme_spec_nvm_cmd_cpl_sc_str(enum xnvme_spec_nvm_cmd_cpl_sc eval);
+xnvme_spec_nvm_cmd_cpl_sc_str(int eval);
 
 /**
  * Produces a string representation of the given opcode, one of ::xnvme_spec_nvm_opcode,
@@ -837,24 +837,25 @@ const char *
 xnvme_spec_nvm_opc_str(int eval);
 
 /**
- * Produces a string representation of the given ::xnvme_spec_psdt
+ * Produces a string representation of the given ::xnvme_spec_base_psdt
  *
  * @param eval the enum value to produce a string representation of
  * @return On success, a string representation is returned. On error, the string
  * "ENOSYS" is returned.
  */
 const char *
-xnvme_spec_psdt_str(enum xnvme_spec_psdt eval);
+xnvme_spec_psdt_str(enum xnvme_spec_base_psdt eval);
 
 /**
- * Produces a string representation of the given ::xnvme_spec_sgl_descriptor_subtype
+ * Produces a string representation of the given
+ * ::xnvme_spec_base_sgldst
  *
  * @param eval the enum value to produce a string representation of
  * @return On success, a string representation is returned. On error, the string
  * "ENOSYS" is returned.
  */
 const char *
-xnvme_spec_sgl_descriptor_subtype_str(enum xnvme_spec_sgl_descriptor_subtype eval);
+xnvme_spec_sgl_descriptor_subtype_str(enum xnvme_spec_base_sgldst eval);
 
 /**
  * Produces a string representation of the given ::xnvme_spec_zns_zra

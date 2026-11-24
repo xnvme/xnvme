@@ -75,7 +75,7 @@ exit:
 			ctx->cpl.status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SC, sc);
 		ctx->cpl.status = xnvme_bits_set(ctx->cpl.status,
 						 XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SCT,
-						 XNVME_STATUS_CODE_TYPE_VENDOR);
+						 XNVME_SPEC_BASE_STATUS_CODE_TYPE_VENDOR_SPECIFIC);
 		return -sc;
 	}
 
@@ -141,7 +141,7 @@ exit:
 			ctx->cpl.status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SC, sc);
 		ctx->cpl.status = xnvme_bits_set(ctx->cpl.status,
 						 XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SCT,
-						 XNVME_STATUS_CODE_TYPE_VENDOR);
+						 XNVME_SPEC_BASE_STATUS_CODE_TYPE_VENDOR_SPECIFIC);
 		return -sc;
 	}
 

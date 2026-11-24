@@ -112,7 +112,7 @@ xnvme_be_windows_sync_fs_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t db
 			ctx->cpl.status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SC, err);
 		ctx->cpl.status = xnvme_bits_set(ctx->cpl.status,
 						 XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SCT,
-						 XNVME_STATUS_CODE_TYPE_VENDOR);
+						 XNVME_SPEC_BASE_STATUS_CODE_TYPE_VENDOR_SPECIFIC);
 	}
 
 	return err;

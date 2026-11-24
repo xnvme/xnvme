@@ -38,7 +38,7 @@ cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf, si
 				errno);
 			ctx->cpl.status = xnvme_bits_set(
 				ctx->cpl.status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SCT,
-				XNVME_STATUS_CODE_TYPE_VENDOR);
+				XNVME_SPEC_BASE_STATUS_CODE_TYPE_VENDOR_SPECIFIC);
 			return -errno;
 		}
 
@@ -52,7 +52,7 @@ cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf, si
 				errno);
 			ctx->cpl.status = xnvme_bits_set(
 				ctx->cpl.status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SCT,
-				XNVME_STATUS_CODE_TYPE_VENDOR);
+				XNVME_SPEC_BASE_STATUS_CODE_TYPE_VENDOR_SPECIFIC);
 			return -errno;
 		}
 		return 0;
@@ -81,7 +81,7 @@ cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt, size_t d
 				errno);
 			ctx->cpl.status = xnvme_bits_set(
 				ctx->cpl.status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SCT,
-				XNVME_STATUS_CODE_TYPE_VENDOR);
+				XNVME_SPEC_BASE_STATUS_CODE_TYPE_VENDOR_SPECIFIC);
 			return -errno;
 		}
 
@@ -95,7 +95,7 @@ cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt, size_t d
 				errno);
 			ctx->cpl.status = xnvme_bits_set(
 				ctx->cpl.status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SCT,
-				XNVME_STATUS_CODE_TYPE_VENDOR);
+				XNVME_SPEC_BASE_STATUS_CODE_TYPE_VENDOR_SPECIFIC);
 			return -errno;
 		}
 		return 0;
