@@ -122,7 +122,11 @@ if is_linux
 else
   upcie_dep = dependency('', required: false)
 endif
-be_upcie = is_linux and get_option('with-upcie').allowed()
+upcie_opt = get_option('with-upcie').require(
+  not is_linux or ['x86', 'x86_64', 'aarch64'].contains(host_machine.cpu_family()),
+  error_message: 'uPCIe has memory barriers only for x86 and aarch64',
+)
+be_upcie = is_linux and upcie_opt.allowed()
 conf_data.set('XNVME_BE_UPCIE_ENABLED', be_upcie)
 if be_upcie
   # uPCIe headers (dmabuf.h: memfd_create + file sealing) need _GNU_SOURCE
