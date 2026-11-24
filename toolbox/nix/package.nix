@@ -21,8 +21,8 @@ let
   upcie = fetchFromGitHub {
     owner = "safl";
     repo = "upcie";
-    tag = "v0.12.0";
-    hash = "sha256-0uZaPZ1sTWBMbdnAfQEKh0WNlDjECNxQWgmOO5/E5nM=";
+    tag = "v0.12.1";
+    hash = "sha256-+dw9HPXa6YVoM1C4YIbbH55Ec7wtn9+huiwEoLaXgxU=";
   };
 
   # Header-only; the CUSE devices of homi and qublk take it as a meson

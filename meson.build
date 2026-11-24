@@ -116,7 +116,7 @@ conf_data.set('XNVME_BE_RAMDISK_ENABLED', get_option('with-ramdisk').allowed())
 if is_linux
   upcie_dep = subproject(
     'upcie',
-    version: '>=0.12.0',
+    version: '>=0.12.1',
     default_options: ['skip-install=true'],
   ).get_variable('upcie_dep')
 else
