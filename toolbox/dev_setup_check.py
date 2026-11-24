@@ -56,7 +56,7 @@ def main():
         print("qemu-system-x86_64: MISSING")
         errors.append(
             "qemu-system-x86_64 not found. Need upstream QEMU >= %d.%d.\n"
-            "  Run inside the xnvme-devenv host container: make devenv-up, or\n"
+            "  Run inside the systems-devenv host container: make devenv-up, or\n"
             "  make docker for a shell in it" % MIN_QEMU_VERSION
         )
     else:
@@ -97,7 +97,7 @@ def main():
         print(f"vfu_kvssd: {kvssd} ({version})")
     else:
         print("vfu_kvssd: missing (the guests' NVMe KV device will not attach)")
-        print("  fix: run in the xnvme-devenv host container (make docker), or")
+        print("  fix: run in the systems-devenv host container (make docker), or")
         print("  install the deb from https://github.com/safl/vfio-user-kvssd/releases")
 
     if errors:

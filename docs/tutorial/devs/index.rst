@@ -3,7 +3,7 @@
 Development Environment
 =======================
 
-**xNVMe** is developed and tested in `xnvme-devenv`_'s host container: a
+**xNVMe** is developed and tested in `systems-devenv`_'s host container: a
 container with **QEMU**, **CIJOE**, the vfio-user device servers and the rigs,
 the PCIe topologies a guest boots with. The guest runs **xNVMe**, built from
 your tree, against emulated NVMe devices. The **CI** runs its emulated jobs in
@@ -23,7 +23,7 @@ Guests
 The guest to pick depends on what you work on. Debian 13 is kept
 upstream-pure, a stock kernel with in-tree drivers only, so plain NVMe work
 runs on a kernel users run, without bleeding-edge surprises.
-The xnvme-devenv Ubuntu 26.10 guest carries what upstream does not have yet:
+The systems-devenv Ubuntu 26.10 guest carries what upstream does not have yet:
 a patched kernel, safl/linux 7.3.0-xnvme2, and drivers built for it, matched
 to the device servers in the host container of the same release.
 
@@ -121,8 +121,8 @@ against it::
 
 The container's home is ``DEVENV_HOME`` (default ``.devenv`` in this tree),
 which keeps **CIJOE** and the guest across ``devenv-down``. The staged guest
-images are in ``DEVENV_CACHE`` (default ``~/.cache/xnvme-devenv``), which every
-checkout's environment shares, so point it at a disk that has the room.
+images are in ``DEVENV_CACHE`` (default ``~/.cache/systems-devenv``), which
+every checkout's environment shares, so point it at a disk that has the room.
 ``DEVENV_ENGINE=podman`` runs it with Podman instead of Docker, and
 ``DEVENV_IMAGE`` picks another host container, by default the one the **CI**
 jobs use. Each checkout gets an environment of its own, named for its
@@ -157,4 +157,4 @@ does with its macOS machine::
 installs **xNVMe** on the machine; it boots nothing, so it needs neither the
 host container nor a rig.
 
-.. _xnvme-devenv: https://github.com/xnvme/xnvme-devenv
+.. _systems-devenv: https://github.com/refenv/systems-devenv

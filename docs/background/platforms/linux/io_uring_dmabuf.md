@@ -68,8 +68,8 @@ not yet in a released kernel:
 The backend is built with `liburing` and CUDA or HIP. No `liburing` release
 has the UAPI of the series yet, so xNVMe defines the part it uses itself. On a
 kernel without the series, opening the device fails with `-ENOTSUP`. The
-[xnvme-devenv](https://github.com/xnvme/xnvme-devenv) guest runs a kernel with
-the series, and the CI runs the backend there, on an emulated AMD GPU.
+[systems-devenv](https://github.com/refenv/systems-devenv) guest runs a kernel
+with the series, and the CI runs the backend there, on an emulated AMD GPU.
 
 (sec-platforms-linux-async-io_uring_dmabuf-iommu)=
 

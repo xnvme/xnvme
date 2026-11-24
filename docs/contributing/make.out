@@ -25,14 +25,14 @@ deb-dist                         ; Build the Debian packages from the source arc
 default                          ; Invoke: 'make help'
 devenv-docgen                    ; Generate the documentation in the running guest, from the source it has;
 devenv-down                      ; Stop the guest and remove the host container; DEVENV_HOME is kept
-devenv-host                      ; Start the xnvme-devenv host container, unless running, without a guest
+devenv-host                      ; Start the systems-devenv host container, unless running, without a guest
 devenv-provision                 ; Build this tree's source archive and provision it into the running guest
 devenv-run                       ; Run CMD in the host container, starting it unless running; no guest is
 devenv-shell                     ; Open a shell in the host container
 devenv-ssh                       ; SSH into the guest as root, on the port the host container publishes it on
 devenv-sync                      ; Update the provisioned guest's source with this tree and rebuild only what
 devenv-test                      ; Run tests in the running guest: those TESTS selects, or the guest's test task
-devenv-up                        ; Start the xnvme-devenv host container, unless running, the guest in it, and
+devenv-up                        ; Start the systems-devenv host container, unless running, the guest in it, and
 docgen-deps                      ; Install xNVMe's documentation tooling where cijoe runs; doxygen, graphviz and
 docgen-guest                     ; Start and provision a QEMU guest, then generate the documentation in it
 docker                           ; Drop into a privileged docker instance with the repository bind-mounted at /tmp/xnvme

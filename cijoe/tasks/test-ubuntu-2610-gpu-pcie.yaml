@@ -14,7 +14,7 @@ steps:
   uses: core.facts_gather
 
 - name: gpu_plug
-  uses: xnvme_devenv.rig_device_plug
+  uses: systems_devenv.rig_device_plug
   with:
     device_name: gpu0
 
