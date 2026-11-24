@@ -99,9 +99,6 @@ frontend_tests = [
   ['driver, a controller and no backend', ['driver', '0000:ff:1f.7'], true],
   ['driver, no such backend', ['driver', '--be', 'nosuch', '--all'], true],
   ['driver, a backend of no controller', ['driver', '--be', 'ramdisk', '--all'], true],
-  ['driver, userspace, nothing named', ['driver', '--be', 'upcie'], true],
-  ['driver, userspace, not a controller', ['driver', '--be', 'upcie', '0000:ff:1f.7'], true],
-  ['driver, userspace --all, dry-run', ['driver', '--be', 'upcie', '--all', '--dry-run'], false],
   ['driver, kernel, not a controller', ['driver', '--be', 'posix', 'ff:1f.7'], true],
   ['driver, kernel --all, dry-run', ['driver', '--be', 'posix', '--all', '--dry-run'], false],
   ['group cmd', ['cmd'], false],
@@ -122,6 +119,13 @@ frontend_tests = [
   ['exec-path', ['--exec-path'], false],
   ['no such command', ['nosuch'], true],
 ]
+if be_upcie
+  frontend_tests += [
+    ['driver, userspace, nothing named', ['driver', '--be', 'upcie'], true],
+    ['driver, userspace, not a controller', ['driver', '--be', 'upcie', '0000:ff:1f.7'], true],
+    ['driver, userspace --all, dry-run', ['driver', '--be', 'upcie', '--all', '--dry-run'], false],
+  ]
+endif
 if thread_dep.found()
   frontend_tests += [
     ['--help on a program', ['perf', '--help'], false],
