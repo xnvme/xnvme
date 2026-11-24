@@ -103,6 +103,16 @@ xnvme_be_rdma_dev_close(struct xnvme_dev *dev)
 
 	TRANSPORT_DEBUG("INFO: dev_close() for NVMe-oF device: %s", dev->ident.uri);
 
+	if (dev->ident.dtype == XNVME_DEV_TYPE_NVME_NAMESPACE) {
+		if (state->sync_qpair) {
+			err = xnvme_transport_qpair_destroy(state->sync_qpair, state->ns);
+			if (err) {
+				XNVME_DEBUG("FAILED: destroying the sync qpair, err: %d", err);
+			}
+			state->sync_qpair = NULL;
+		}
+	}
+
 	// The admin qpairs are shared and owned by the controller, subsystem or namespace
 	if (state->ns || state->subsys) {
 		_rdma_dev_release_references(dev);
@@ -254,6 +264,36 @@ _rdma_dev_bind_to_namespace(struct xnvme_dev *dev, const char *subnqn, uint32_t 
 	return 0;
 }
 
+static inline int
+_rdma_dev_create_sync_queue(struct xnvme_dev *dev)
+{
+	struct xnvme_be_rdma_state *state = TO_TRANSPORT_DEV_STATE(dev);
+	struct xnvme_transport_qpair *qpair;
+	int err;
+
+	err = xnvme_transport_qpair_create_io(state->ns, dev, 8, &qpair);
+	if (err) {
+		TRANSPORT_ERROR("FAILED: xnvme_transport_qpair_create_io(), err: %d", err);
+		return err;
+	}
+	state->sync_qpair = qpair;
+
+	err = xnvme_transport_qpair_connect(qpair);
+	if (err) {
+		TRANSPORT_ERROR("FAILED: xnvme_transport_qpair_connect(), err: %d", err);
+		return err;
+	}
+
+	return 0;
+}
+
+static inline void
+_rdma_dev_disable_io(struct xnvme_dev *dev)
+{
+	dev->be.async = (struct xnvme_be_async)XNVME_BE_NOSYS_QUEUE;
+	dev->be.sync = (struct xnvme_be_sync)XNVME_BE_NOSYS_SYNC;
+}
+
 /*
  * Open an NVMe-oF device
  *
@@ -301,6 +341,17 @@ xnvme_be_rdma_dev_open(struct xnvme_dev *dev)
 	if (err) {
 		TRANSPORT_ERROR("FAILED: xnvme_be_rdma_mem_init(), err: %d", err);
 		goto close_device;
+	}
+
+	// Only namespaces have I/O queues
+	if (dev->ident.dtype == XNVME_DEV_TYPE_NVME_NAMESPACE) {
+		err = _rdma_dev_create_sync_queue(dev);
+		if (err) {
+			TRANSPORT_ERROR("FAILED: _rdma_dev_create_sync_queue(), err: %d", err);
+			goto close_device;
+		}
+	} else {
+		_rdma_dev_disable_io(dev);
 	}
 
 	_rdma_dev_dump(dev);
