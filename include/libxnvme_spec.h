@@ -116,6 +116,7 @@ enum xnvme_spec_media_status_code {
  */
 enum xnvme_spec_path_status_code {
 	XNVME_SPEC_PATH_SC_HOST_PATH_ERROR = 0x70, ///< Host Pathing Error
+	XNVME_SPEC_PATH_SC_COMMAND_ABORTED = 0x71, ///< Command Aborted By Host
 };
 
 /**
