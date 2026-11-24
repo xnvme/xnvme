@@ -2,13 +2,16 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
+#include <ctype.h>
 #include <endian.h>
 #include <errno.h>
 #include <inttypes.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/random.h>
 #include <time.h>
 
 #include <xnvme_transport_base.h>
@@ -34,6 +37,25 @@
 
 #define RETRY_CLAMP(val, max) ((val) > (max) ? (max) : (val))
 
+#define TRANSPORT_FABRIC_HOSTNQN_UUID_BASE "nqn.2014-08.org.nvmexpress:uuid:"
+
+// Used only when the kernel cannot provide random bytes for the per-process host identity
+#define TRANSPORT_FABRIC_FALLBACK_HOSTNQN \
+	TRANSPORT_FABRIC_HOSTNQN_UUID_BASE "4f6b0c94-cafe-4ab6-a011-fef3f2678ffd"
+
+#define TRANSPORT_FABRIC_UUID_STR_LEN 36
+#define TRANSPORT_FABRIC_HOSTNQN_UUID_PREFIX ":uuid:"
+
+/*
+ * Per-process default host identity, as in SPDK: a random UUID generated once, used as HOSTID
+ * and embedded in the default host NQN, so every Connect from this process carries the same
+ * identity.
+ */
+static pthread_once_t g_transport_fabric_host_once = PTHREAD_ONCE_INIT;
+static uint8_t g_transport_fabric_hostid[16];
+static char g_transport_fabric_hostnqn[sizeof(TRANSPORT_FABRIC_HOSTNQN_UUID_BASE) +
+				       TRANSPORT_FABRIC_UUID_STR_LEN];
+
 static inline void
 _transport_fabric_set_empty_sgl(struct xnvme_spec_sgl_descriptor *sgl)
 {
@@ -41,6 +63,96 @@ _transport_fabric_set_empty_sgl(struct xnvme_spec_sgl_descriptor *sgl)
 	sgl->generic.type = XNVME_SPEC_SGL_DESCR_TYPE_KEYED_DATA_BLOCK;
 	sgl->generic.subtype = XNVME_SPEC_SGL_DESCR_SUBTYPE_ADDRESS;
 	sgl->unkeyed.len = 0;
+}
+
+/**
+ * Parses the canonical text form of a UUID, "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx", into its 16
+ * bytes in RFC 4122 (big-endian) order, the order used for HOSTID. @str may continue after the
+ * UUID, so it can point into a larger string.
+ */
+static int
+_transport_fabric_uuid_parse(const char *str, uint8_t uuid[16])
+{
+	// sscanf() also accepts a sign or whitespace in a %x field, so check the format first
+	for (int i = 0; i < TRANSPORT_FABRIC_UUID_STR_LEN; ++i) {
+		bool dash = (i == 8 || i == 13 || i == 18 || i == 23);
+
+		if (dash ? str[i] != '-' : !isxdigit((unsigned char)str[i])) {
+			return -EINVAL;
+		}
+	}
+
+	return sscanf(str,
+		      "%2hhx%2hhx%2hhx%2hhx-%2hhx%2hhx-%2hhx%2hhx-%2hhx%2hhx-"
+		      "%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx",
+		      &uuid[0], &uuid[1], &uuid[2], &uuid[3], &uuid[4], &uuid[5], &uuid[6],
+		      &uuid[7], &uuid[8], &uuid[9], &uuid[10], &uuid[11], &uuid[12], &uuid[13],
+		      &uuid[14], &uuid[15]) == 16
+		       ? 0
+		       : -EINVAL;
+}
+
+/**
+ * Derives HOSTID from a host NQN of the form "nqn.2014-08.org.nvmexpress:uuid:<UUID>", the same
+ * convention as nvme-cli, where the host identifier is the UUID of the host NQN.
+ */
+static int
+_transport_fabric_hostid_from_hostnqn(const char *hostnqn, uint8_t hostid[16])
+{
+	const char *uuid = strstr(hostnqn, TRANSPORT_FABRIC_HOSTNQN_UUID_PREFIX);
+
+	if (!uuid) {
+		return -EINVAL;
+	}
+	uuid += strlen(TRANSPORT_FABRIC_HOSTNQN_UUID_PREFIX);
+
+	if (strlen(uuid) != TRANSPORT_FABRIC_UUID_STR_LEN) {
+		return -EINVAL;
+	}
+
+	return _transport_fabric_uuid_parse(uuid, hostid);
+}
+
+// Generates a random (version 4, RFC 4122 variant) UUID
+static int
+_transport_fabric_uuid_generate(uint8_t uuid[16])
+{
+	ssize_t nbytes;
+
+	do {
+		nbytes = getrandom(uuid, 16, 0);
+	} while (nbytes < 0 && errno == EINTR);
+
+	if (nbytes != 16) {
+		return nbytes < 0 ? -errno : -EIO;
+	}
+
+	uuid[6] = (uuid[6] & 0x0f) | 0x40;
+	uuid[8] = (uuid[8] & 0x3f) | 0x80;
+
+	return 0;
+}
+
+static void
+_transport_fabric_host_init(void)
+{
+	const uint8_t *id = g_transport_fabric_hostid;
+
+	if (_transport_fabric_uuid_generate(g_transport_fabric_hostid)) {
+		TRANSPORT_WARN("WARN: cannot generate a host UUID, using a fixed host identity");
+		snprintf(g_transport_fabric_hostnqn, sizeof(g_transport_fabric_hostnqn), "%s",
+			 TRANSPORT_FABRIC_FALLBACK_HOSTNQN);
+		_transport_fabric_hostid_from_hostnqn(g_transport_fabric_hostnqn,
+						      g_transport_fabric_hostid);
+		return;
+	}
+
+	snprintf(g_transport_fabric_hostnqn, sizeof(g_transport_fabric_hostnqn),
+		 "%s%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
+		 TRANSPORT_FABRIC_HOSTNQN_UUID_BASE, id[0], id[1], id[2], id[3], id[4], id[5],
+		 id[6], id[7], id[8], id[9], id[10], id[11], id[12], id[13], id[14], id[15]);
+
+	TRANSPORT_DEBUG("INFO: default hostnqn: %s", g_transport_fabric_hostnqn);
 }
 
 static inline void
@@ -195,6 +307,7 @@ static inline void
 _transport_fabric_connect_data_init(struct xnvme_transport_qpair *qpair, void *buf)
 {
 	struct xnvme_spec_transports_connect_data *data = buf;
+	const char *hostnqn;
 
 	memset(data, 0, sizeof(*data));
 
@@ -207,9 +320,16 @@ _transport_fabric_connect_data_init(struct xnvme_transport_qpair *qpair, void *b
 			 qpair->dev->ident.subnqn);
 	}
 
-	if (qpair->dev->opts.hostnqn) {
-		snprintf((char *)data->hostnqn, sizeof(data->hostnqn), "%s",
-			 qpair->dev->opts.hostnqn);
+	pthread_once(&g_transport_fabric_host_once, _transport_fabric_host_init);
+
+	// Without a user host NQN, use the per-process identity
+	hostnqn = qpair->dev->opts.hostnqn ? qpair->dev->opts.hostnqn : g_transport_fabric_hostnqn;
+	snprintf((char *)data->hostnqn, sizeof(data->hostnqn), "%s", hostnqn);
+
+	// A user host NQN carrying a UUID supplies HOSTID, as with nvme-cli; otherwise, as in
+	// SPDK, the per-process HOSTID is used
+	if (_transport_fabric_hostid_from_hostnqn(hostnqn, data->hostid)) {
+		memcpy(data->hostid, g_transport_fabric_hostid, sizeof(data->hostid));
 	}
 
 	TRANSPORT_DEBUG("INFO: Fabric connect data initialized with subnqn: %s, hostnqn: %s, "
