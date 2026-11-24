@@ -13,7 +13,34 @@ A brief overview of **xNVMe** related presentations
 
       <div class="col-lg-4">
         <div class="card" style="width: 18rem;">
-          <a href="https://www.snia.org/sites/default/files/2026-04/SNIA-SDCAI26-Lund-AiSIO-Orchestrating-Storage-IO-r14.pdf">
+          <a href="https://www.snia.org/sniadeveloper/session/19744">
+            <img src="/_static/sdc23.png" class="card-img-top" alt="AiSIO Orchestrating Storage I/O Across CPUs and Accelerators">
+          </a>
+          <div class="card-body">
+            <h5 class="card-title">AiSIO<br>Orchestrating Storage I/O<br>Across CPUs and Accelerators</h5>
+            <h6 class="card-subtitle mb-2 text-muted">
+              Presentation given at the SNIA Developer Conference 2026 (SDC '26).
+            </h6>
+            <p class="card-text"></p>
+          </div>
+          <ul class="list-group list-group-flush">
+            <li class="list-group-item">
+            <a href="/_static/sdc26.pdf">
+              <i class="fas fa-file-pdf"></i> Presentation slides
+            </a>
+            </li>
+            <li class="list-group-item">
+              <a href="https://www.youtube.com/watch?v=Vg_wcUciK3A">
+               <i class="fas fa-play-circle"></i> Presentation video
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="col-lg-4">
+        <div class="card" style="width: 18rem;">
+          <a href="https://www.snia.org/sniadeveloper/session/19565">
             <img src="/_static/sdcai26.webp" class="card-img-top" alt="AiSIO Orchestrating Storage I/O Across CPUs and Accelerators">
           </a>
           <div class="card-body">
@@ -29,6 +56,11 @@ A brief overview of **xNVMe** related presentations
             <a href="https://www.snia.org/sites/default/files/2026-04/SNIA-SDCAI26-Lund-AiSIO-Orchestrating-Storage-IO-r14.pdf">
               <i class="fas fa-file-pdf"></i> Presentation slides
             </a>
+            </li>
+            <li class="list-group-item">
+              <a href="https://www.youtube.com/watch?v=AJe22Nah5KA">
+               <i class="fas fa-play-circle"></i> Presentation video
+              </a>
             </li>
           </ul>
         </div>
