@@ -18,6 +18,53 @@ Known Issues
 
 See the file named ``ISSUES.rst`` in the root of the repository.
 
+v0.8.1
+------
+
+v0.8.1 updates uPCIe to v0.12.1 for the GPU backends, makes ``xnvme qublk``
+complete a failed command with the errno that the kernel NVMe driver gives the
+same status, and fixes the build of the FreeBSD driver binding on FreeBSD 15.
+
+* API extensions
+
+  - ``enum xnvme_spec_status_code`` names the generic status codes Invalid
+    Namespace or Format, Command Interrupted, LBA Out of Range, Capacity
+    Exceeded, Namespace Not Ready and Reservation Conflict
+  - ``enum xnvme_spec_media_status_code`` names the Media and Data Integrity
+    Errors status codes from Write Fault to Deallocated or Unwritten Logical
+    Block, and ``enum xnvme_spec_path_status_code`` the Host Pathing Error
+  - ``enum xnvme_spec_nvm_cmd_cpl_sc`` names Conflicting Attributes and
+    Invalid Protection Information
+
+* Backends
+
+  - uPCIe v0.12.1: ``dmamem_from_cuda_iommufd()`` and
+    ``dmamem_from_hip_iommufd()`` set ``base_va``, so ``upcie-cuda`` and
+    ``upcie-hip`` give a GPU heap mapped through iommufd the right IOVA, and
+    ``dmamem_iommu_map_pa_populate()`` fails when an address on the first
+    device is already mapped
+
+* Command line
+
+  - ``xnvme qublk`` completes a failed command with the errno that
+    ``nvme_error_status()`` of the kernel NVMe driver gives the same status,
+    for example ``EBADE`` for Reservation Conflict and ``ENOSPC`` for Capacity
+    Exceeded. It completed every failure as ``EIO``, except a DISCARD or
+    WRITE_ZEROES refused as unsupported, as ``EOPNOTSUPP``. Any other status,
+    including an errno the library records before the device answers, is
+    still ``EIO``
+
+* Library and build
+
+  - ``lib/platform/freebsd/xnvme_driver_freebsd.c`` includes ``<sys/param.h>``
+    first. FreeBSD 15 failed to compile it, as ``<sys/linker.h>`` uses
+    ``MAXPATHLEN`` and no header before it pulled in ``<sys/param.h>``
+
+* Documentation
+
+  - The material page lists the AiSIO talk given at SDC '26, with its slides
+    and video, and the video of the talk given at SDC AI '26
+
 v0.8.0
 ------
 
