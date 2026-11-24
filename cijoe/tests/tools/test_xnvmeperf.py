@@ -570,3 +570,26 @@ def test_xfer_register_host_huge(cijoe, device, be_opts, cli_args):
         _check_times(
             result["sizes"][0][case], ("register", "unregister"), 2, state.output()
         )
+
+
+@xnvme_parametrize(labels=["nvm"], opts=["be"])
+def test_xfer_heap(cijoe, device, be_opts, cli_args):
+    """'perf-xfer heap' times opening the device with a host heap of each size, and closing it"""
+
+    if be_opts["be"] != "upcie":
+        pytest.skip(reason="The host heap is upcie's")
+
+    homi_id = get_homi_id()
+    homi_arg = f"--homi-id {homi_id}" if homi_id else ""
+    err, state = cijoe.run(
+        f"xnvme perf-xfer heap {device['uri']} --be {be_opts['be']} {homi_arg}"
+        " --mib 64,128 --count 2"
+    )
+    assert not err, state.output()
+
+    result = yaml.safe_load(state.output())["xnvme_perf_xfer_heap"]
+    assert result["count"] == 2, state.output()
+    sizes = result["sizes"]
+    assert [size["host_heap_nbytes"] for size in sizes] == [64 << 20, 128 << 20]
+    for size in sizes:
+        _check_times(size, ("open", "close"), 2, state.output())

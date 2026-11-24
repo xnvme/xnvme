@@ -471,6 +471,85 @@ sub_register(struct xnvme_cli *cli)
 #endif
 }
 
+static int
+sub_heap(struct xnvme_cli *cli)
+{
+#ifdef __linux__
+	static const char *names[2] = {"open", "close"};
+	const char *vfio_mode = getenv("XNVME_UPCIE_VFIO_MODE");
+	struct xnvme_opts opts = {0};
+	size_t sizes[XFER_NSIZES_MAX];
+	double *usecs[2] = {NULL, NULL};
+	uint32_t count;
+	int nsizes, err;
+
+	err = get_count(cli, &count);
+	if (err) {
+		return err;
+	}
+	nsizes = get_sizes(cli, sizes);
+	if (nsizes < 0) {
+		return nsizes;
+	}
+
+	usecs[0] = calloc(count, sizeof(double));
+	usecs[1] = calloc(count, sizeof(double));
+	if (!usecs[0] || !usecs[1]) {
+		err = -ENOMEM;
+		xnvme_cli_perr("Error: no memory for the times", err);
+		goto exit;
+	}
+
+	xnvme_opts_set_defaults(&opts);
+	xnvme_cli_to_opts(cli, &opts);
+
+	printf("xnvme_perf_xfer_heap:\n");
+	printf("  uri: '%s'\n", cli->args.uri);
+	printf("  be: '%s'\n", cli->args.be ? cli->args.be : "");
+	printf("  homi_id: %u\n", opts.homi_id);
+	printf("  upcie_vfio_mode: '%s'\n", vfio_mode ? vfio_mode : "");
+	printf("  count: %u\n", count);
+	printf("  sizes:\n");
+	for (int i = 0; i < nsizes; ++i) {
+		double first[2];
+
+		opts.host_heap_size = sizes[i];
+		for (uint32_t j = 0; j <= count; ++j) {
+			double *open_usecs = j ? &usecs[0][j - 1] : &first[0];
+			double *close_usecs = j ? &usecs[1][j - 1] : &first[1];
+			struct xnvme_dev *dev;
+			struct timespec t0;
+
+			clock_gettime(CLOCK_MONOTONIC, &t0);
+			dev = xnvme_dev_open(cli->args.uri, &opts);
+			*open_usecs = usecs_since(&t0);
+			if (!dev) {
+				err = -errno;
+				xnvme_cli_perr("xnvme_dev_open()", err);
+				goto exit;
+			}
+
+			clock_gettime(CLOCK_MONOTONIC, &t0);
+			xnvme_dev_close(dev);
+			*close_usecs = usecs_since(&t0);
+		}
+
+		printf("  - host_heap_nbytes: %zu\n", sizes[i]);
+		pr_times(4, names, first, usecs, count);
+		fflush(stdout);
+	}
+
+exit:
+	free(usecs[1]);
+	free(usecs[0]);
+
+	return err;
+#else
+	xnvme_cli_perr("Error: heap is implemented for Linux only", -ENOTSUP);
+	return -ENOTSUP;
+#endif
+}
+
 static struct xnvme_cli_sub g_subs[] = {
 	{
 		"htod",
@@ -508,6 +587,26 @@ static struct xnvme_cli_sub g_subs[] = {
 			{XNVME_CLI_OPT_DMABUF_FD, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_MIB, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_HUGE, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_COUNT, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_BE, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_HOMI_ID, XNVME_CLI_LOPT},
+		},
+	},
+	{
+		"heap",
+		"Time opening a device with a host heap of each size, and closing it",
+		"Open the device with a host heap of each size of --mib and close it, once and "
+		"then --count times, 100 by default. Report the microseconds of the first open "
+		"and close apart, and the minimum, median and maximum of the --count after them. "
+		"The upcie backends allocate the heap of hugetlb pages, lock it and map it for "
+		"the device as they open it; XNVME_UPCIE_VFIO_MODE, iommufd or type1, chooses how "
+		"they map it, and is printed. Other backends have no host heap.",
+		sub_heap,
+		{
+			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
+			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_MIB, XNVME_CLI_LREQ},
 			{XNVME_CLI_OPT_COUNT, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_BE, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_HOMI_ID, XNVME_CLI_LOPT},

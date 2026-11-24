@@ -10,8 +10,9 @@ writing a known per-LBA pattern and reading it back.
 
 **xnvme perf-xfer** measures transfers between memories and what setting them
 up costs: ``htod`` gives the host-to-device copy bandwidth of a GPU, the ceiling
-of the bounce path described below, and ``register`` times registering a
-dma-buf or host memory with a device.
+of the bounce path described below, ``register`` times registering a dma-buf
+or host memory with a device, and ``heap`` times opening a device with a host
+heap of a given size.
 
 Two subcommands of **xnvme perf-storage**, ``cuda-run`` and ``cuda-verify``,
 need a build with CUDA support (``XNVME_BE_UPCIE_CUDA_ENABLED``); without it
@@ -148,6 +149,14 @@ before the first registration, so that its pages are faulted in, and
 The upcie backends register no host memory, and fail with ``-ENOSYS``::
 
    xnvme perf-xfer register 0000:01:00.0 --be libvfn --mib 2,64,1024 --huge 2M --count 20
+
+``xnvme perf-xfer heap`` times opening the device and closing it, with a host
+heap of each size of ``--mib``. The upcie backends allocate the heap of
+hugetlb pages, lock it and map it for the device as they open it.
+``XNVME_UPCIE_VFIO_MODE``, ``iommufd`` or ``type1``, chooses how they map it,
+and the YAML records it::
+
+   XNVME_UPCIE_VFIO_MODE=type1 xnvme perf-xfer heap 0000:01:00.0 --be upcie --mib 64,1024 --count 10
 
 ``verify`` — Data integrity check
 ==================================

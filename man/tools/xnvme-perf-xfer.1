@@ -21,6 +21,10 @@ Keep \fB--qdepth\fP pinned copies of \fB--iosize\fP in flight to one GPU for \fB
 .B
 \fBxnvme-perf-xfer-register\fP(1)
 Register memory with the device and unregister it, once and then \fB--count\fP times, 100 by default. Report the microseconds of the first registration and unregistering apart, and the minimum, median and maximum of the \fB--count\fP after them, so that a cost only the first call pays does not count in those. The memory is the dma-buf the process inherited as \fB--dmabuf-fd\fP, named by addresses reserved with PROT_NONE, which nothing reads or writes; its size is the exporter's. Or it is host memory of each size of \fB--mib\fP, of base pages or of the hugetlb pages of \fB--huge\fP, timed twice: written before the first registration, so that its pages are faulted in, and untouched, mapped afresh for each registration and never written. With \fB--homi-id\fP the registrations go through the server.
+.TP
+.B
+\fBxnvme-perf-xfer-heap\fP(1)
+Open the device with a host heap of each size of \fB--mib\fP and close it, once and then \fB--count\fP times, 100 by default. Report the microseconds of the first open and close apart, and the minimum, median and maximum of the \fB--count\fP after them. The upcie backends allocate the heap of hugetlb pages, lock it and map it for the device as they open it; XNVME_UPCIE_VFIO_MODE, iommufd or type1, chooses how they map it, and is printed. Other backends have no host heap.
 .RE
 .PP
 
