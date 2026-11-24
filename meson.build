@@ -34,6 +34,11 @@ foreach sys : system_support
     set_variable('is_' + sys, system == sys)
 endforeach
 
+# NVMe data structures are little-endian, and xNVMe uses them in host byte order
+if host_machine.endian() != 'little'
+    error('xNVMe supports only little-endian hosts; @0@ is big-endian'.format(host_machine.cpu_family()))
+endif
+
 spdk_rdma_option = get_option('with-spdk-rdma')
 
 if not is_linux and spdk_rdma_option.enabled()
