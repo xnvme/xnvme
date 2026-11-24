@@ -471,6 +471,7 @@ enum xnvme_spec_log_lpi {
 	XNVME_SPEC_LOG_FDPRUHU   = 0x21, ///< XNVME_SPEC_LOG_FDPRUHU
 	XNVME_SPEC_LOG_FDPSTATS  = 0x22, ///< XNVME_SPEC_LOG_FDPSTATS
 	XNVME_SPEC_LOG_FDPEVENTS = 0x23, ///< XNVME_SPEC_LOG_FDPEVENTS
+	XNVME_SPEC_LOG_DISCOVERY = 0x70, ///< XNVME_SPEC_LOG_DISCOVERY
 	XNVME_SPEC_LOG_SANITIZE  = 0x81, ///< XNVME_SPEC_LOG_SANITIZE
 };
 
@@ -1684,9 +1685,21 @@ struct xnvme_spec_sgl_descriptor {
 			uint64_t subtype : 4; ///< SGL subtype
 			uint64_t type    : 4; ///< SGL type
 		} unkeyed;
+
+		uint64_t keyed; ///< Keyed SGL: length, key, subtype and type, see
+				///< XNVME_SPEC_SGL_DESCRIPTOR_KEYED_*
 	};
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_sgl_descriptor) == 16, "Incorrect size")
+
+/** Length of entry of a keyed SGL; bits 23:0 of 'keyed' */
+#define XNVME_SPEC_SGL_DESCRIPTOR_KEYED_LEN 0x0000000000FFFFFFULL
+/** Key of a keyed SGL; bits 55:24 of 'keyed' */
+#define XNVME_SPEC_SGL_DESCRIPTOR_KEYED_KEY 0x00FFFFFFFF000000ULL
+/** SGL subtype of a keyed SGL; bits 59:56 of 'keyed' */
+#define XNVME_SPEC_SGL_DESCRIPTOR_KEYED_SUBTYPE 0x0F00000000000000ULL
+/** SGL type of a keyed SGL; bits 63:60 of 'keyed' */
+#define XNVME_SPEC_SGL_DESCRIPTOR_KEYED_TYPE 0xF000000000000000ULL
 
 /**
  * PRP or SGL for Data Transfer field

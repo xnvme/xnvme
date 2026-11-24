@@ -25,6 +25,12 @@ XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_cmd_log, cdw14,
 			 XNVME_SPEC_CMD_LOG_CDW14_UUIDX | XNVME_SPEC_CMD_LOG_CDW14_OT |
 				 XNVME_SPEC_CMD_LOG_CDW14_CSI),
 		    "cdw14 of struct xnvme_spec_cmd_log")
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_sgl_descriptor, keyed,
+			 XNVME_SPEC_SGL_DESCRIPTOR_KEYED_LEN |
+				 XNVME_SPEC_SGL_DESCRIPTOR_KEYED_KEY |
+				 XNVME_SPEC_SGL_DESCRIPTOR_KEYED_SUBTYPE |
+				 XNVME_SPEC_SGL_DESCRIPTOR_KEYED_TYPE),
+		    "keyed of struct xnvme_spec_sgl_descriptor")
 XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_cmd_log, cdw10) == 40,
 		    "cdw10 of struct xnvme_spec_cmd_log")
 XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_cmd_log, lsi) == 46,
@@ -288,6 +294,142 @@ XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_cs_vector, bits,
 			 XNVME_SPEC_CS_VECTOR_BITS_NVM | XNVME_SPEC_CS_VECTOR_BITS_KV |
 				 XNVME_SPEC_CS_VECTOR_BITS_ZNS),
 		    "bits of struct xnvme_spec_cs_vector")
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_transports_common_cmd, flags,
+			 XNVME_SPEC_TRANSPORTS_COMMON_CMD_FLAGS_FUSE |
+				 XNVME_SPEC_TRANSPORTS_COMMON_CMD_FLAGS_PSDT),
+		    "flags of struct xnvme_spec_transports_common_cmd")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_transports_common_cmd, flags) == 1,
+		    "flags of struct xnvme_spec_transports_common_cmd")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_transports_common_cmd, fctype) == 4,
+		    "fctype of struct xnvme_spec_transports_common_cmd")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_transports_common_cmd, sgl1) == 24,
+		    "sgl1 of struct xnvme_spec_transports_common_cmd")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_transports_common_cmd, fcts) == 40,
+		    "fcts of struct xnvme_spec_transports_common_cmd")
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_transports_connect_cmd, cattr,
+			 XNVME_SPEC_TRANSPORTS_CONNECT_CMD_CATTR_CONNENT |
+				 XNVME_SPEC_TRANSPORTS_CONNECT_CMD_CATTR_INDIVIOQDELS |
+				 XNVME_SPEC_TRANSPORTS_CONNECT_CMD_CATTR_DISSQFC |
+				 XNVME_SPEC_TRANSPORTS_CONNECT_CMD_CATTR_PRIOCLASS),
+		    "cattr of struct xnvme_spec_transports_connect_cmd")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_transports_connect_cmd, fctype) == 4,
+		    "fctype of struct xnvme_spec_transports_connect_cmd")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_transports_connect_cmd, sgl1) == 24,
+		    "sgl1 of struct xnvme_spec_transports_connect_cmd")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_transports_connect_cmd, recfmt) == 40,
+		    "recfmt of struct xnvme_spec_transports_connect_cmd")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_transports_connect_cmd, qid) == 42,
+		    "qid of struct xnvme_spec_transports_connect_cmd")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_transports_connect_cmd, sqsize) == 44,
+		    "sqsize of struct xnvme_spec_transports_connect_cmd")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_transports_connect_cmd, cattr) == 46,
+		    "cattr of struct xnvme_spec_transports_connect_cmd")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_transports_connect_cmd, kato) == 48,
+		    "kato of struct xnvme_spec_transports_connect_cmd")
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_transports_property_get_cmd, attrib,
+			 XNVME_SPEC_TRANSPORTS_PROPERTY_GET_CMD_ATTRIB_PRS),
+		    "attrib of struct xnvme_spec_transports_property_get_cmd")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_transports_property_get_cmd, attrib) == 40,
+		    "attrib of struct xnvme_spec_transports_property_get_cmd")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_transports_property_get_cmd, ofst) == 44,
+		    "ofst of struct xnvme_spec_transports_property_get_cmd")
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_transports_property_set_cmd, attrib,
+			 XNVME_SPEC_TRANSPORTS_PROPERTY_SET_CMD_ATTRIB_PUS),
+		    "attrib of struct xnvme_spec_transports_property_set_cmd")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_transports_property_set_cmd, attrib) == 40,
+		    "attrib of struct xnvme_spec_transports_property_set_cmd")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_transports_property_set_cmd, ofst) == 44,
+		    "ofst of struct xnvme_spec_transports_property_set_cmd")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_transports_property_set_cmd, value) == 48,
+		    "value of struct xnvme_spec_transports_property_set_cmd")
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_transports_connect_resp_cpl, success.authreq,
+			 XNVME_SPEC_TRANSPORTS_CONNECT_RESP_CPL_AUTHREQ_ATR |
+				 XNVME_SPEC_TRANSPORTS_CONNECT_RESP_CPL_AUTHREQ_ASCR),
+		    "authreq of struct xnvme_spec_transports_connect_resp_cpl")
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_transports_connect_resp_cpl, connect_invalid.iattr,
+			 XNVME_SPEC_TRANSPORTS_CONNECT_RESP_CPL_IATTR_IPS),
+		    "iattr of struct xnvme_spec_transports_connect_resp_cpl")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_transports_connect_resp_cpl, success.authreq) == 2,
+		    "authreq of struct xnvme_spec_transports_connect_resp_cpl")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_transports_connect_resp_cpl,
+			     connect_invalid.iattr) == 2,
+		    "iattr of struct xnvme_spec_transports_connect_resp_cpl")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_transports_connect_resp_cpl, sqhd) == 8,
+		    "sqhd of struct xnvme_spec_transports_connect_resp_cpl")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_transports_connect_resp_cpl, cid) == 12,
+		    "cid of struct xnvme_spec_transports_connect_resp_cpl")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_transports_connect_resp_cpl, status) == 14,
+		    "status of struct xnvme_spec_transports_connect_resp_cpl")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_transports_resp_cqe, sqhd) == 8,
+		    "sqhd of struct xnvme_spec_transports_resp_cqe")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_transports_resp_cqe, cid) == 12,
+		    "cid of struct xnvme_spec_transports_resp_cqe")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_transports_resp_cqe, status) == 14,
+		    "status of struct xnvme_spec_transports_resp_cqe")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_transports_property_get_resp_cpl, sqhd) == 8,
+		    "sqhd of struct xnvme_spec_transports_property_get_resp_cpl")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_transports_property_get_resp_cpl, cid) == 12,
+		    "cid of struct xnvme_spec_transports_property_get_resp_cpl")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_transports_property_get_resp_cpl, status) == 14,
+		    "status of struct xnvme_spec_transports_property_get_resp_cpl")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_transports_property_set_resp_cpl, sqhd) == 8,
+		    "sqhd of struct xnvme_spec_transports_property_set_resp_cpl")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_transports_property_set_resp_cpl, cid) == 12,
+		    "cid of struct xnvme_spec_transports_property_set_resp_cpl")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_transports_property_set_resp_cpl, status) == 14,
+		    "status of struct xnvme_spec_transports_property_set_resp_cpl")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_transports_connect_data, cntlid) == 16,
+		    "cntlid of struct xnvme_spec_transports_connect_data")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_transports_connect_data, subnqn) == 256,
+		    "subnqn of struct xnvme_spec_transports_connect_data")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_transports_connect_data, hostnqn) == 512,
+		    "hostnqn of struct xnvme_spec_transports_connect_data")
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_transports_connect_data) == 1024,
+		    "size of struct xnvme_spec_transports_connect_data")
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_discovery_log_page_entry, treq,
+			 XNVME_SPEC_DISCOVERY_LOG_PAGE_ENTRY_TREQ_TSC |
+				 XNVME_SPEC_DISCOVERY_LOG_PAGE_ENTRY_TREQ_SQFCD |
+				 XNVME_SPEC_DISCOVERY_LOG_PAGE_ENTRY_TREQ_ZHIDS |
+				 XNVME_SPEC_DISCOVERY_LOG_PAGE_ENTRY_TREQ_TASC),
+		    "treq of struct xnvme_spec_discovery_log_page_entry")
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_discovery_log_page_entry, eflags,
+			 XNVME_SPEC_DISCOVERY_LOG_PAGE_ENTRY_EFLAGS_DUPRETINFO |
+				 XNVME_SPEC_DISCOVERY_LOG_PAGE_ENTRY_EFLAGS_EPCSD |
+				 XNVME_SPEC_DISCOVERY_LOG_PAGE_ENTRY_EFLAGS_NCC),
+		    "eflags of struct xnvme_spec_discovery_log_page_entry")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_discovery_log_page_entry, treq) == 3,
+		    "treq of struct xnvme_spec_discovery_log_page_entry")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_discovery_log_page_entry, portid) == 4,
+		    "portid of struct xnvme_spec_discovery_log_page_entry")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_discovery_log_page_entry, cntlid) == 6,
+		    "cntlid of struct xnvme_spec_discovery_log_page_entry")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_discovery_log_page_entry, asqsz) == 8,
+		    "asqsz of struct xnvme_spec_discovery_log_page_entry")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_discovery_log_page_entry, eflags) == 10,
+		    "eflags of struct xnvme_spec_discovery_log_page_entry")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_discovery_log_page_entry, trsvcid) == 32,
+		    "trsvcid of struct xnvme_spec_discovery_log_page_entry")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_discovery_log_page_entry, subnqn) == 256,
+		    "subnqn of struct xnvme_spec_discovery_log_page_entry")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_discovery_log_page_entry, traddr) == 512,
+		    "traddr of struct xnvme_spec_discovery_log_page_entry")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_discovery_log_page_entry, tsas) == 768,
+		    "tsas of struct xnvme_spec_discovery_log_page_entry")
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_discovery_log_page, dlpf,
+			 XNVME_SPEC_DISCOVERY_LOG_PAGE_DLPF_EXTEND |
+				 XNVME_SPEC_DISCOVERY_LOG_PAGE_DLPF_PORTLCL |
+				 XNVME_SPEC_DISCOVERY_LOG_PAGE_DLPF_ALLSUB),
+		    "dlpf of struct xnvme_spec_discovery_log_page")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_discovery_log_page, numrec) == 8,
+		    "numrec of struct xnvme_spec_discovery_log_page")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_discovery_log_page, recfmt) == 16,
+		    "recfmt of struct xnvme_spec_discovery_log_page")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_discovery_log_page, dlpf) == 18,
+		    "dlpf of struct xnvme_spec_discovery_log_page")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_discovery_log_page, tdlpl) == 20,
+		    "tdlpl of struct xnvme_spec_discovery_log_page")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_discovery_log_page, first) == 1024,
+		    "first of struct xnvme_spec_discovery_log_page")
 
 struct offset_case {
 	const char *name;
