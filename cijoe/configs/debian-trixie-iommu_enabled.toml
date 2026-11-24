@@ -28,7 +28,7 @@ default_systemimage = "debian-13-x86_64"
 [qemu.systems.x86_64]
 bin = "qemu-system-x86_64"
 
-# Used by: xnvme_devenv.rig_guest_start and xnvme_devenv.rig_guest_kill
+# Used by: systems_devenv.rig_guest_start and systems_devenv.rig_guest_kill
 [qemu.guests.trixie_amd64]
 path = "{{ local.env.HOME }}/guests/debian-trixie-amd64"
 system_label = "x86_64"

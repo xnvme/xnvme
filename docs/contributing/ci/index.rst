@@ -142,7 +142,7 @@ Where the devices come from, and which guest runs what
 
 A verification job gets its NVMe devices from one of three sources:
 
-* **emulated**: **QEMU** and the vfio-user device servers in `xnvme-devenv`_'s
+* **emulated**: **QEMU** and the vfio-user device servers in `systems-devenv`_'s
   host container, on a GitHub-hosted runner, with the guest booted on a rig
 * **passthru**: a lab machine's real drive, passed by vfio-pci to a guest
   booted in the same host container, on the lab machine
@@ -151,7 +151,7 @@ A verification job gets its NVMe devices from one of three sources:
 The guest follows what is verified. Debian 13 is kept upstream-pure, a stock
 kernel and in-tree drivers only, and verifies the transports on a kernel users
 run.
-The xnvme-devenv Ubuntu 26.10 guest carries a patched kernel and the drivers
+The systems-devenv Ubuntu 26.10 guest carries a patched kernel and the drivers
 built for it, matched to the device servers in the host container of the same
 release, and verifies what needs them; a driver and a server from different
 releases present as a wedged device rather than an error.
@@ -175,12 +175,12 @@ releases present as a wedged device rather than an error.
      - none
      - none
    * - NVMe/RDMA
-     - ``verify-nvme-rdma-emulated``: the xnvme-devenv Ubuntu 26.10 guest; rig
+     - ``verify-nvme-rdma-emulated``: the systems-devenv Ubuntu 26.10 guest; rig
        ``rdma-node-emulated``
      - none
      - none
    * - NVMe with buffers in GPU memory
-     - ``verify-gpu-emulated``: the xnvme-devenv Ubuntu 26.10 guest; rig
+     - ``verify-gpu-emulated``: the systems-devenv Ubuntu 26.10 guest; rig
        ``compute-node-emulated``
      - none
      - none
@@ -198,7 +198,7 @@ Containers and guest images
 
 The emulated **CI** jobs and ``docgen-full`` run inside a Docker host container
 (set by **GHA**'s ``container:`` directive), and boot a **QEMU** guest as part
-of their work. The host container comes from `xnvme-devenv`_, which adds the
+of their work. The host container comes from `systems-devenv`_, which adds the
 vfio-user device servers to a `nosi`_ base; the guest images come from
 `nosi`_ itself.
 Both publish **OCI** artifacts on **GHCR**.
@@ -240,43 +240,43 @@ Both publish **OCI** artifacts on **GHCR**.
      - Host container
      - Guest disk image
    * - ``verify-nvme-pcie-emulated / (debian, trixie-iommu_enabled, ...)``
-     - ``xnvme/xnvme-devenv/host`` (upstream QEMU + CIJOE + vfu_kvssd)
+     - ``refenv/systems-devenv/host`` (upstream QEMU + CIJOE + vfu_kvssd)
      - ``safl/nosi/debian-13-headless``
    * - ``verify-nvme-pcie-emulated / (debian, trixie-iommu_disabled, ...)``
-     - ``xnvme/xnvme-devenv/host`` (upstream QEMU + CIJOE + vfu_kvssd)
+     - ``refenv/systems-devenv/host`` (upstream QEMU + CIJOE + vfu_kvssd)
      - ``safl/nosi/debian-13-headless``
    * - ``verify-nvme-pcie-emulated / (freebsd, 14, ...)``
-     - ``xnvme/xnvme-devenv/host`` (upstream QEMU + CIJOE + vfu_kvssd)
+     - ``refenv/systems-devenv/host`` (upstream QEMU + CIJOE + vfu_kvssd)
      - ``safl/nosi/freebsd-14-headless``
    * - ``verify-nvme-tcp-emulated / (debian, trixie-iommu_enabled, ...)``
-     - ``xnvme/xnvme-devenv/host`` (upstream QEMU + CIJOE + vfu_kvssd)
+     - ``refenv/systems-devenv/host`` (upstream QEMU + CIJOE + vfu_kvssd)
      - ``safl/nosi/debian-13-headless``
    * - ``verify-nvme-rdma-emulated``
-     - ``xnvme/xnvme-devenv/host`` (QEMU, CIJOE, rocm-ernic server)
-     - ``xnvme/xnvme-devenv/guest-ubuntu-2610``
+     - ``refenv/systems-devenv/host`` (QEMU, CIJOE, rocm-ernic server)
+     - ``refenv/systems-devenv/guest-ubuntu-2610``
    * - ``verify-gpu-emulated``
-     - ``xnvme/xnvme-devenv/host`` (QEMU, CIJOE, rocjitsu server)
-     - ``xnvme/xnvme-devenv/guest-ubuntu-2610``
+     - ``refenv/systems-devenv/host`` (QEMU, CIJOE, rocjitsu server)
+     - ``refenv/systems-devenv/guest-ubuntu-2610``
    * - ``verify-nvme-pcie-hardware / passthru (debian, trixie-iommu_enabled, ...)``
-     - ``xnvme/xnvme-devenv/host`` (QEMU, CIJOE), on the MAAS runner
+     - ``refenv/systems-devenv/host`` (QEMU, CIJOE), on the MAAS runner
      - ``safl/nosi/debian-13-headless``
    * - ``perf / bdev_xnvme``
-     - ``xnvme/xnvme-devenv/host`` (QEMU, CIJOE), on the MAAS runner
+     - ``refenv/systems-devenv/host`` (QEMU, CIJOE), on the MAAS runner
      - ``safl/nosi/debian-13-headless``
    * - ``perf / latency (linux, ...)``
-     - ``xnvme/xnvme-devenv/host`` (QEMU, CIJOE), on the MAAS runner
+     - ``refenv/systems-devenv/host`` (QEMU, CIJOE), on the MAAS runner
      - ``safl/nosi/debian-13-headless``
    * - ``perf / latency (freebsd, ...)``
-     - ``xnvme/xnvme-devenv/host`` (QEMU, CIJOE), on the MAAS runner
+     - ``refenv/systems-devenv/host`` (QEMU, CIJOE), on the MAAS runner
      - ``safl/nosi/freebsd-14-headless``
    * - ``perf / latency (windows, ...)``
-     - ``xnvme/xnvme-devenv/host`` (QEMU, CIJOE, swtpm), on the MAAS runner
+     - ``refenv/systems-devenv/host`` (QEMU, CIJOE, swtpm), on the MAAS runner
      - Windows 11, from the Hetzner Storage Box, on the runner
    * - ``docgen-full``
-     - ``xnvme/xnvme-devenv/host`` (upstream QEMU + CIJOE + vfu_kvssd)
+     - ``refenv/systems-devenv/host`` (upstream QEMU + CIJOE + vfu_kvssd)
      - ``safl/nosi/debian-13-headless``
 
-The emulated jobs and ``docgen-full`` run in the `xnvme-devenv`_ host container, with
+The emulated jobs and ``docgen-full`` run in the `systems-devenv`_ host container, with
 upstream **QEMU**; the NVMe KV command set is supplied by `vfio-user-kvssd`_
 over **vfio-user**, installed in the container. ``verify-nvme-pcie-hardware / passthru`` and the
 benchmarks run the container on the lab machine, and pass its drive through
@@ -305,6 +305,6 @@ container; :ref:`sec-tutorials-devs-linux-reproduce-ci` describes them.
 .. _CIJOE: https://cijoe.readthedocs.io
 .. _GitHub Actions: https://github.com/features/actions
 .. _nosi: https://github.com/safl/nosi
-.. _xnvme-devenv: https://github.com/xnvme/xnvme-devenv
+.. _systems-devenv: https://github.com/refenv/systems-devenv
 .. _vfio-user-kvssd: https://github.com/safl/vfio-user-kvssd
 .. _xnvme.io via GitHub-pages: https://github.com/xnvme/xnvme.github.io

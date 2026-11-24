@@ -3,7 +3,7 @@
 On Hetzner
 ==========
 
-Qemu guests on MaaS from Hetzner **AX42**, booted in the xnvme-devenv host
+Qemu guests on MaaS from Hetzner **AX42**, booted in the systems-devenv host
 container with one of the two NVMe SSDs on the host passed through by the
 ``storage-node-passthru`` rig. Simultaneous Multithreading (SMT) disabled and
 six cores pinned for the guest machine, two left for Linux and the GitHub
@@ -65,7 +65,7 @@ And the following system software setup and configuration:
   - ``ghr`` has ``memlock unlimited`` and can thus launch qemu guest with a lot
     of memory
 
-  - ``ghr`` is a member of ``docker``, thus, can start the xnvme-devenv host
+  - ``ghr`` is a member of ``docker``, thus, can start the systems-devenv host
     container that ``verify-nvme-pcie-hardware / passthru`` and the benchmarks run in
 
 * ``/home/ghr/system_imaging`` holds the guest images, the Windows one among
@@ -152,7 +152,7 @@ Windows Guest Image
 Unlike the other guests, the Windows image cannot be distributed. Therefore,
 you must manually retrieve it from the private Hetzner Storage Box. The
 ``postinstall.sh`` script has already fetched the virtio drivers the Windows
-guest needs; its UEFI firmware and TPM come with xnvme-devenv's
+guest needs; its UEFI firmware and TPM come with systems-devenv's
 ``uefi-secureboot-tpm`` rig.
 
 Download the image using the command below, replacing your username with your

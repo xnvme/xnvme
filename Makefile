@@ -142,7 +142,7 @@ endef
 docker:
 	@echo "## xNVMe: docker"
 	mkdir -p /tmp/artifacts
-	docker run -it --privileged -w /tmp/xnvme --mount type=bind,source="$(shell pwd)",target=/tmp/xnvme --mount type=bind,source=/tmp/artifacts,target=/tmp/artifacts ghcr.io/xnvme/xnvme-devenv/host:v0.15.0 bash
+	docker run -it --privileged -w /tmp/xnvme --mount type=bind,source="$(shell pwd)",target=/tmp/xnvme --mount type=bind,source=/tmp/artifacts,target=/tmp/artifacts $(DEVENV_IMAGE) bash
 	@echo "## xNVME: docker [DONE]"
 
 CIJOE_GUEST_CONFIGS = --config configs/fio.toml --config configs/xnvme.toml --config configs/$(GUEST).toml
@@ -162,16 +162,16 @@ ifeq ($(origin RIG),undefined)
 RIG = $(if $(filter guest-start verify-guest docgen-guest devenv-up,$(MAKECMDGOALS)),$(RIG_DEFAULT),$(or $(shell cat $(CIJOE_RIG_FILE) 2>/dev/null),$(RIG_DEFAULT)))
 endif
 export RIG
-DEVENV_CIJOE ?= /opt/xnvme-devenv/cijoe
-DEVENV_RIGS ?= /opt/xnvme-devenv/rigs
+DEVENV_CIJOE ?= /opt/systems-devenv/cijoe
+DEVENV_RIGS ?= /opt/systems-devenv/rigs
 rig_file = $(firstword $(wildcard $(abspath $(1)) $(CURDIR)/cijoe/rigs/$(1).toml $(DEVENV_RIGS)/$(1).toml))
-RIG_CONFIGS = $(foreach r,$(RIG),--config $(or $(call rig_file,$(r)),$(error no rig '$(r)'; is this the xnvme-devenv host container?)))
+RIG_CONFIGS = $(foreach r,$(RIG),--config $(or $(call rig_file,$(r)),$(error no rig '$(r)'; is this the systems-devenv host container?)))
 
-DEVENV_IMAGE ?= ghcr.io/xnvme/xnvme-devenv/host:v0.15.0
+DEVENV_IMAGE ?= ghcr.io/refenv/systems-devenv/host:v0.19.0
 DEVENV_ENGINE ?= docker
-DEVENV_NAME ?= xnvme-devenv-$(notdir $(CURDIR))
+DEVENV_NAME ?= systems-devenv-$(notdir $(CURDIR))
 DEVENV_HOME ?= $(CURDIR)/.devenv
-DEVENV_CACHE ?= $(HOME)/.cache/xnvme-devenv
+DEVENV_CACHE ?= $(HOME)/.cache/systems-devenv
 # A worktree's .git names the git directory of its main checkout, which the
 # container then needs at the same path
 DEVENV_GIT_DIR := $(shell git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)
@@ -182,7 +182,7 @@ export DEVENV_SSH_CONFIG
 DEVENV_RUN = $(DEVENV_ENGINE) exec -e DEVENV_TESTS -e DEVENV_SSH_CONFIG -e RIG -e PASSTHRU $(DEVENV_NAME) bash -euo pipefail -c 'export PATH=$$HOME/.local/bin:$$PATH; $(1)'
 
 define devenv-up-help
-# Start the xnvme-devenv host container, unless running, the guest in it, and
+# Start the systems-devenv host container, unless running, the guest in it, and
 # provision this tree into the guest
 #
 # Optional: DEVENV_GUEST=<guest> (default: cijoe/current.guest),
@@ -202,7 +202,7 @@ devenv-up:
 	@echo "## xNVMe: devenv-up [DONE]"
 
 define devenv-host-help
-# Start the xnvme-devenv host container, unless running, without a guest
+# Start the systems-devenv host container, unless running, without a guest
 #
 # Optional: DEVENV_HOME, DEVENV_ENGINE=podman, DEVENV_IMAGE
 endef
@@ -575,7 +575,7 @@ verify-ramdisk:
 define verify-guest-help
 # Chain: guest-start + guest-provision + guest-test (reads from cijoe/current.guest)
 #
-# Requires: the xnvme-devenv host container (run: make devenv-up, or make docker)
+# Requires: the systems-devenv host container (run: make devenv-up, or make docker)
 # Requires: Guest selected via 'make guest-select'
 # Requires: /tmp/artifacts/xnvme-src.tar.gz (run: make gen-artifacts ALLOW_DIRTY=1)
 # Optional: CIJOE_OUTPUT=<prefix> for CI artifact naming
@@ -627,7 +627,7 @@ guest-bench:
 
 define docgen-deps-help
 # Install xNVMe's documentation tooling where cijoe runs; doxygen, graphviz and
-# ctags come with the xnvme-devenv host container
+# ctags come with the systems-devenv host container
 endef
 .PHONY: docgen-deps
 docgen-deps:
@@ -667,7 +667,7 @@ define docgen-guest-help
 # Start and provision a QEMU guest, then generate the documentation in it
 # (reads from cijoe/current.guest)
 #
-# Requires: the xnvme-devenv host container, docgen-deps
+# Requires: the systems-devenv host container, docgen-deps
 # Requires: Guest selected via 'make guest-select'
 # Requires: /tmp/artifacts/xnvme-src.tar.gz (run: make gen-artifacts ALLOW_DIRTY=1)
 # Optional: CIJOE_OUTPUT=<prefix> for CI artifact naming
