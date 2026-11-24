@@ -680,6 +680,18 @@ static struct xnvme_cli_opt_attr xnvme_cli_opts[] = {
 		.descr = "A dma-buf the process inherited as this fd",
 	},
 	{
+		.opt = XNVME_CLI_OPT_MIB,
+		.vtype = XNVME_CLI_OPT_VTYPE_STR,
+		.name = "mib",
+		.descr = "Sizes in MiB, separated by commas",
+	},
+	{
+		.opt = XNVME_CLI_OPT_HUGE,
+		.vtype = XNVME_CLI_OPT_VTYPE_STR,
+		.name = "huge",
+		.descr = "Back host memory with hugetlb pages of this size: 2M or 1G",
+	},
+	{
 		.opt = XNVME_CLI_OPT_USE_CMB_SQS,
 		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
 		.name = "use_cmb_sqs",
@@ -1781,6 +1793,12 @@ xnvme_cli_assign_arg(struct xnvme_cli *cli, struct xnvme_cli_opt_attr *opt_attr,
 			return -1;
 		}
 		args->dmabuf_fd = (int)num;
+		break;
+	case XNVME_CLI_OPT_MIB:
+		args->mib = arg;
+		break;
+	case XNVME_CLI_OPT_HUGE:
+		args->huge = arg;
 		break;
 	case XNVME_CLI_OPT_USE_CMB_SQS:
 		args->use_cmb_sqs = arg ? num : 0;

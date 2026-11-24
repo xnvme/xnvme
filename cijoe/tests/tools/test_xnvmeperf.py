@@ -462,3 +462,111 @@ def test_xfer_register(cijoe, device, be_opts, cli_args):
     for name in ("register_usecs", "unregister_usecs"):
         usecs = result[name]
         assert 0 < usecs["min"] <= usecs["median"] <= usecs["max"], state.output()
+
+
+def _check_times(result, names, count, output):
+    """The times 'perf-xfer' prints of a pair of calls, such as register and unregister"""
+
+    for name in names:
+        assert result[f"first_{name}_usecs"] >= 0, output
+        usecs = result[f"{name}_usecs"]
+        assert 0 <= usecs["min"] <= usecs["median"] <= usecs["max"], output
+
+
+@pytest.mark.parametrize(
+    "args",
+    [
+        "--count 2",
+        "--mib 2 --dmabuf-fd 999",
+        "--mib 2,,4",
+        "--mib 0",
+        "--mib 2,x",
+        "--mib 3 --huge 2M",
+        "--mib 2 --huge 4M",
+        "--huge 2M --dmabuf-fd 999",
+    ],
+)
+@xnvme_parametrize(labels=["nvm"], opts=["be"])
+def test_xfer_register_host_args(cijoe, device, be_opts, cli_args, args):
+    """'perf-xfer register' fails, before opening the device, for arguments it cannot use"""
+
+    if get_osname() != "linux":
+        pytest.skip(reason="Other platforms return -ENOTSUP for register")
+
+    err, state = cijoe.run(
+        f"xnvme perf-xfer register {device['uri']} --be {be_opts['be']} {args}"
+    )
+    assert err, f"registered with {args}"
+    assert "Invalid argument" in state.output(), state.output()
+
+
+@xnvme_parametrize(labels=["nvm"], opts=["be"])
+def test_xfer_register_host(cijoe, device, be_opts, cli_args):
+    """'perf-xfer register --mib' times registering host memory of base pages
+
+    For each size, on memory faulted in before the first registration, and on memory
+    mapped afresh and untouched for each. upcie registers no host memory, and fails with
+    ENOSYS. SPDK registers only memory it can translate, which test_xfer_register_host_huge
+    covers.
+    """
+
+    if get_osname() != "linux":
+        pytest.skip(reason="Other platforms return -ENOTSUP for register")
+
+    if be_opts["be"] == "spdk":
+        pytest.skip(
+            reason="SPDK registers hugetlb memory; see test_xfer_register_host_huge"
+        )
+
+    homi_id = get_homi_id()
+    homi_arg = f"--homi-id {homi_id}" if homi_id else ""
+    err, state = cijoe.run(
+        f"xnvme perf-xfer register {device['uri']} --be {be_opts['be']} {homi_arg}"
+        " --mib 2,4 --count 4"
+    )
+    if be_opts["be"] == "upcie":
+        assert err, state.output()
+        assert "Function not implemented" in state.output(), state.output()
+        return
+    assert not err, state.output()
+
+    result = yaml.safe_load(state.output())["xnvme_perf_xfer_register"]
+    assert result["count"] == 4, state.output()
+    assert [size["nbytes"] for size in result["sizes"]] == [2 << 20, 4 << 20]
+    for size in result["sizes"]:
+        for case in ("faulted", "untouched"):
+            _check_times(size[case], ("register", "unregister"), 4, state.output())
+
+
+@xnvme_parametrize(labels=["nvm"], opts=["be"])
+def test_xfer_register_host_huge(cijoe, device, be_opts, cli_args):
+    """'perf-xfer register --mib --huge 2M' times registering host memory of hugetlb pages
+
+    Skipped where the guest has no free hugetlb pages of 2 MiB left for it.
+    """
+
+    if get_osname() != "linux":
+        pytest.skip(reason="Other platforms return -ENOTSUP for register")
+
+    if be_opts["be"] == "upcie":
+        pytest.skip(
+            reason="upcie registers no host memory; see test_xfer_register_host"
+        )
+
+    homi_id = get_homi_id()
+    homi_arg = f"--homi-id {homi_id}" if homi_id else ""
+    err, state = cijoe.run(
+        f"xnvme perf-xfer register {device['uri']} --be {be_opts['be']} {homi_arg}"
+        " --mib 4 --huge 2M --count 2"
+    )
+    if err and "Cannot allocate memory" in state.output():
+        pytest.skip(reason="No free hugetlb pages of 2 MiB")
+    assert not err, state.output()
+
+    result = yaml.safe_load(state.output())["xnvme_perf_xfer_register"]
+    assert result["page_nbytes"] == 2 << 20, state.output()
+    assert [size["nbytes"] for size in result["sizes"]] == [4 << 20]
+    for case in ("faulted", "untouched"):
+        _check_times(
+            result["sizes"][0][case], ("register", "unregister"), 2, state.output()
+        )
