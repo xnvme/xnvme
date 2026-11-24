@@ -11,17 +11,36 @@ The following people have contributed to the implementation of xNVMe.
 ## Contributors to the current release
 
 * Alex Docauer <alex@docauer.net>
+* Ankit Kumar <ankit.kumar@samsung.com>
+* Atul Malakar <a.malakar@samsung.com>
 * DenizYil <denizyil@outlook.dk>
+* Eduard Kyvenko <e.kyvenko@samsung.com>
+* Fedor Uporov <fuporov.vstack@gmail.com>
 * Frederik Madsen <frederik.meisner@gmail.com>
+* Gurmeet Singh <gur.singh@samsung.com>
 * Jaeyoon Choi <j_yoon.choi@samsung.com>
 * James Swaro <j.swaro@samsung.com>
 * Jesper Wendel Devantier <j.devantier@samsung.com>
+* Joel Granados <j.granados@samsung.com>
 * Karl Bonde Torp <k.torp@samsung.com>
+* Klaus Jensen <k.jensen@samsung.com>
+* Krishna Kanth Reddy <krish.reddy@samsung.com>
+* Liad Oz <liadozil@gmail.com>
 * Mads Ynddal <m.ynddal@samsung.com>
+* Michael Bang <mi.bang@samsung.com>
+* Minsik Jeon <hmi.jeon@samsung.com>
+* Morten B. Rasmussen <m.rasmussen@samsung.com>
 * Nadja Brix Koch <n.koch@samsung.com>
+* Niclas Hedam <niclas@hed.am>
+* Rishabh Shukla <rishabh.sh@samsung.com>
+* Saurabh Rajpoot <s.rajpoot@samsung.com>
 * Simon A. F. Lund <os@safl.dk>
 * Simon A. F. Lund <simon.lund@samsung.com>
+* Steven Seungcheol Lee <sc108.lee@samsung.com>
+* Vered Kalef <vered.kalef@gmail.com>
+* Vikash Kumar <vikash.k5@samsung.com>
 * Vikram Khurana <vikramkhurana@Vikrams-MacBook-Pro.local>
+* Vincent Fu <vincent.fu@samsung.com>
 * Yonggil Song <yonggil.song@samsung.com>
 
 ## Contributors to previous releases
