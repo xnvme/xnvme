@@ -6,6 +6,7 @@
 #include <xnvme_platform.h>
 
 #ifdef XNVME_PLATFORM_FREEBSD_ENABLED
+#include <sys/param.h>
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -17,7 +18,6 @@
 #include <sys/ioctl.h>
 #include <sys/linker.h>
 #include <sys/mount.h>
-#include <sys/param.h>
 #include <sys/pciio.h>
 #include <sys/ucred.h>
 #include <unistd.h>
