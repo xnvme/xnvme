@@ -210,13 +210,7 @@ xnvme_transport_qpair_complete(struct xnvme_transport_qpair *qpair,
 	req->complete = 1;
 	req->status = cpl->status ? -EIO : 0;
 
-	if (ctx->async.queue) {
-		// do a user level completion
-		ctx->async.queue->base.outstanding--;
-		xnvme_transport_req_free(qpair->req_pool, req);
-
-		ctx->async.cb(ctx, ctx->async.cb_arg);
-	}
+	xnvme_transport_handle_user_cb(qpair, req, ctx);
 
 	return 0;
 }

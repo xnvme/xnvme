@@ -30,6 +30,10 @@ struct xnvme_spec_cpl;
 		}                                                         \
 	} while (0)
 
+
+static inline void
+xnvme_transport_qpair_flush_all_active(struct xnvme_transport_qpair *qpair);
+
 struct xnvme_transport_req {
 	SLIST_ENTRY(xnvme_transport_req) next;
 	void *context;
@@ -174,9 +178,6 @@ struct xnvme_transport_qpair {
 		.cntlid          = TRANSPORT_ADMINQ_DYNAMIC_CTRLR_ID, \
 	}
 
-static inline void
-xnvme_transport_req_timeout(struct xnvme_transport_qpair *qpair, struct xnvme_transport_req *req);
-
 /**
  * Core ctrlr/qpair lifecycle and the hot-path submit/poll wrappers.
  *
@@ -294,8 +295,10 @@ xnvme_transport_qpair_is_connected(struct xnvme_transport_qpair *qpair)
 /**
  * Polls @qpair until @req completes, fails, or @timeout_msec elapses.
  *
- * @return 0 when the wait ended without timing out (the outcome is in req->status),
- * -ETIMEDOUT when @timeout_msec elapsed first. On timeout @req is still in flight.
+ * @return 0 when successful,
+ * -ETIMEDOUT when @timeout_msec elapsed first.
+ * -ECONNRESET when the qpair has encountered an error.
+ * - Other negative errno values may indicate different errors.
  */
 static inline int
 xnvme_transport_wait_for_completion(struct xnvme_transport_qpair *qpair,
@@ -306,8 +309,9 @@ xnvme_transport_wait_for_completion(struct xnvme_transport_qpair *qpair,
 	int ret;
 
 	while (!xnvme_transport_req_is_complete(req)) {
-		if (xnvme_transport_req_has_error(req))
+		if (xnvme_transport_req_has_error(req)) {
 			break;
+		}
 
 		if (xnvme_transport_qpair_has_error(qpair)) {
 			req->status = -ECONNRESET;
@@ -328,12 +332,12 @@ xnvme_transport_wait_for_completion(struct xnvme_transport_qpair *qpair,
 		if (_xnvme_timer_clock_sample() - start >= timeout_ns) {
 			_TRANSPORT_ERROR(TRANSPORT_DEBUG_CATEGORY_CMD_IO,
 					 "FAILED: request timed out after %lu msec", timeout_msec);
-			xnvme_transport_req_timeout(qpair, req);
-			return -ETIMEDOUT;
+			req->status = -ETIMEDOUT;
+			break;
 		}
 	}
 
-	return 0;
+	return req->status;
 }
 
 static inline int
@@ -348,12 +352,15 @@ xnvme_transport_qpair_submit_sync(struct xnvme_transport_qpair *qpair, struct xn
 	}
 
 	err = xnvme_transport_wait_for_completion(qpair, req, XNVME_TRANSPORT_SYNC_TIMEOUT_MSEC);
-	if (err) {
-		// The request is still in flight, so it must not be returned to the pool
-		return err;
+	switch (err) {
+	case -ETIMEDOUT:
+	case -ECONNRESET:
+		XNVME_TRANSPORT_QPAIR_SET_STATE_ERROR(qpair);
+		break;
+	default:
+		break;
 	}
 
-	err = req->status;
 	xnvme_transport_req_free(qpair->req_pool, req);
 
 	return err;
@@ -434,30 +441,17 @@ xnvme_transport_cmd_sync(struct xnvme_transport_qpair *qpair, struct xnvme_cmd_c
 }
 
 static inline void
-xnvme_transport_req_fail(struct xnvme_transport_qpair *qpair, struct xnvme_transport_req *req,
-			 int err, bool retry)
+xnvme_transport_handle_user_cb(struct xnvme_transport_qpair *qpair,
+			       struct xnvme_transport_req *req, struct xnvme_cmd_ctx *ctx)
 {
-	struct xnvme_spec_cpl cpl = {
-		.cid = req->cid,
-	};
+	// handle callback
+	if (ctx->async.queue) {
+		// do a user level completion
+		ctx->async.queue->base.outstanding--;
+		xnvme_transport_req_free(qpair->req_pool, req);
 
-	req->status = err;
-
-	cpl.status = xnvme_bits_set(cpl.status, XNVME_SPEC_CQE_STATUS_SC,
-				    XNVME_SPEC_PATH_SC_COMMAND_ABORTED);
-	cpl.status =
-		xnvme_bits_set(cpl.status, XNVME_SPEC_CQE_STATUS_SCT, XNVME_STATUS_CODE_TYPE_PATH);
-	cpl.status = xnvme_bits_set(cpl.status, XNVME_SPEC_CQE_STATUS_DNR, !retry);
-
-	xnvme_transport_qpair_complete(qpair, &cpl);
-
-	xnvme_transport_req_free(qpair->req_pool, req);
-}
-
-static inline void
-xnvme_transport_req_timeout(struct xnvme_transport_qpair *qpair, struct xnvme_transport_req *req)
-{
-	xnvme_transport_req_fail(qpair, req, -ETIMEDOUT, true);
+		ctx->async.cb(ctx, ctx->async.cb_arg);
+	}
 }
 
 static inline void
@@ -465,11 +459,29 @@ xnvme_transport_qpair_flush_all_active(struct xnvme_transport_qpair *qpair)
 {
 	struct xnvme_transport_req_pool *pool = qpair->req_pool;
 	struct xnvme_transport_req *req       = &pool->reqs[0];
+	struct xnvme_cmd_ctx *ctx;
+	struct xnvme_spec_cpl *cpl;
 
 	for (uint64_t i = 0; i < pool->entries; i++) {
 		req = &pool->reqs[i];
 		if (req->active) {
-			xnvme_transport_req_fail(qpair, req, -ECANCELED, false);
+			ctx = (struct xnvme_cmd_ctx *)&req->context;
+			cpl = &ctx->cpl;
+
+			// write failed completion
+			cpl->status = xnvme_bits_set(cpl->status, XNVME_SPEC_CQE_STATUS_SC,
+						     XNVME_SPEC_PATH_SC_COMMAND_ABORTED);
+			cpl->status = xnvme_bits_set(cpl->status, XNVME_SPEC_CQE_STATUS_SCT,
+						     XNVME_STATUS_CODE_TYPE_PATH);
+			cpl->status =
+				xnvme_bits_set(cpl->status, XNVME_SPEC_CQE_STATUS_DNR, false);
+			cpl->cid = req->cid;
+
+			// write failed request
+			req->status   = -ECANCELED;
+			req->complete = 1;
+
+			xnvme_transport_handle_user_cb(qpair, req, ctx);
 		}
 	}
 }
