@@ -26,7 +26,8 @@ most of this will be things you already know.
 Or in case you have a variable containing it for example::
 
         uri = "/dev/nvme0n1"
-        dev = xnvme_dev_open(xnvme.cast_char_pointer(uri), None)
+        dev = ctypes.POINTER(xnvme.xnvme_dev)()
+        err = xnvme.xnvme_dev_open_uri(xnvme.cast_char_pointer(uri), None, ctypes.byref(dev))
 
 * When passing structs as a pointer to a C function, then use
   ``ctypes.byref(mystruct)``

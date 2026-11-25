@@ -43,12 +43,12 @@ Test xNVMe basic buffer alloc/free
 Exercise the different parsers
 .TP
 .B
-\fBxnvme\fP-\fItest\fP-compare(1)
-Basic Compare Test Verification
+\fBxnvme\fP-\fItest\fP-cmd-prep(1)
+Exercise the command preps
 .TP
 .B
-\fBxnvme\fP-\fItest\fP-compat(1)
-Exercise the deprecated functions of libxnvme_compat.h
+\fBxnvme\fP-\fItest\fP-compare(1)
+Basic Compare Test Verification
 .TP
 .B
 \fBxnvme\fP-\fItest\fP-copy(1)
@@ -69,6 +69,14 @@ Copy bytes from input to output
 .B
 \fBxnvme\fP-\fItest\fP-delay-identification(1)
 Open without geo-derivation
+.TP
+.B
+\fBxnvme\fP-\fItest\fP-dmabuf-udmabuf(1)
+Test I/O through a dma-buf udmabuf exports
+.TP
+.B
+\fBxnvme\fP-\fItest\fP-dmabuf-vfio(1)
+Test I/O through a dma-buf vfio-pci exports
 .TP
 .B
 \fBxnvme\fP-\fItest\fP-dual-be(1)

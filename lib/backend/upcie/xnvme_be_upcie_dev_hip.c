@@ -31,6 +31,36 @@ _hip_ctrlr_term(struct xnvme_be_upcie_hip_ctrlr *slot)
 	memset(slot, 0, sizeof(*slot));
 }
 
+static int
+_hip_heap_init(size_t heap_size)
+{
+	int err;
+
+	err = hipmem_heap_init(&g_upcie_hip_rte.hip_heap, heap_size, &g_upcie_hip_rte.hip_config);
+	if (err) {
+		return err;
+	}
+	err = xnvme_buf_reg_add_xfer(&g_upcie_hip_rte.hip_heap,
+				     (void *)(uintptr_t)g_upcie_hip_rte.hip_heap.vaddr,
+				     g_upcie_hip_rte.hip_heap.size, 0, XNVME_BUF_XFER_HIP);
+	if (err) {
+		hipmem_heap_term(&g_upcie_hip_rte.hip_heap);
+	}
+
+	return err;
+}
+
+static void
+_hip_heap_term(void)
+{
+	struct xnvme_buf_reg *reg = xnvme_buf_reg_any(&g_upcie_hip_rte.hip_heap);
+
+	if (reg) {
+		xnvme_buf_reg_remove(reg);
+	}
+	hipmem_heap_term(&g_upcie_hip_rte.hip_heap);
+}
+
 static void
 _hip_rte_term(void)
 {
@@ -49,7 +79,7 @@ _hip_rte_term(void)
 	for (int i = 0; i < XNVME_BE_CREF_MAX_ENTRIES; ++i) {
 		_hip_ctrlr_term(&g_upcie_hip_rte.ctrlrs[i]);
 	}
-	hipmem_heap_term(&g_upcie_hip_rte.hip_heap);
+	_hip_heap_term();
 
 	g_upcie_hip_rte.is_initialized = 0;
 }
@@ -143,9 +173,9 @@ _hip_rte_init(size_t heap_size, uint32_t gpu_id, struct xnvme_be_upcie_ctrlr *ct
 	const size_t dmabuf_gran = 2UL << 20;
 	heap_size = ((heap_size + dmabuf_gran - 1) / dmabuf_gran) * dmabuf_gran;
 
-	err = hipmem_heap_init(&g_upcie_hip_rte.hip_heap, heap_size, &g_upcie_hip_rte.hip_config);
+	err = _hip_heap_init(heap_size);
 	if (err) {
-		XNVME_DEBUG("FAILED: hipmem_heap_init(); err(%d)", err);
+		XNVME_DEBUG("FAILED: _hip_heap_init(); err(%d)", err);
 		return err;
 	}
 
@@ -169,7 +199,7 @@ _hip_rte_init(size_t heap_size, uint32_t gpu_id, struct xnvme_be_upcie_ctrlr *ct
 			XNVME_DEBUG("FAILED: registering the HIP heap with the server; err(%d)",
 				    err);
 			_hip_ctrlr_term(slot);
-			hipmem_heap_term(&g_upcie_hip_rte.hip_heap);
+			_hip_heap_term();
 			return err;
 		}
 		g_upcie_hip_rte.dmem_is_shared = 1;
@@ -178,7 +208,7 @@ _hip_rte_init(size_t heap_size, uint32_t gpu_id, struct xnvme_be_upcie_ctrlr *ct
 					       xnvme_be_upcie_va_bits());
 		if (err) {
 			XNVME_DEBUG("FAILED: dmamem_from_hip_registry(); err(%d)", err);
-			hipmem_heap_term(&g_upcie_hip_rte.hip_heap);
+			_hip_heap_term();
 			return err;
 		}
 		g_upcie_hip_rte.dmem_is_shared = 1;

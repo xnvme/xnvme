@@ -161,9 +161,9 @@ Each heap is allocated once per process, on the first open, so the values given
 to that open are the ones that take effect, and later opens leave the heaps as
 they are.
 
-Not every tool takes these options on its command line. **xnvmeperf** takes
-`--gpu-id` and sizes both heaps from the workload it is given, and **homi**
-takes all three.
+Not every tool takes these options on its command line. **xnvme
+perf-storage** takes `--gpu-id` and sizes both heaps from the workload it is
+given, and **homi** takes all three.
 
 (sec-backends-upcie-cuda-kernel)=
 
@@ -215,7 +215,7 @@ XNVME_UPCIE_IOVA_BASE=0x2000000000  # 128 GiB
 XNVME_UPCIE_IOVA_SIZE=0x400000000   # 16 GiB
 ```
 
-A window outside every usable IOVA range fails `xnvme_dev_open()` with `ERANGE`.
+A window outside every usable IOVA range fails `xnvme_dev_open_uri()` with `ERANGE`.
 
 ### Several controllers
 
@@ -330,7 +330,7 @@ the domain type, set as described below. Host-issued I/O, including
 {ref}`sec-backends-upcie-cuda-p2p-cq-mirror`, needs none of this.
 ```
 
-Needed only for GPU-resident queues, meaning `xnvme perf cuda-run`, `cuda-verify`
+Needed only for GPU-resident queues, meaning `xnvme perf-storage cuda-run`, `cuda-verify`
 and anything else built on {ref}`sec-api-c-gpu`. Host-driven I/O needs nothing
 here.
 
@@ -420,7 +420,7 @@ survive a reboot.
 
 ```bash
 cat /sys/kernel/iommu_groups/16/type      # identity
-sudo xnvme perf cuda-verify --be upcie-cuda --iosize 4096 --qdepth 32 \
+sudo xnvme perf-storage cuda-verify --be upcie-cuda --iosize 4096 --qdepth 32 \
     --nqueues 2 0000:01:00.0
 sudo dmesg | grep -iE 'AMD-Vi|DMAR'
 ```
@@ -464,7 +464,7 @@ latency at a depth of one. What it costs is the entries themselves on the
 GPU's transmit side, four 16-byte writes per command, which is idle traffic
 for reads but competes with the controller's payload reads on writes; and
 the placement depends on host memory the GPU can map. The `--sq-hostmem` flag of
-`xnvme perf cuda-run` and `cuda-verify` selects it.
+`xnvme perf-storage cuda-run` and `cuda-verify` selects it.
 
 A kernel writes an entry as four 16-byte stores cached at L2 only, so the
 L2 combines them into whole sectors before they leave the GPU. With

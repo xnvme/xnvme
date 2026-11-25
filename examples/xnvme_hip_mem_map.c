@@ -29,14 +29,20 @@
 static int
 read_lba0(struct xnvme_dev *dev, void *buf)
 {
+	struct xnvme_cmd_prep_nvm_read_args args = {
+		.nsid = xnvme_dev_get_nsid(dev),
+	};
 	struct xnvme_cmd_ctx ctx = {0};
 	int err;
 
 	xnvme_dev_get_cmd_ctx(dev, &ctx);
-	err = xnvme_nvm_read(&ctx, xnvme_dev_get_nsid(dev), 0x0, 0, buf, NULL);
+	err = xnvme_cmd_prep_nvm_read(&ctx.cmd, &args);
+	if (!err) {
+		err = xnvme_cmd_pass(&ctx, buf, xnvme_dev_get_geo(dev)->lba_nbytes, NULL, 0);
+	}
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		err = err ? err : -EIO;
-		xnvme_cli_perr("xnvme_nvm_read()", err);
+		xnvme_cli_perr("read", err);
 		return err;
 	}
 
@@ -58,10 +64,9 @@ reopen_and_read(const char *uri, struct xnvme_opts *opts, struct xnvme_dev **dev
 	xnvme_dev_close(*dev);
 	*mapped = 0;
 
-	*dev = xnvme_dev_open(uri, opts);
-	if (!*dev) {
-		err = -errno;
-		xnvme_cli_perr("xnvme_dev_open()", err);
+	err = xnvme_dev_open_uri(uri, opts, dev);
+	if (err) {
+		xnvme_cli_perr("xnvme_dev_open_uri()", err);
 		return err;
 	}
 
@@ -96,10 +101,9 @@ second_ctrlr_read(const char *uri, struct xnvme_opts *opts, struct xnvme_dev **d
 	struct xnvme_dev *second;
 	int err;
 
-	second = xnvme_dev_open(uri, opts);
-	if (!second) {
-		err = -errno;
-		xnvme_cli_perr("xnvme_dev_open()", err);
+	err = xnvme_dev_open_uri(uri, opts, &second);
+	if (err) {
+		xnvme_cli_perr("xnvme_dev_open_uri()", err);
 		return err;
 	}
 
@@ -131,6 +135,44 @@ second_ctrlr_read(const char *uri, struct xnvme_opts *opts, struct xnvme_dev **d
 	return 0;
 }
 
+/*
+ * xnvme_buf_register() recorded HIP as the runtime of buf, so the buffer helpers call HIP; a load
+ * or store by the CPU there faults
+ */
+static int
+check_helpers(void *buf, size_t nbytes)
+{
+	size_t diff = 0;
+	void *zeros;
+	int err;
+
+	zeros = calloc(1, nbytes);
+	if (!zeros) {
+		return -ENOMEM;
+	}
+
+	err = xnvme_buf_fill(buf, nbytes, "rand-t");
+	err = err ? err : xnvme_buf_diff(zeros, buf, nbytes, &diff);
+	if (!err && !diff) {
+		err = -EIO;
+		xnvme_cli_perr("xnvme_buf_fill() of the registered buffer wrote no byte", err);
+	}
+	err = err ? err : xnvme_buf_clear(buf, nbytes);
+	diff = 0; // xnvme_buf_diff() adds to it
+	err = err ? err : xnvme_buf_diff(zeros, buf, nbytes, &diff);
+	if (!err && diff) {
+		err = -EIO;
+		xnvme_cli_perr("xnvme_buf_clear() of the registered buffer left bytes set", err);
+	}
+	if (err) {
+		xnvme_cli_perr("the buffer helpers on the registered buffer", err);
+	}
+
+	free(zeros);
+
+	return err;
+}
+
 int
 main(int argc, char **argv)
 {
@@ -152,14 +194,13 @@ main(int argc, char **argv)
 		return argc < 2;
 	}
 
-	opts.be = "upcie-hip";
+	snprintf(opts.be, sizeof(opts.be), "%s", "upcie-hip");
 	if (argc > 2) {
 		opts.homi_id = (uint32_t)strtoul(argv[2], NULL, 0);
 	}
-	dev = xnvme_dev_open(argv[1], &opts);
-	if (!dev) {
-		err = -errno;
-		xnvme_cli_perr("xnvme_dev_open()", err);
+	err = xnvme_dev_open_uri(argv[1], &opts, &dev);
+	if (err) {
+		xnvme_cli_perr("xnvme_dev_open_uri()", err);
 		return err;
 	}
 
@@ -188,11 +229,28 @@ main(int argc, char **argv)
 	mapped = 1;
 	xnvme_cli_pinf("xnvme_buf_register(%p, %zu): registered", buf, buf_nbytes);
 
+	err = check_helpers(buf, buf_nbytes);
+	if (err) {
+		goto exit;
+	}
+	xnvme_cli_pinf(
+		"OK: the buffer helpers filled, cleared and compared the registered buffer");
+
+	struct xnvme_cmd_prep_nvm_read_args args = {
+		.nsid = xnvme_dev_get_nsid(dev),
+		.slba = 0x0,
+		.nlb = (uint16_t)(nlb - 1),
+	};
+
 	xnvme_dev_get_cmd_ctx(dev, &ctx);
-	err = xnvme_nvm_read(&ctx, xnvme_dev_get_nsid(dev), 0x0, nlb - 1, buf, NULL);
+	err = xnvme_cmd_prep_nvm_read(&ctx.cmd, &args);
+	if (!err) {
+		// The buffer is rounded up to 2 MiB; transfer the blocks read
+		err = xnvme_cmd_pass(&ctx, buf, nlb * lba_nbytes, NULL, 0);
+	}
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		err = err ? err : -EIO;
-		xnvme_cli_perr("xnvme_nvm_read()", err);
+		xnvme_cli_perr("read", err);
 		goto exit;
 	}
 

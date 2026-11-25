@@ -183,56 +183,58 @@ submit_commit_and_fetch(struct qublk_queue *q, struct qublk_io *io, int result)
 static int
 nvme_status_errno(struct xnvme_cmd_ctx *ctx)
 {
-	uint16_t sct = xnvme_bits_get(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT);
-	uint16_t sc = xnvme_bits_get(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC);
+	uint16_t sct =
+		xnvme_bits_get(ctx->cpl.status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SCT);
+	uint16_t sc =
+		xnvme_bits_get(ctx->cpl.status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SC);
 
 	switch (sct) {
-	case XNVME_STATUS_CODE_TYPE_GENERIC:
+	case XNVME_SPEC_BASE_STATUS_CODE_TYPE_GENERIC_COMMAND_STATUS:
 		switch (sc) {
-		case XNVME_STATUS_CODE_CAP_EXCEEDED:
+		case XNVME_SPEC_BASE_GENERIC_COMMAND_STATUS_CAPACITY_EXCEEDED:
 			return -ENOSPC;
-		case XNVME_STATUS_CODE_LBA_RANGE:
-		case XNVME_STATUS_CODE_CMD_INTERRUPTED:
-		case XNVME_STATUS_CODE_NS_NOT_READY:
+		case XNVME_SPEC_BASE_GENERIC_COMMAND_STATUS_LBA_OUT_OF_RANGE:
+		case XNVME_SPEC_BASE_GENERIC_COMMAND_STATUS_COMMAND_INTERRUPTED:
+		case XNVME_SPEC_BASE_GENERIC_COMMAND_STATUS_NAMESPACE_NOT_READY:
 			return -EREMOTEIO;
-		case XNVME_STATUS_CODE_INVALID_OPCODE:
-		case XNVME_STATUS_CODE_INVALID_FIELD:
-		case XNVME_STATUS_CODE_INVALID_NS:
+		case XNVME_SPEC_BASE_GENERIC_COMMAND_STATUS_INVALID_COMMAND_OPCODE:
+		case XNVME_SPEC_BASE_GENERIC_COMMAND_STATUS_INVALID_FIELD_IN_COMMAND:
+		case XNVME_SPEC_BASE_GENERIC_COMMAND_STATUS_INVALID_NAMESPACE_OR_FORMAT:
 			return -EOPNOTSUPP;
-		case XNVME_STATUS_CODE_RESERVATION_CONFLICT:
+		case XNVME_SPEC_BASE_GENERIC_COMMAND_STATUS_RESERVATION_CONFLICT:
 			return -EBADE;
 		}
 		break;
-	case XNVME_STATUS_CODE_TYPE_CMDSPEC:
+	case XNVME_SPEC_BASE_STATUS_CODE_TYPE_COMMAND_SPECIFIC_STATUS:
 		switch (sc) {
-		case XNVME_SPEC_NVM_CMD_CPL_SC_BAD_ATTRIBUTES:
+		case XNVME_SPEC_NVM_COMMAND_SPECIFIC_STATUS_CONFLICTING_ATTRIBUTES:
 			return -EOPNOTSUPP;
-		case XNVME_SPEC_NVM_CMD_CPL_SC_INVALID_PI:
+		case XNVME_SPEC_NVM_COMMAND_SPECIFIC_STATUS_INVALID_PROTECTION_INFORMATION:
 			return -EILSEQ;
-		case XNVME_SPEC_NVM_CMD_CPL_SC_WRITE_TO_RONLY:
+		case XNVME_SPEC_NVM_COMMAND_SPECIFIC_STATUS_ATTEMPTED_WRITE_TO_READ_ONLY_RANGE:
 			return -ENODATA;
-		case XNVME_SPEC_ZND_SC_TOO_MANY_ACTIVE:
+		case XNVME_SPEC_ZNS_COMMAND_SPECIFIC_STATUS_TOO_MANY_ACTIVE_ZONES:
 			return -EOVERFLOW;
-		case XNVME_SPEC_ZND_SC_TOO_MANY_OPEN:
+		case XNVME_SPEC_ZNS_COMMAND_SPECIFIC_STATUS_TOO_MANY_OPEN_ZONES:
 			return -ETOOMANYREFS;
 		}
 		break;
-	case XNVME_STATUS_CODE_TYPE_MEDIA:
+	case XNVME_SPEC_BASE_STATUS_CODE_TYPE_MEDIA_AND_DATA_INTEGRITY_ERRORS:
 		switch (sc) {
-		case XNVME_SPEC_MEDIA_SC_WRITE_FAULT:
-		case XNVME_SPEC_MEDIA_SC_READ_ERROR:
-		case XNVME_SPEC_MEDIA_SC_COMPARE_FAILED:
-		case XNVME_SPEC_MEDIA_SC_ACCESS_DENIED:
-		case XNVME_SPEC_MEDIA_SC_UNWRITTEN_BLOCK:
+		case XNVME_SPEC_BASE_MEDIA_AND_DATA_INTEGRITY_ERROR_STATUS_WRITE_FAULT:
+		case XNVME_SPEC_BASE_MEDIA_AND_DATA_INTEGRITY_ERROR_STATUS_UNRECOVERED_READ_ERROR:
+		case XNVME_SPEC_BASE_MEDIA_AND_DATA_INTEGRITY_ERROR_STATUS_COMPARE_FAILURE:
+		case XNVME_SPEC_BASE_MEDIA_AND_DATA_INTEGRITY_ERROR_STATUS_ACCESS_DENIED:
+		case XNVME_SPEC_BASE_MEDIA_AND_DATA_INTEGRITY_ERROR_STATUS_DEALLOCATED_OR_UNWRITTEN_LOGICAL_BLOCK:
 			return -ENODATA;
-		case XNVME_SPEC_MEDIA_SC_GUARD_CHECK:
-		case XNVME_SPEC_MEDIA_SC_APPTAG_CHECK:
-		case XNVME_SPEC_MEDIA_SC_REFTAG_CHECK:
+		case XNVME_SPEC_BASE_MEDIA_AND_DATA_INTEGRITY_ERROR_STATUS_END_TO_END_GUARD_CHECK_ERROR:
+		case XNVME_SPEC_BASE_MEDIA_AND_DATA_INTEGRITY_ERROR_STATUS_END_TO_END_APPLICATION_TAG_CHECK_ERROR:
+		case XNVME_SPEC_BASE_MEDIA_AND_DATA_INTEGRITY_ERROR_STATUS_END_TO_END_REFERENCE_TAG_CHECK_ERROR:
 			return -EILSEQ;
 		}
 		break;
-	case XNVME_STATUS_CODE_TYPE_PATH:
-		if (sc == XNVME_SPEC_PATH_SC_HOST_PATH_ERROR) {
+	case XNVME_SPEC_BASE_STATUS_CODE_TYPE_PATH_RELATED_STATUS:
+		if (sc == XNVME_SPEC_BASE_PATH_RELATED_STATUS_HOST_PATHING_ERROR) {
 			return -ENOLINK;
 		}
 		break;
@@ -327,13 +329,6 @@ dispatch(struct qublk_queue *q, struct qublk_io *io)
 		return -EBUSY;
 	}
 
-	/*
-	 * The ctx is pooled per xnvme queue and reused across commands.
-	 * xnvme_nvm_{read,write} only writes opcode/nsid/slba/nlb, so other
-	 * fields in cdw12 (fua, lr, prinfo, ...) carry over from the prior
-	 * command. Zero the NVMe command header before each submit.
-	 */
-	memset(&ctx->cmd, 0, sizeof(ctx->cmd));
 	xnvme_cmd_ctx_set_cb(ctx, on_xnvme_complete, io);
 
 	switch (op) {
@@ -346,20 +341,28 @@ dispatch(struct qublk_queue *q, struct qublk_io *io)
 		 * covers have completed. One FLUSH on the local queue
 		 * therefore covers writes completed on every queue.
 		 */
-		xnvme_prep_nvm(ctx, XNVME_SPEC_NVM_OPC_FLUSH, nsid, 0, 0);
-		rc = xnvme_cmd_pass(ctx, NULL, 0, NULL, 0);
+		rc = xnvme_cmd_prep_io_flush(&ctx->cmd, &(struct xnvme_cmd_prep_io_flush_args){
+								.nsid = nsid,
+							});
+		if (!rc) {
+			rc = xnvme_cmd_pass(ctx, NULL, 0, NULL, 0);
+		}
 		break;
 	case UBLK_IO_OP_READ:
 		slba = iod->start_sector >> (lba_shift - XNVME_UNIVERSAL_SECT_SH);
 		nlb = (uint16_t)(((iod->nr_sectors << XNVME_UNIVERSAL_SECT_SH) >> lba_shift) - 1);
-		rc = xnvme_nvm_read(ctx, nsid, slba, nlb, io->buf, NULL);
+		rc = xnvme_cmd_prep_nvm_read(&ctx->cmd, &(struct xnvme_cmd_prep_nvm_read_args){
+								.nsid = nsid,
+								.slba = slba,
+								.nlb = nlb,
+							});
+		if (!rc) {
+			rc = xnvme_cmd_pass(ctx, io->buf, (size_t)bytes, NULL, 0);
+		}
 		break;
 	case UBLK_IO_OP_WRITE:
 		slba = iod->start_sector >> (lba_shift - XNVME_UNIVERSAL_SECT_SH);
 		nlb = (uint16_t)(((iod->nr_sectors << XNVME_UNIVERSAL_SECT_SH) >> lba_shift) - 1);
-		if (iod->op_flags & UBLK_IO_F_FUA) {
-			ctx->cmd.nvm.fua = 1;
-		}
 
 		// The data to write is fetched from the kernel before the command is submitted
 		if (dev->user_copy) {
@@ -369,12 +372,21 @@ dispatch(struct qublk_queue *q, struct qublk_io *io)
 			}
 		}
 
-		rc = xnvme_nvm_write(ctx, nsid, slba, nlb, io->buf, NULL);
+		rc = xnvme_cmd_prep_nvm_write(
+			&ctx->cmd, &(struct xnvme_cmd_prep_nvm_write_args){
+					   .nsid = nsid,
+					   .slba = slba,
+					   .fua = (iod->op_flags & UBLK_IO_F_FUA) ? 1 : 0,
+					   .nlb = nlb,
+				   });
+		if (!rc) {
+			rc = xnvme_cmd_pass(ctx, io->buf, (size_t)bytes, NULL, 0);
+		}
 		break;
 	case UBLK_IO_OP_DISCARD: {
 		// One deallocate range, as nvme_setup_discard() builds it, in the
 		// tag's buffer, which is device-reachable and carries no data here
-		struct xnvme_spec_dsm_range *range = io->buf;
+		struct xnvme_spec_nvm_range *range = io->buf;
 
 		// Reached only if the kernel split past what was advertised
 		if (((uint64_t)bytes >> lba_shift) > UINT32_MAX) {
@@ -387,7 +399,14 @@ dispatch(struct qublk_queue *q, struct qublk_io *io)
 		range->cattr = 0;
 		range->llb = (uint32_t)(bytes >> lba_shift);
 		range->slba = iod->start_sector >> (lba_shift - XNVME_UNIVERSAL_SECT_SH);
-		rc = xnvme_nvm_dsm(ctx, nsid, range, 0, true, false, false);
+		rc = xnvme_cmd_prep_nvm_dataset_management(
+			&ctx->cmd, &(struct xnvme_cmd_prep_nvm_dataset_management_args){
+					   .nsid = nsid,
+					   .ad = 1,
+				   });
+		if (!rc) {
+			rc = xnvme_cmd_pass(ctx, range, sizeof(*range), NULL, 0);
+		}
 		break;
 	}
 	case UBLK_IO_OP_WRITE_ZEROES:
@@ -401,12 +420,18 @@ dispatch(struct qublk_queue *q, struct qublk_io *io)
 
 		slba = iod->start_sector >> (lba_shift - XNVME_UNIVERSAL_SECT_SH);
 		nlb = (uint16_t)((bytes >> lba_shift) - 1);
-		// As nvme_setup_write_zeroes(): deallocate unless NOUNMAP is set
-		if (dev->wz_deac && !(iod->op_flags & UBLK_IO_F_NOUNMAP)) {
-			ctx->cmd.write_zeroes.deac = 1;
+		rc = xnvme_cmd_prep_nvm_write_zeroes(
+			&ctx->cmd,
+			&(struct xnvme_cmd_prep_nvm_write_zeroes_args){
+				.nsid = nsid,
+				.slba = slba,
+				// As nvme_setup_write_zeroes(): deallocate unless NOUNMAP is set
+				.deac = dev->wz_deac && !(iod->op_flags & UBLK_IO_F_NOUNMAP),
+				.nlb = nlb,
+			});
+		if (!rc) {
+			rc = xnvme_cmd_pass(ctx, NULL, 0, NULL, 0);
 		}
-
-		rc = xnvme_nvm_write_zeroes(ctx, nsid, slba, nlb);
 		break;
 	default:
 		rc = qublk_zoned_dispatch(q, io, ctx);

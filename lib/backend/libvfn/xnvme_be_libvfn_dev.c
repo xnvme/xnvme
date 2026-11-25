@@ -156,7 +156,7 @@ xnvme_be_libvfn_dev_open(struct xnvme_dev *dev)
 {
 	dev->ident.dtype =
 		dev->opts.nsid ? XNVME_DEV_TYPE_NVME_NAMESPACE : XNVME_DEV_TYPE_NVME_CONTROLLER;
-	dev->ident.csi = XNVME_SPEC_CSI_NVM;
+	dev->ident.csi = XNVME_SPEC_BASE_CSI_NVM_COMMAND_SET;
 	dev->ident.nsid = dev->opts.nsid;
 
 	return 0;

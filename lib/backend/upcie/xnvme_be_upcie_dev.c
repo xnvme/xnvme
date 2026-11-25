@@ -247,6 +247,8 @@ _rte_term(void)
 		return;
 	}
 
+	xnvme_be_upcie_dmabufs_term(NULL);
+
 	if (g_upcie_rte.connection.alive) {
 		/* Nothing below this is ours to release: the memory belongs to
 		 * whoever is serving, and closing the socket is what tells it
@@ -756,6 +758,9 @@ int
 xnvme_be_upcie_ctrlr_term(void *handle)
 {
 	struct xnvme_be_upcie_ctrlr *ctrlr = handle;
+
+	xnvme_be_upcie_dmabufs_term(ctrlr);
+
 	if (g_upcie_rte.connection.alive) {
 		/* Hand the I/O queue back, if one was ever asked for, and let go
 		 * of the description and of the BAR0 mapping made for it. The
@@ -804,7 +809,7 @@ xnvme_be_upcie_dev_open(struct xnvme_dev *dev)
 
 	dev->ident.dtype =
 		dev->opts.nsid ? XNVME_DEV_TYPE_NVME_NAMESPACE : XNVME_DEV_TYPE_NVME_CONTROLLER;
-	dev->ident.csi = XNVME_SPEC_CSI_NVM;
+	dev->ident.csi = XNVME_SPEC_BASE_CSI_NVM_COMMAND_SET;
 	dev->ident.nsid = dev->opts.nsid;
 
 	/* Data buffers come off the host heap; the GPU backends override this with

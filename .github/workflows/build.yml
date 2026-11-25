@@ -161,11 +161,11 @@ jobs:
       run: |
         cijoe -r
 
-    - name: Python-bindings (ctypes), install and test
+    - name: Python-bindings, install and test
       if: (!contains('focal', matrix.ver))
       run: |
         python3 -m pipx inject xnvme-cijoe "${{ steps.source.outputs.directory }}/xnvme-py-sdist.tar.gz" --force
-        pytest --pyargs xnvme.ctypes_bindings
+        pytest --pyargs xnvme.tests
 
     #
     # Ramdisk testing
@@ -311,10 +311,10 @@ jobs:
       run: |
         cijoe -r
 
-    - name: Python-bindings (ctypes), install and test
+    - name: Python-bindings, install and test
       run: |
         pipx inject xnvme-cijoe "${{ steps.source.outputs.directory }}/xnvme-py-sdist.tar.gz" --force
-        pytest --pyargs xnvme.ctypes_bindings
+        pytest --pyargs xnvme.tests
 
     #
     # Ramdisk testing

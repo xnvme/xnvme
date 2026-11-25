@@ -6,6 +6,7 @@
 #define _XOPEN_SOURCE 700
 #endif
 #include <libxnvme.h>
+#include <xnvme_cmd.h>
 #include <xnvme_dev.h>
 #include <xnvme_be_nosys.h>
 #ifdef XNVME_PLATFORM_WINDOWS_ENABLED
@@ -53,7 +54,7 @@ get_device_size(HANDLE dev_handle)
 static int
 _idfy_ctrlr(struct xnvme_dev *XNVME_UNUSED(dev), void *dbuf)
 {
-	struct xnvme_spec_idfy_ctrlr *ctrlr = dbuf;
+	struct xnvme_spec_base_identify_controller *ctrlr = dbuf;
 
 	ctrlr->mdts = XNVME_ILOG2(1024 * 1024);
 
@@ -63,7 +64,7 @@ _idfy_ctrlr(struct xnvme_dev *XNVME_UNUSED(dev), void *dbuf)
 static int
 _idfy_ns(struct xnvme_dev *dev, void *dbuf)
 {
-	struct xnvme_spec_idfy_ns *ns = dbuf;
+	struct xnvme_spec_nvm_identify_namespace *ns = dbuf;
 	struct xnvme_be_windows_state *state = &xnvme_be_state(dev)->windows_state;
 
 	DWORD disk_size = get_device_size(state->async_handle);
@@ -73,12 +74,10 @@ _idfy_ns(struct xnvme_dev *dev, void *dbuf)
 	ns->nuse = disk_size;
 
 	ns->nlbaf = 0; ///< This means that there is only one
-	ns->flbas = xnvme_bits_set(ns->flbas, XNVME_SPEC_IDFY_NS_FLBAS_FORMAT,
+	ns->flbas = xnvme_bits_set(ns->flbas, XNVME_SPEC_NVM_IDENTIFY_NAMESPACE_FLBAS_FIDXL,
 				   0); ///< using the first one
 
-	ns->lbaf[0].ms = 0;
-	ns->lbaf[0].ds = XNVME_ILOG2(512);
-	ns->lbaf[0].rp = 0;
+	ns->lbaf[0] = xnvme_bits_set(0, XNVME_SPEC_NVM_LBA_FORMAT_LBADS, XNVME_ILOG2(512));
 
 	return 0;
 }
@@ -89,15 +88,16 @@ _idfy(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes)
 	// A device delivers the whole page, so what is not emulated reads as zero
 	memset(dbuf, 0, dbuf_nbytes);
 
-	switch (ctx->cmd.idfy.cns) {
-	case XNVME_SPEC_IDFY_NS:
+	switch (xnvme_bits_get(ctx->cmd.common.cdw10, XNVME_SPEC_ADMIN_IDENTIFY_CDW10_CNS)) {
+	case XNVME_SPEC_BASE_CNS_NVM_COMMAND_SET_IDENTIFY_NAMESPACE_DATA_STRUCTURE:
 		return _idfy_ns(ctx->dev, dbuf);
 
-	case XNVME_SPEC_IDFY_CTRLR:
+	case XNVME_SPEC_BASE_CNS_IDENTIFY_CONTROLLER_DATA_STRUCTURE:
 		return _idfy_ctrlr(ctx->dev, dbuf);
 
-	case XNVME_SPEC_IDFY_NS_IOCS:
-		switch (ctx->cmd.idfy.csi) {
+	case XNVME_SPEC_BASE_CNS_IO_COMMAND_SET_SPECIFIC_IDENTIFY_NAMESPACE_DATA_STRUCTURE:
+		switch (xnvme_bits_get(ctx->cmd.common.cdw11,
+				       XNVME_SPEC_ADMIN_IDENTIFY_CDW11_CSI)) {
 			// case XNVME_SPEC_CSI_FS:
 			// return _idfy_ns_iocs_block(ctx->dev, dbuf);
 
@@ -106,8 +106,9 @@ _idfy(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes)
 		}
 		break;
 
-	case XNVME_SPEC_IDFY_CTRLR_IOCS:
-		switch (ctx->cmd.idfy.csi) {
+	case XNVME_SPEC_BASE_CNS_IO_COMMAND_SET_SPECIFIC_IDENTIFY_CONTROLLER_DATA_STRUCTURE:
+		switch (xnvme_bits_get(ctx->cmd.common.cdw11,
+				       XNVME_SPEC_ADMIN_IDENTIFY_CDW11_CSI)) {
 			// case XNVME_SPEC_CSI_FS:
 			// return _idfy_ctrlr_iocs_block(ctx->dev, dbuf);
 
@@ -121,25 +122,30 @@ _idfy(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes)
 	}
 
 	///< TODO: set some appropriate status-code for other idfy-cmds
-	ctx->cpl.status = xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC, 0x3);
-	ctx->cpl.status = xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT, 0x3);
+	ctx->cpl.status = xnvme_bits_set(ctx->cpl.status,
+					 XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SC, 0x3);
+	ctx->cpl.status = xnvme_bits_set(ctx->cpl.status,
+					 XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SCT, 0x3);
 	return 1;
 }
 
 static int
 _gfeat(struct xnvme_cmd_ctx *ctx, void *XNVME_UNUSED(dbuf))
 {
-	struct xnvme_spec_feat feat = {0};
 
-	switch (ctx->cmd.gfeat.cdw10.fid) {
-	case XNVME_SPEC_FEAT_NQUEUES:
-		feat.nqueues.nsqa = 63;
-		feat.nqueues.ncqa = 63;
-		ctx->cpl.cdw0 = feat.val;
+	switch (xnvme_bits_get(ctx->cmd.common.cdw10, XNVME_SPEC_ADMIN_GET_FEATURES_CDW10_FID)) {
+	case XNVME_SPEC_BASE_FEATURE_NUMBER_OF_QUEUES:
+		ctx->cpl.dw0 =
+			xnvme_bits_set(0, XNVME_SPEC_BASE_FEATURE_NUMBER_OF_QUEUES_CQE_DW0_NSQA,
+				       63) |
+			xnvme_bits_set(0, XNVME_SPEC_BASE_FEATURE_NUMBER_OF_QUEUES_CQE_DW0_NCQA,
+				       63);
 		break;
 
 	default:
-		XNVME_DEBUG("FAILED: unsupported fid: %d", ctx->cmd.gfeat.cdw10.fid);
+		XNVME_DEBUG("FAILED: unsupported fid: %d",
+			    (int)xnvme_bits_get(ctx->cmd.common.cdw10,
+						XNVME_SPEC_ADMIN_GET_FEATURES_CDW10_FID));
 		return -ENOSYS;
 	}
 
@@ -159,19 +165,19 @@ xnvme_be_windows_block_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t d
 				 void *XNVME_UNUSED(mbuf), size_t XNVME_UNUSED(mbuf_nbytes))
 {
 	///< NOTE: opcode-dispatch (admin)
-	switch (ctx->cmd.common.opcode) {
-	case XNVME_SPEC_ADM_OPC_IDFY:
+	switch (xnvme_cmd_sqe_get_opc(&ctx->cmd)) {
+	case XNVME_SPEC_ADMIN_IDENTIFY_OPCODE:
 		return _idfy(ctx, dbuf, dbuf_nbytes);
 
-	case XNVME_SPEC_ADM_OPC_GFEAT:
+	case XNVME_SPEC_ADMIN_GET_FEATURES_OPCODE:
 		return _gfeat(ctx, dbuf);
 
-	case XNVME_SPEC_ADM_OPC_LOG:
+	case XNVME_SPEC_ADMIN_GET_LOG_PAGE_OPCODE:
 		XNVME_DEBUG("FAILED: not implemented yet.");
 		return -ENOSYS;
 
 	default:
-		XNVME_DEBUG("FAILED: ENOSYS opcode: %hu", ctx->cmd.common.opcode);
+		XNVME_DEBUG("FAILED: ENOSYS opcode: %hu", xnvme_cmd_sqe_get_opc(&ctx->cmd));
 		return -ENOSYS;
 	}
 }

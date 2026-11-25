@@ -27,6 +27,14 @@ Allocate and free buffers from 16 threads at once, 'count' rounds each
 Allocate a buffer and resolve its physical address
 .TP
 .B
+\fBxnvme-test-buf-buf_props\fP(1)
+Check what \fBxnvme_buf_get_props\fP() reports for a buffer from \fBxnvme_buf_alloc\fP() and, on Linux, for untouched, touched, read-only, PROT_NONE, hugetlb and unmapped ranges
+.TP
+.B
+\fBxnvme-test-buf-buf_helpers\fP(1)
+Fill, copy, compare and clear memory from \fBxnvme_buf_alloc\fP() with the buffer helpers, which call the CUDA or HIP runtime for memory of the heap of a GPU backend and use the CPU for other memory
+.TP
+.B
 \fBxnvme-test-buf-buf_virt_alloc_free\fP(1)
 Allocate and free a buffer 'count' times of size [1, 2^count]
 .RE

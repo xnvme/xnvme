@@ -74,11 +74,12 @@ control-plane calls is serialised with respect to each other by one
 process-wide lock, so these may be made from several threads at once, on any
 backend. They carry the note *Control plane*:
 
-* ``xnvme_dev_open()``, ``xnvme_dev_close()`` and ``xnvme_enumerate()``
+* ``xnvme_dev_open_uri()``, ``xnvme_dev_close()`` and ``xnvme_enumerate()``
 * ``xnvme_queue_init()`` and ``xnvme_queue_term()``
 * ``xnvme_buf_alloc()``, ``xnvme_buf_realloc()``, ``xnvme_buf_free()``, their
   ``xnvme_buf_phys_*()`` variants and ``xnvme_buf_vtophys()``
-* ``xnvme_buf_register()`` and ``xnvme_buf_unregister()``
+* ``xnvme_buf_register()``, ``xnvme_buf_register_dmabuf()`` and
+  ``xnvme_buf_unregister()``
 * ``xnvme_cuda_queue_create()`` and ``xnvme_cuda_queue_destroy()``
 
 They are not serialised against data-plane use of the same object, which does

@@ -135,10 +135,12 @@ emu_poke(struct xnvme_queue *q, uint32_t max)
 		if (err) {
 			if (!xnvme_cmd_ctx_cpl_status(entry->ctx)) {
 				entry->ctx->cpl.status = xnvme_bits_set(
-					entry->ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC, -err);
+					entry->ctx->cpl.status,
+					XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SC, -err);
 				entry->ctx->cpl.status = xnvme_bits_set(
-					entry->ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT,
-					XNVME_STATUS_CODE_TYPE_VENDOR);
+					entry->ctx->cpl.status,
+					XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SCT,
+					XNVME_SPEC_BASE_STATUS_CODE_TYPE_VENDOR_SPECIFIC);
 			}
 			XNVME_DEBUG("FAILED: sync.cmd_io{v}(), err: %d", err);
 		}
@@ -182,10 +184,12 @@ emu_reap(struct xnvme_queue *q, struct xnvme_cmd_ctx **completions, uint32_t max
 		if (err) {
 			if (!xnvme_cmd_ctx_cpl_status(entry->ctx)) {
 				entry->ctx->cpl.status = xnvme_bits_set(
-					entry->ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC, -err);
+					entry->ctx->cpl.status,
+					XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SC, -err);
 				entry->ctx->cpl.status = xnvme_bits_set(
-					entry->ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT,
-					XNVME_STATUS_CODE_TYPE_VENDOR);
+					entry->ctx->cpl.status,
+					XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SCT,
+					XNVME_SPEC_BASE_STATUS_CODE_TYPE_VENDOR_SPECIFIC);
 			}
 			XNVME_DEBUG("FAILED: sync.cmd_io{v}(), err: %d", err);
 		}

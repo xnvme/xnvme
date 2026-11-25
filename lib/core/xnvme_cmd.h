@@ -26,6 +26,66 @@ enum xnvme_cmd_opts {
 #define XNVME_CMD_DEF_UPLD (0x0)
 
 /**
+ * The opcode of 'sqe', XNVME_SPEC_BASE_COMMON_COMMAND_FORMAT_CDW0_OPC
+ */
+static inline uint8_t
+xnvme_cmd_sqe_get_opc(const union xnvme_cmd_sqe *sqe)
+{
+	return (uint8_t)xnvme_bits_get(sqe->common.cdw0,
+				       XNVME_SPEC_BASE_COMMON_COMMAND_FORMAT_CDW0_OPC);
+}
+
+/**
+ * Write 'opc' into the opcode of 'sqe', as xnvme_cmd_sqe_get_opc() reads it
+ */
+static inline void
+xnvme_cmd_sqe_set_opc(union xnvme_cmd_sqe *sqe, uint8_t opc)
+{
+	sqe->common.cdw0 = (uint32_t)xnvme_bits_set(
+		sqe->common.cdw0, XNVME_SPEC_BASE_COMMON_COMMAND_FORMAT_CDW0_OPC, opc);
+}
+
+/**
+ * The 64 bits of dwords 10 and 11 of 'sqe', where the I/O commands have their SLBA, as in
+ * XNVME_SPEC_NVM_READ_CDW10_11_SLBA
+ */
+static inline uint64_t
+xnvme_cmd_sqe_get_cdw10_11(const union xnvme_cmd_sqe *sqe)
+{
+	return (uint64_t)sqe->common.cdw11 << 32 | sqe->common.cdw10;
+}
+
+/**
+ * Write 'val' into dwords 10 and 11 of 'sqe', as xnvme_cmd_sqe_get_cdw10_11() reads them
+ */
+static inline void
+xnvme_cmd_sqe_set_cdw10_11(union xnvme_cmd_sqe *sqe, uint64_t val)
+{
+	sqe->common.cdw10 = (uint32_t)val;
+	sqe->common.cdw11 = (uint32_t)(val >> 32);
+}
+
+/**
+ * The 64 bits of dwords 0 and 1 of 'cpl', where a backend puts a result such as the number of
+ * bytes transferred, and the Linux NVMe driver the 64-bit result of a command
+ */
+static inline uint64_t
+xnvme_cmd_cpl_get_dw0_1(const struct xnvme_spec_base_completion_queue_entry *cpl)
+{
+	return (uint64_t)cpl->dw1 << 32 | cpl->dw0;
+}
+
+/**
+ * Write 'val' into dwords 0 and 1 of 'cpl', as xnvme_cmd_cpl_get_dw0_1() reads them
+ */
+static inline void
+xnvme_cmd_cpl_set_dw0_1(struct xnvme_spec_base_completion_queue_entry *cpl, uint64_t val)
+{
+	cpl->dw0 = (uint32_t)val;
+	cpl->dw1 = (uint32_t)(val >> 32);
+}
+
+/**
  * Pass a PSEUDO-NVMe Command through to the device
  *
  * @param ctx Pointer to command context (::xnvme_cmd_ctx)

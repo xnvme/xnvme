@@ -12,7 +12,7 @@ sub_sync_read(struct xnvme_cli *cli)
 	const struct xnvme_geo *geo = xnvme_dev_get_geo(dev);
 	uint32_t nsid = cli->args.nsid;
 
-	struct xnvme_spec_znd_descr zone = {0};
+	struct xnvme_spec_zns_zone_descriptor zone = {0};
 
 	size_t buf_nbytes;
 	char *buf = NULL;
@@ -32,7 +32,7 @@ sub_sync_read(struct xnvme_cli *cli)
 			goto exit;
 		}
 	} else {
-		err = xnvme_znd_descr_from_dev_in_state(dev, XNVME_SPEC_ZND_STATE_EMPTY, &zone);
+		err = xnvme_znd_descr_from_dev_in_state(dev, XNVME_SPEC_ZNS_ZS_EMPTY, &zone);
 		if (err) {
 			xnvme_cli_perr("xnvme_znd_descr_from_dev()", -err);
 			goto exit;
@@ -64,11 +64,18 @@ sub_sync_read(struct xnvme_cli *cli)
 		struct xnvme_cmd_ctx ctx = {0};
 		void *payload = buf + sect * geo->lba_nbytes;
 
-		xnvme_dev_get_cmd_ctx(dev, &ctx);
+		struct xnvme_cmd_prep_nvm_read_args args = {
+			.nsid = nsid,
+			.slba = zone.zslba + sect,
+		};
 
-		err = xnvme_nvm_read(&ctx, nsid, zone.zslba + sect, 0, payload, NULL);
+		xnvme_dev_get_cmd_ctx(dev, &ctx);
+		err = xnvme_cmd_prep_nvm_read(&ctx.cmd, &args);
+		if (!err) {
+			err = xnvme_cmd_pass(&ctx, payload, geo->lba_nbytes, NULL, 0);
+		}
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-			xnvme_cli_perr("xnvme_nvm_read()", err);
+			xnvme_cli_perr("xnvme_cmd_pass()", err);
 			xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 			err = err ? err : -EIO;
 			goto exit;
@@ -99,7 +106,7 @@ sub_sync_write(struct xnvme_cli *cli)
 	const struct xnvme_geo *geo = xnvme_dev_get_geo(dev);
 	uint32_t nsid = cli->args.nsid;
 
-	struct xnvme_spec_znd_descr zone = {0};
+	struct xnvme_spec_zns_zone_descriptor zone = {0};
 
 	size_t buf_nbytes;
 	char *buf = NULL;
@@ -119,7 +126,7 @@ sub_sync_write(struct xnvme_cli *cli)
 			goto exit;
 		}
 	} else {
-		err = xnvme_znd_descr_from_dev_in_state(dev, XNVME_SPEC_ZND_STATE_EMPTY, &zone);
+		err = xnvme_znd_descr_from_dev_in_state(dev, XNVME_SPEC_ZNS_ZS_EMPTY, &zone);
 		if (err) {
 			xnvme_cli_perr("xnvme_znd_descr_from_dev()", -err);
 			goto exit;
@@ -152,11 +159,18 @@ sub_sync_write(struct xnvme_cli *cli)
 		struct xnvme_cmd_ctx ctx = {0};
 		void *payload = buf + sect * geo->lba_nbytes;
 
-		xnvme_dev_get_cmd_ctx(dev, &ctx);
+		struct xnvme_cmd_prep_nvm_write_args args = {
+			.nsid = nsid,
+			.slba = zone.zslba + sect,
+		};
 
-		err = xnvme_nvm_write(&ctx, nsid, zone.zslba + sect, 0, payload, NULL);
+		xnvme_dev_get_cmd_ctx(dev, &ctx);
+		err = xnvme_cmd_prep_nvm_write(&ctx.cmd, &args);
+		if (!err) {
+			err = xnvme_cmd_pass(&ctx, payload, geo->lba_nbytes, NULL, 0);
+		}
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-			xnvme_cli_perr("xnvme_nvm_write()", err);
+			xnvme_cli_perr("xnvme_cmd_pass()", err);
 			xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 			err = err ? err : -EIO;
 			goto exit;
@@ -179,7 +193,7 @@ sub_sync_append(struct xnvme_cli *cli)
 	const struct xnvme_geo *geo = xnvme_dev_get_geo(dev);
 	uint32_t nsid = cli->args.nsid;
 
-	struct xnvme_spec_znd_descr zone = {0};
+	struct xnvme_spec_zns_zone_descriptor zone = {0};
 
 	size_t buf_nbytes;
 	char *buf = NULL;
@@ -199,7 +213,7 @@ sub_sync_append(struct xnvme_cli *cli)
 			goto exit;
 		}
 	} else {
-		err = xnvme_znd_descr_from_dev_in_state(dev, XNVME_SPEC_ZND_STATE_EMPTY, &zone);
+		err = xnvme_znd_descr_from_dev_in_state(dev, XNVME_SPEC_ZNS_ZS_EMPTY, &zone);
 		if (err) {
 			xnvme_cli_perr("xnvme_znd_descr_from_dev()", -err);
 			goto exit;
@@ -232,11 +246,18 @@ sub_sync_append(struct xnvme_cli *cli)
 		struct xnvme_cmd_ctx ctx = {0};
 		void *payload = buf + sect * geo->lba_nbytes;
 
-		xnvme_dev_get_cmd_ctx(dev, &ctx);
+		struct xnvme_cmd_prep_zns_zone_append_args args = {
+			.nsid = nsid,
+			.zslba = zone.zslba,
+		};
 
-		err = xnvme_znd_append(&ctx, nsid, zone.zslba, 0, payload, NULL);
+		xnvme_dev_get_cmd_ctx(dev, &ctx);
+		err = xnvme_cmd_prep_zns_zone_append(&ctx.cmd, &args);
+		if (!err) {
+			err = xnvme_cmd_pass(&ctx, payload, geo->lba_nbytes, NULL, 0);
+		}
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-			xnvme_cli_perr("xnvme_cmd_append()", err);
+			xnvme_cli_perr("xnvme_cmd_pass()", err);
 			xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 			err = err ? err : -EIO;
 			goto exit;

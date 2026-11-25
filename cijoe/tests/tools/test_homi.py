@@ -120,7 +120,7 @@ def _alone(cijoe, homi_id):
     """Stop every client, so the only connection left is the one asking"""
 
     # The brackets stop pkill matching its own command line
-    cijoe.run("pkill -f '[x]nvme perf run ' || true")
+    cijoe.run("pkill -f '[x]nvme perf-storage run ' || true")
     cijoe.run("pkill -f '[s]ocket.AF_UNIX' || true")
     ok, connections, _ = _wait_for(cijoe, homi_id, lambda c, _u: c == 1, 60)
     assert ok, f"the server reports {connections} connections with no clients running"
@@ -166,7 +166,7 @@ def _perf(uris, be, homi_id, runtime, nqueues=1):
     """An xnvmeperf client of `uris`, holding `nqueues` queues for `runtime` seconds"""
 
     return (
-        f"xnvme perf run {' '.join(uris)} --be {be} --homi-id {homi_id}"
+        f"xnvme perf-storage run {' '.join(uris)} --be {be} --homi-id {homi_id}"
         f" --iopattern randread --iosize 4096 --qdepth 8 --nqueues {nqueues}"
         f" --runtime {runtime} --cpulist 0"
     )
@@ -174,7 +174,7 @@ def _perf(uris, be, homi_id, runtime, nqueues=1):
 
 def _stop_clients(cijoe, uris):
     for uri in uris:
-        cijoe.run(f"pkill -f '[x]nvme perf run {uri} ' || true")
+        cijoe.run(f"pkill -f '[x]nvme perf-storage run {uri} ' || true")
 
 
 def _lblk_read(cijoe, dev, be_opts, homi_id, id_opt="--homi-id", timeout=None):
@@ -825,7 +825,7 @@ def test_a_client_outlives_the_server_shutting_down(
     # The runtime, the command timeout for noticing, and slack for a loaded host
     rc = _bg_wait(cijoe, "shutdown", runtime + 45)
     if rc is None:
-        cijoe.run("pgrep -a -x xnvme-perf")
+        cijoe.run("pgrep -af '[x]nvme[- ]perf-storage run'")
     assert rc is not None, f"the client of {uri} never terminated after its server did"
     if completion == "reap":
         assert rc != "0", f"the client of {uri} exited 0 with its queue failed"

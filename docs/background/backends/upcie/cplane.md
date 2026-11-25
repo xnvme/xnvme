@@ -21,11 +21,12 @@ xnvme info 0000:03:00.0 --be upcie --homi-id 1
 ```
 
 The identifier is `--homi-id`: the number a server listens under and a client
-asks for. **homi** and **xnvmeperf** take that spelling and no other. Tools
-that are not about sharing still accept `--shm_id`, which named this before
-there was a control plane, and it goes on meaning a segment identifier for
-{ref}`sec-backends-spdk`, which hands the value to DPDK. Either spelling sets
-both, so a value given once reaches whichever backend reads it.
+asks for. **homi**, **xnvme perf-storage** and **xnvme perf-xfer register**
+take that spelling and no other. Tools that are not about sharing still accept
+`--shm_id`, which named this before there was a control plane, and it goes on
+meaning a segment identifier for {ref}`sec-backends-spdk`, which hands the
+value to DPDK. Either spelling sets both, so a value given once reaches
+whichever backend reads it.
 
 (sec-backends-upcie-cplane-model)=
 ## Process model
@@ -231,12 +232,17 @@ one place where a policy could be applied and of a record that needs no lock.
 
 A GPU client registers its own device memory and the server describes it to
 the controller, so I/O a client submits from the host reaches VRAM under
-either attachment mode. Behind an IOMMU that description cannot come from
-mapping the dma-buf, since `IOMMU_IOAS_MAP_FILE` does not accept one exported
-by CUDA or HIP; it is installed from the physical addresses behind it instead,
-by the server here and by a process that opened the controller for itself.
-A region registered again, for another controller, is handed the description
-it already has, so the addresses a client resolves through do not change.
+either attachment mode. Behind an IOMMU, a dma-buf that `IOMMU_IOAS_MAP_FILE`
+accepts, such as one a vfio-pci device exports, is mapped with it. One
+exported by CUDA or HIP is not accepted, and its description is installed from
+the physical addresses behind it instead, by the server here and by a process
+that opened the controller for itself. Either way, a dma-buf registered again,
+for another controller, is handed the description it already has, so the
+addresses a client resolves through do not change, and it stays mapped until
+its last registration is given back. Another dma-buf of the same memory,
+exported again, is mapped with `IOMMU_IOAS_MAP_FILE` at addresses of its own,
+so its registration at the same address through another controller returns
+`-EBUSY`.
 The heap is registered this way when the client opens the controller, and a
 buffer the client allocated itself the same way when it hands it to
 `xnvme_buf_register()`: one registration per buffer and controller, given back

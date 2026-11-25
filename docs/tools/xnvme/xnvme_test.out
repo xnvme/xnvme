@@ -14,6 +14,8 @@ The test programs:
   xnvme test cuse-admin64-identify
   xnvme test dd
   xnvme test delay-identification
+  xnvme test dmabuf-udmabuf
+  xnvme test dmabuf-vfio
   xnvme test dual-be
   xnvme test enum
   xnvme test file

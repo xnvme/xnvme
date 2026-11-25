@@ -6,6 +6,7 @@
 #define _XOPEN_SOURCE 700
 #endif
 #include <libxnvme.h>
+#include <xnvme_cmd.h>
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
 #ifdef XNVME_PLATFORM_WINDOWS_ENABLED
@@ -39,9 +40,9 @@ xnvme_be_windows_sync_fs_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t db
 
 	memset(&overlapped, 0, sizeof(OVERLAPPED));
 
-	switch (ctx->cmd.common.opcode) {
-	case XNVME_SPEC_NVM_OPC_WRITE:
-		slba = ctx->cmd.nvm.slba << ssw;
+	switch (xnvme_cmd_sqe_get_opc(&ctx->cmd)) {
+	case XNVME_SPEC_NVM_WRITE_OPCODE:
+		slba = xnvme_cmd_sqe_get_cdw10_11(&ctx->cmd) << ssw;
 		overlapped.Offset = slba;
 		overlapped.OffsetHigh = (slba >> 32);
 		if (!WriteFile(state->sync_handle, dbuf, dbuf_nbytes, &res, &overlapped)) {
@@ -54,8 +55,8 @@ xnvme_be_windows_sync_fs_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t db
 		break;
 
 	case XNVME_SPEC_FS_OPC_WRITE:
-		overlapped.Offset = ctx->cmd.nvm.slba;
-		overlapped.OffsetHigh = (ctx->cmd.nvm.slba >> 32);
+		overlapped.Offset = xnvme_cmd_sqe_get_cdw10_11(&ctx->cmd);
+		overlapped.OffsetHigh = (xnvme_cmd_sqe_get_cdw10_11(&ctx->cmd) >> 32);
 		if (!WriteFile(state->sync_handle, dbuf, dbuf_nbytes, &res, &overlapped)) {
 			if (res != (ssize_t)dbuf_nbytes) {
 				err = GetLastError();
@@ -65,8 +66,8 @@ xnvme_be_windows_sync_fs_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t db
 		}
 		break;
 
-	case XNVME_SPEC_NVM_OPC_READ:
-		slba = ctx->cmd.nvm.slba << ssw;
+	case XNVME_SPEC_NVM_READ_OPCODE:
+		slba = xnvme_cmd_sqe_get_cdw10_11(&ctx->cmd) << ssw;
 		overlapped.Offset = slba;
 		overlapped.OffsetHigh = (slba >> 32);
 		if (!ReadFile(state->sync_handle, dbuf, dbuf_nbytes, &res, &overlapped)) {
@@ -88,7 +89,7 @@ xnvme_be_windows_sync_fs_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t db
 		}
 		break;
 
-	case XNVME_SPEC_NVM_OPC_FLUSH:
+	case XNVME_SPEC_IO_FLUSH_OPCODE:
 	case XNVME_SPEC_FS_OPC_FLUSH:
 		if (FlushFileBuffers(state->sync_handle)) {
 			res = dbuf_nbytes;
@@ -99,17 +100,19 @@ xnvme_be_windows_sync_fs_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t db
 		break;
 
 	default:
-		XNVME_DEBUG("FAILED: nosys opcode: %d", ctx->cmd.common.opcode);
+		XNVME_DEBUG("FAILED: nosys opcode: %d", xnvme_cmd_sqe_get_opc(&ctx->cmd));
 		return -ENOSYS;
 	}
 
-	ctx->cpl.result = res;
+	xnvme_cmd_cpl_set_dw0_1(&ctx->cpl, res);
 	if (res <= 0) {
 		XNVME_DEBUG("FAILED: {ReadFile,WriteFile,FlushFileBuffers}(), err: %d", err);
-		ctx->cpl.result = 0;
-		ctx->cpl.status = xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC, err);
-		ctx->cpl.status = xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT,
-						 XNVME_STATUS_CODE_TYPE_VENDOR);
+		xnvme_cmd_cpl_set_dw0_1(&ctx->cpl, 0);
+		ctx->cpl.status = xnvme_bits_set(
+			ctx->cpl.status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SC, err);
+		ctx->cpl.status = xnvme_bits_set(ctx->cpl.status,
+						 XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SCT,
+						 XNVME_SPEC_BASE_STATUS_CODE_TYPE_VENDOR_SPECIFIC);
 	}
 
 	return err;

@@ -12,24 +12,28 @@
 #include <errno.h>
 #include <unistd.h>
 #include <xnvme_be_ramdisk.h>
+#include <xnvme_cmd.h>
 #include <xnvme_dev.h>
 
 static int
 _idfy_ctrlr(struct xnvme_dev *XNVME_UNUSED(dev), void *dbuf)
 {
-	struct xnvme_spec_idfy_ctrlr *ctrlr = dbuf;
+	struct xnvme_spec_base_identify_controller *ctrlr = dbuf;
 	ctrlr->mdts = 0;
-	ctrlr->oncs = xnvme_bits_set(ctrlr->oncs, XNVME_SPEC_IDFY_CTRLR_ONCS_COPY, 1);
-	ctrlr->oncs = xnvme_bits_set(ctrlr->oncs, XNVME_SPEC_IDFY_CTRLR_ONCS_WRITE_ZEROES, 1);
+	ctrlr->oncs =
+		xnvme_bits_set(ctrlr->oncs, XNVME_SPEC_BASE_IDENTIFY_CONTROLLER_ONCS_NVMCPYS, 1);
+	ctrlr->oncs =
+		xnvme_bits_set(ctrlr->oncs, XNVME_SPEC_BASE_IDENTIFY_CONTROLLER_ONCS_NVMWZSV, 1);
 
-	ctrlr->cdfs = xnvme_bits_set(ctrlr->cdfs, XNVME_SPEC_IDFY_CTRLR_CDFS_FORMAT0, 1);
+	ctrlr->cdfs =
+		xnvme_bits_set(ctrlr->cdfs, XNVME_SPEC_BASE_IDENTIFY_CONTROLLER_CDFS_CDF0S, 1);
 	return 0;
 }
 
 static int
 _idfy_ns(struct xnvme_dev *dev, void *dbuf)
 {
-	struct xnvme_spec_idfy_ns *ns = dbuf;
+	struct xnvme_spec_nvm_identify_namespace *ns = dbuf;
 	size_t ramdisk_size;
 	const size_t lba_size = 512;
 
@@ -43,12 +47,10 @@ _idfy_ns(struct xnvme_dev *dev, void *dbuf)
 	ns->nuse = ramdisk_size / lba_size;
 
 	ns->nlbaf = 0; ///< This means that there is only one
-	ns->flbas = xnvme_bits_set(ns->flbas, XNVME_SPEC_IDFY_NS_FLBAS_FORMAT,
+	ns->flbas = xnvme_bits_set(ns->flbas, XNVME_SPEC_NVM_IDENTIFY_NAMESPACE_FLBAS_FIDXL,
 				   0); ///< using the first one
 
-	ns->lbaf[0].ms = 0;
-	ns->lbaf[0].ds = XNVME_ILOG2(lba_size);
-	ns->lbaf[0].rp = 0;
+	ns->lbaf[0] = xnvme_bits_set(0, XNVME_SPEC_NVM_LBA_FORMAT_LBADS, XNVME_ILOG2(lba_size));
 
 	ns->mcl = 128;
 	ns->mssrl = 128;
@@ -63,11 +65,11 @@ _idfy(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes)
 	// A device delivers the whole page, so what is not emulated reads as zero
 	memset(dbuf, 0, dbuf_nbytes);
 
-	switch (ctx->cmd.idfy.cns) {
-	case XNVME_SPEC_IDFY_NS:
+	switch (xnvme_bits_get(ctx->cmd.common.cdw10, XNVME_SPEC_ADMIN_IDENTIFY_CDW10_CNS)) {
+	case XNVME_SPEC_BASE_CNS_NVM_COMMAND_SET_IDENTIFY_NAMESPACE_DATA_STRUCTURE:
 		return _idfy_ns(ctx->dev, dbuf);
 
-	case XNVME_SPEC_IDFY_CTRLR:
+	case XNVME_SPEC_BASE_CNS_IDENTIFY_CONTROLLER_DATA_STRUCTURE:
 		return _idfy_ctrlr(ctx->dev, dbuf);
 
 	default:
@@ -75,25 +77,30 @@ _idfy(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes)
 	}
 
 	/* ///< TODO: set some appropriate status-code for other idfy-cmds */
-	/* ctx->cpl.status = xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC, 0x3); */
-	/* ctx->cpl.status = xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT, 0x3); */
+	/* ctx->cpl.status = xnvme_bits_set(ctx->cpl.status,
+	 * XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SC, 0x3); */
+	/* ctx->cpl.status = xnvme_bits_set(ctx->cpl.status,
+	 * XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SCT, 0x3); */
 	return 1;
 }
 
 static int
 _ramdisk_gfeat(struct xnvme_cmd_ctx *ctx, void *XNVME_UNUSED(dbuf))
 {
-	struct xnvme_spec_feat feat = {0};
 
-	switch (ctx->cmd.gfeat.cdw10.fid) {
-	case XNVME_SPEC_FEAT_NQUEUES:
-		feat.nqueues.nsqa = 63;
-		feat.nqueues.ncqa = 63;
-		ctx->cpl.cdw0 = feat.val;
+	switch (xnvme_bits_get(ctx->cmd.common.cdw10, XNVME_SPEC_ADMIN_GET_FEATURES_CDW10_FID)) {
+	case XNVME_SPEC_BASE_FEATURE_NUMBER_OF_QUEUES:
+		ctx->cpl.dw0 =
+			xnvme_bits_set(0, XNVME_SPEC_BASE_FEATURE_NUMBER_OF_QUEUES_CQE_DW0_NSQA,
+				       63) |
+			xnvme_bits_set(0, XNVME_SPEC_BASE_FEATURE_NUMBER_OF_QUEUES_CQE_DW0_NCQA,
+				       63);
 		break;
 
 	default:
-		XNVME_DEBUG("FAILED: unsupported fid: %d", ctx->cmd.gfeat.cdw10.fid);
+		XNVME_DEBUG("FAILED: unsupported fid: %d",
+			    (int)xnvme_bits_get(ctx->cmd.common.cdw10,
+						XNVME_SPEC_ADMIN_GET_FEATURES_CDW10_FID));
 		return -ENOSYS;
 	}
 
@@ -104,15 +111,15 @@ static int
 _xnvme_be_ramdisk_admin_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
 				  void *XNVME_UNUSED(mbuf), size_t XNVME_UNUSED(mbuf_nbytes))
 {
-	switch (ctx->cmd.common.opcode) {
-	case XNVME_SPEC_ADM_OPC_IDFY:
+	switch (xnvme_cmd_sqe_get_opc(&ctx->cmd)) {
+	case XNVME_SPEC_ADMIN_IDENTIFY_OPCODE:
 		return _idfy(ctx, dbuf, dbuf_nbytes);
 
-	case XNVME_SPEC_ADM_OPC_GFEAT:
+	case XNVME_SPEC_ADMIN_GET_FEATURES_OPCODE:
 		return _ramdisk_gfeat(ctx, dbuf);
 
 	default:
-		XNVME_DEBUG("FAILED: ENOSYS opcode: %d", ctx->cmd.common.opcode);
+		XNVME_DEBUG("FAILED: ENOSYS opcode: %d", xnvme_cmd_sqe_get_opc(&ctx->cmd));
 		return -ENOSYS;
 	}
 }

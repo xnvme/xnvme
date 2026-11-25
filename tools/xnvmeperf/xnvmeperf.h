@@ -44,8 +44,13 @@ struct xnvmeperf_args {
 	enum xnvmeperf_completion completion;
 	int buf_host_bounce;
 	uint8_t gpu_buf; ///< Allocate IO buffers on the GPU; set by --be 'io_uring_dmabuf'
+	int dmabuf_fd;   ///< --dmabuf-fd: the payloads in this inherited dma-buf; -1 for none
+	void *dmabuf_va; ///< Addresses reserved for the dma-buf, never accessed; NULL for none
+	size_t dmabuf_nbytes;
 	struct xnvme_opts opts;
 };
+
+extern struct xnvme_cli g_xnvmeperf_storage_cli;
 
 int
 fill_pattern(void *buf, size_t nbytes, uint64_t slba, uint16_t nlb);

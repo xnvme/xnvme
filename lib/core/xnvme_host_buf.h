@@ -19,6 +19,14 @@ int
 xnvme_host_buf_fill(void *buf, size_t nbytes, const char *content);
 
 /**
+ * Inspect the properties of [vaddr, vaddr + nbytes), for xnvme_buf_get_props()
+ *
+ * Sets the fields that the platform reports; the other fields keep the caller's values.
+ */
+int
+xnvme_host_buf_get_props(const void *vaddr, size_t nbytes, struct xnvme_buf_props *props);
+
+/**
  * Whether [vaddr, vaddr + nbytes) lies in hugetlb pages, which stay where they are
  *
  * Ordinary pages can move once their physical address is handed out, so a device that is given

@@ -31,6 +31,7 @@ main(int argc, char *argv[])
 {
 	struct xnvme_opts opts = {0};
 	struct xnvme_dev *dev;
+	int err;
 
 	xnvme_opts_set_defaults(&opts);
 
@@ -52,7 +53,11 @@ main(int argc, char *argv[])
 		return 1;
 	}
 
-	dev = xnvme_dev_open(argv[1], &opts);
+	err = xnvme_dev_open_uri(argv[1], &opts, &dev);
+	if (err) {
+		xnvme_cli_perr("xnvme_dev_open_uri()", err);
+		return 1;
+	}
 	xnvme_dev_pr(dev, XNVME_PR_DEF);
 	xnvme_dev_close(dev);
 

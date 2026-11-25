@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <libxnvme.h>
+#include <xnvme_cmd.h>
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
 #ifdef XNVME_BE_SPDK_ENABLED
@@ -19,7 +20,7 @@ cmd_sync_cb(void *cb_arg, const struct spdk_nvme_cpl *cpl)
 	struct xnvme_cmd_ctx *ctx = cb_arg;
 	uint8_t *completed = &ctx->be_rsvd[0];
 
-	ctx->cpl = *(const struct xnvme_spec_cqe *)cpl;
+	ctx->cpl = *(const struct xnvme_spec_base_completion_queue_entry *)cpl;
 	*completed = 1;
 }
 
@@ -27,20 +28,17 @@ static inline int
 submit_ioc(struct spdk_nvme_ctrlr *ctrlr, struct spdk_nvme_qpair *qpair, struct xnvme_cmd_ctx *ctx,
 	   void *dbuf, uint32_t dbuf_nbytes, void *mbuf, spdk_nvme_cmd_cb cb_fn, void *cb_arg)
 {
-#ifdef XNVME_TRACE_ENABLED
-	XNVME_DEBUG("Dumping IO command");
-	xnvme_spec_sqe_pr(cmd, XNVME_PR_DEF);
-#endif
-
-	switch (ctx->cmd.common.opcode) {
+	switch (xnvme_cmd_sqe_get_opc(&ctx->cmd)) {
 	case XNVME_SPEC_FS_OPC_READ:
-		ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_READ;
-		ctx->cmd.nvm.slba = ctx->cmd.nvm.slba >> ctx->dev->geo.ssw;
+		xnvme_cmd_sqe_set_opc(&ctx->cmd, XNVME_SPEC_NVM_READ_OPCODE);
+		xnvme_cmd_sqe_set_cdw10_11(&ctx->cmd, xnvme_cmd_sqe_get_cdw10_11(&ctx->cmd) >>
+							      ctx->dev->geo.ssw);
 		break;
 
 	case XNVME_SPEC_FS_OPC_WRITE:
-		ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_WRITE;
-		ctx->cmd.nvm.slba = ctx->cmd.nvm.slba >> ctx->dev->geo.ssw;
+		xnvme_cmd_sqe_set_opc(&ctx->cmd, XNVME_SPEC_NVM_WRITE_OPCODE);
+		xnvme_cmd_sqe_set_cdw10_11(&ctx->cmd, xnvme_cmd_sqe_get_cdw10_11(&ctx->cmd) >>
+							      ctx->dev->geo.ssw);
 		break;
 	}
 

@@ -1,1 +1,1 @@
-xnvme perf cuda-verify --help
+xnvme perf-storage cuda-verify --help

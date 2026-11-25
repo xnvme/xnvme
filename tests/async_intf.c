@@ -37,26 +37,37 @@ test_init_term(struct xnvme_cli *cli)
 	if (!cli->args.clear) {
 		// Ask how many queues are supported
 		struct xnvme_cmd_ctx ctx = {0};
-		struct xnvme_spec_feat feat = {.val = 0};
+		uint32_t feat = 0;
+		struct xnvme_cmd_prep_adm_get_features_args gf = {
+			.sel = XNVME_SPEC_ADMIN_GET_FEATURES_CDW10_SEL_CURRENT,
+			.fid = XNVME_SPEC_BASE_FEATURE_NUMBER_OF_QUEUES,
+		};
 
 		xnvme_dev_get_cmd_ctx(dev, &ctx);
 
-		err = xnvme_adm_gfeat(&ctx, 0x0, XNVME_SPEC_FEAT_NQUEUES,
-				      XNVME_SPEC_FEAT_SEL_CURRENT, NULL, 0);
+		err = xnvme_cmd_prep_adm_get_features(&ctx.cmd, &gf);
+		if (!err) {
+			err = xnvme_cmd_pass_admin(&ctx, NULL, 0, NULL, 0);
+		}
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-			xnvme_cli_perr("xnvme_adm_gfeat()", err);
+			xnvme_cli_perr("get_features(NQUEUES)", err);
 			xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 			err = err ? err : -EIO;
 			return err;
 		}
 
-		feat.val = ctx.cpl.cdw0;
+		feat = ctx.cpl.dw0;
 
-		xnvme_spec_feat_pr(XNVME_SPEC_FEAT_NQUEUES, &feat, XNVME_PR_DEF);
+		xnvme_spec_feat_pr(XNVME_SPEC_BASE_FEATURE_NUMBER_OF_QUEUES, feat, XNVME_PR_DEF);
 
-		if (count >= (uint64_t)(feat.nqueues.nsqa + 1)) {
-			xnvme_cli_pinf("skipping -- count: %" PRIu64 " > (nsqa + 1): %u", count,
-				       feat.nqueues.nsqa);
+		if (count >=
+		    xnvme_bits_get(feat, XNVME_SPEC_BASE_FEATURE_NUMBER_OF_QUEUES_CQE_DW0_NSQA) +
+			    1) {
+			xnvme_cli_pinf(
+				"skipping -- count: %" PRIu64 " > (nsqa + 1): %u", count,
+				(unsigned int)xnvme_bits_get(
+					feat,
+					XNVME_SPEC_BASE_FEATURE_NUMBER_OF_QUEUES_CQE_DW0_NSQA));
 			return 0;
 		}
 	}
@@ -157,10 +168,19 @@ test_init_io_term(struct xnvme_cli *cli)
 			struct xnvme_cmd_ctx *ctx = xnvme_queue_get_cmd_ctx(queue);
 			uint64_t slba = (round * qd + i) % geo->nsect;
 
-			err = xnvme_nvm_read(ctx, nsid, slba, 0, (char *)buf + i * geo->lba_nbytes,
-					     NULL);
+			struct xnvme_cmd_prep_nvm_read_args rd = {
+				.nsid = nsid,
+				.slba = slba,
+			};
+
+			err = xnvme_cmd_prep_nvm_read(&ctx->cmd, &rd);
+			if (!err) {
+				err = xnvme_cmd_pass(
+					ctx, (char *)buf + i * geo->lba_nbytes,
+					(size_t)xnvme_dev_get_geo(ctx->dev)->lba_nbytes, NULL, 0);
+			}
 			if (err) {
-				xnvme_cli_perr("xnvme_nvm_read()", err);
+				xnvme_cli_perr("read", err);
 				xnvme_queue_put_cmd_ctx(queue, ctx);
 				break;
 			}
@@ -208,8 +228,12 @@ test_init_exhaust(struct xnvme_cli *cli)
 	uint64_t qd = cli->args.qdepth;
 	struct xnvme_queue *queue[XNVME_TESTS_NQUEUE_MAX] = {0};
 	struct xnvme_cmd_ctx ctx = {0};
-	struct xnvme_spec_feat feat = {.val = 0};
-	uint32_t nqueues, created = 0;
+	uint32_t feat = 0;
+	struct xnvme_cmd_prep_adm_get_features_args gf = {
+		.sel = XNVME_SPEC_ADMIN_GET_FEATURES_CDW10_SEL_CURRENT,
+		.fid = XNVME_SPEC_BASE_FEATURE_NUMBER_OF_QUEUES,
+	};
+	uint32_t nsqa, ncqa, nqueues, created = 0;
 	int err;
 
 	if (qd > XNVME_TESTS_QDEPTH_MAX) {
@@ -218,17 +242,23 @@ test_init_exhaust(struct xnvme_cli *cli)
 	}
 
 	xnvme_dev_get_cmd_ctx(dev, &ctx);
-	err = xnvme_adm_gfeat(&ctx, 0x0, XNVME_SPEC_FEAT_NQUEUES, XNVME_SPEC_FEAT_SEL_CURRENT,
-			      NULL, 0);
+	err = xnvme_cmd_prep_adm_get_features(&ctx.cmd, &gf);
+	if (!err) {
+		err = xnvme_cmd_pass_admin(&ctx, NULL, 0, NULL, 0);
+	}
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		xnvme_cli_perr("xnvme_adm_gfeat()", err);
+		xnvme_cli_perr("get_features(NQUEUES)", err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		return err ? err : -EIO;
 	}
-	feat.val = ctx.cpl.cdw0;
-	xnvme_spec_feat_pr(XNVME_SPEC_FEAT_NQUEUES, &feat, XNVME_PR_DEF);
+	feat = ctx.cpl.dw0;
+	xnvme_spec_feat_pr(XNVME_SPEC_BASE_FEATURE_NUMBER_OF_QUEUES, feat, XNVME_PR_DEF);
 
-	nqueues = feat.nqueues.nsqa < feat.nqueues.ncqa ? feat.nqueues.nsqa : feat.nqueues.ncqa;
+	nsqa = (uint32_t)xnvme_bits_get(feat,
+					XNVME_SPEC_BASE_FEATURE_NUMBER_OF_QUEUES_CQE_DW0_NSQA);
+	ncqa = (uint32_t)xnvme_bits_get(feat,
+					XNVME_SPEC_BASE_FEATURE_NUMBER_OF_QUEUES_CQE_DW0_NCQA);
+	nqueues = nsqa < ncqa ? nsqa : ncqa;
 	nqueues += 1; ///< NSQA and NCQA are 0's based
 	xnvme_cli_pinf("nqueues: %u", nqueues);
 	xnvme_cli_pinf("qdepth: %" PRIu64, qd);
@@ -318,16 +348,28 @@ reap_round(struct xnvme_queue *queue, uint32_t nsid, const struct xnvme_geo *geo
 		xnvme_cmd_ctx_set_data(ctx, &records[i]);
 
 		if (i < nflush) {
-			memset(&ctx->cmd, 0, sizeof(ctx->cmd));
-			ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_FLUSH;
-			ctx->cmd.common.nsid = nsid;
-			err = xnvme_cmd_pass(ctx, NULL, 0, NULL, 0);
+			struct xnvme_cmd_prep_io_flush_args fl = {
+				.nsid = nsid,
+			};
+
+			err = xnvme_cmd_prep_io_flush(&ctx->cmd, &fl);
+			if (!err) {
+				err = xnvme_cmd_pass(ctx, NULL, 0, NULL, 0);
+			}
 		} else {
-			err = xnvme_nvm_read(ctx, nsid, records[i].slba, 0,
-					     buf + i * geo->lba_nbytes, NULL);
+			struct xnvme_cmd_prep_nvm_read_args rd = {
+				.nsid = nsid,
+				.slba = records[i].slba,
+			};
+
+			err = xnvme_cmd_prep_nvm_read(&ctx->cmd, &rd);
+			if (!err) {
+				err = xnvme_cmd_pass(ctx, buf + i * geo->lba_nbytes,
+						     geo->lba_nbytes, NULL, 0);
+			}
 		}
 		if (err) {
-			xnvme_cli_perr(i < nflush ? "xnvme_cmd_pass()" : "xnvme_nvm_read()", err);
+			xnvme_cli_perr(i < nflush ? "flush" : "read", err);
 			xnvme_queue_put_cmd_ctx(queue, ctx);
 			return err;
 		}
@@ -367,10 +409,13 @@ reap_round(struct xnvme_queue *queue, uint32_t nsid, const struct xnvme_geo *geo
 					       (void *)record);
 				return -EIO;
 			}
-			if (record->slba != ctx->cmd.nvm.slba) {
+			if (record->slba !=
+			    ((uint64_t)ctx->cmd.common.cdw11 << 32 | ctx->cmd.common.cdw10)) {
 				xnvme_cli_pinf("FAILED: data: slba: 0x%" PRIx64
-					       " != cmd.nvm.slba: 0x%" PRIx64,
-					       record->slba, (uint64_t)ctx->cmd.nvm.slba);
+					       " != cdw10_11: 0x%" PRIx64,
+					       record->slba,
+					       ((uint64_t)ctx->cmd.common.cdw11 << 32 |
+						ctx->cmd.common.cdw10));
 				return -EIO;
 			}
 			if (record->reaped) {
@@ -533,10 +578,20 @@ submit_reads(struct xnvme_queue *queue, uint32_t nsid, const struct xnvme_geo *g
 		struct xnvme_cmd_ctx *ctx = xnvme_queue_get_cmd_ctx(queue);
 		int err;
 
-		err = xnvme_nvm_read(ctx, nsid, i % geo->nsect, 0, buf + i * geo->lba_nbytes,
-				     NULL);
+		struct xnvme_cmd_prep_nvm_read_args rd = {
+			.nsid = nsid,
+			.slba = i % geo->nsect,
+		};
+
+		err = xnvme_cmd_prep_nvm_read(&ctx->cmd, &rd);
+		if (!err) {
+			err = xnvme_cmd_pass(ctx, buf + i * geo->lba_nbytes,
+					     (size_t)xnvme_dev_get_geo(ctx->dev)->lba_nbytes *
+						     (0 + 1),
+					     NULL, 0);
+		}
 		if (err) {
-			xnvme_cli_perr("xnvme_nvm_read()", err);
+			xnvme_cli_perr("read", err);
 			xnvme_queue_put_cmd_ctx(queue, ctx);
 			return err;
 		}
@@ -578,10 +633,20 @@ test_reap_cmd_fail(struct xnvme_cli *cli)
 		return err;
 	}
 
+	struct xnvme_cmd_prep_nvm_read_args rd = {
+		.nsid = nsid,
+	};
+	struct xnvme_cmd_prep_nvm_compare_args cmp = {
+		.nsid = nsid,
+	};
+
 	xnvme_dev_get_cmd_ctx(dev, &sync);
-	err = xnvme_nvm_read(&sync, nsid, 0, 0, buf, NULL);
+	err = xnvme_cmd_prep_nvm_read(&sync.cmd, &rd);
+	if (!err) {
+		err = xnvme_cmd_pass(&sync, buf, geo->lba_nbytes, NULL, 0);
+	}
 	if (err || xnvme_cmd_ctx_cpl_status(&sync)) {
-		xnvme_cli_perr("xnvme_nvm_read()", err);
+		xnvme_cli_perr("read", err);
 		err = err ? err : -EIO;
 		goto exit;
 	}
@@ -597,9 +662,12 @@ test_reap_cmd_fail(struct xnvme_cli *cli)
 
 	ctx = xnvme_queue_get_cmd_ctx(queue);
 	xnvme_cmd_ctx_set_data(ctx, &compare);
-	err = xnvme_nvm_compare(ctx, nsid, 0, 0, buf, NULL);
+	err = xnvme_cmd_prep_nvm_compare(&ctx->cmd, &cmp);
+	if (!err) {
+		err = xnvme_cmd_pass(ctx, buf, geo->lba_nbytes, NULL, 0);
+	}
 	if (err) {
-		xnvme_cli_perr("xnvme_nvm_compare()", err);
+		xnvme_cli_perr("compare", err);
 		xnvme_queue_put_cmd_ctx(queue, ctx);
 		goto exit;
 	}
@@ -827,15 +895,16 @@ exit:
 static int
 check_errno_status(struct xnvme_cmd_ctx *ctx)
 {
-	int sct = xnvme_bits_get(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT);
-	int sc = xnvme_bits_get(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC);
+	int sct =
+		xnvme_bits_get(ctx->cpl.status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SCT);
+	int sc = xnvme_bits_get(ctx->cpl.status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SC);
 
-	if (sct == XNVME_STATUS_CODE_TYPE_VENDOR && sc == ENOSYS) {
+	if (sct == XNVME_SPEC_BASE_STATUS_CODE_TYPE_VENDOR_SPECIFIC && sc == ENOSYS) {
 		return 0;
 	}
 
 	xnvme_cli_pinf("FAILED: sct: 0x%x, sc: 0x%x, expected sct: 0x%x, sc: ENOSYS (0x%x)", sct,
-		       sc, XNVME_STATUS_CODE_TYPE_VENDOR, ENOSYS);
+		       sc, XNVME_SPEC_BASE_STATUS_CODE_TYPE_VENDOR_SPECIFIC, ENOSYS);
 	xnvme_cmd_ctx_pr(ctx, XNVME_PR_DEF);
 
 	return -EIO;
@@ -857,14 +926,21 @@ cb_errno(struct xnvme_cmd_ctx *ctx, void *cb_arg)
 static int
 submit_nosys(struct xnvme_cmd_ctx *ctx, uint32_t nsid, int round)
 {
+	struct xnvme_cmd_prep_nvm_write_uncorrectable_args wu = {
+		.nsid = nsid,
+	};
+	int err;
+
 	if (round == 2) {
-		ctx->cpl.status = xnvme_bits_set(0, XNVME_SPEC_CQE_STATUS_SC,
-						 XNVME_STATUS_CODE_INVALID_FIELD);
+		ctx->cpl.status = xnvme_bits_set(
+			0, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SC,
+			XNVME_SPEC_BASE_GENERIC_COMMAND_STATUS_INVALID_FIELD_IN_COMMAND);
 	}
 
-	memset(&ctx->cmd, 0, sizeof(ctx->cmd));
-	ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_WRITE_UNCORRECTABLE;
-	ctx->cmd.common.nsid = nsid;
+	err = xnvme_cmd_prep_nvm_write_uncorrectable(&ctx->cmd, &wu);
+	if (err) {
+		return err;
+	}
 
 	return xnvme_cmd_pass(ctx, NULL, 0, NULL, 0);
 }

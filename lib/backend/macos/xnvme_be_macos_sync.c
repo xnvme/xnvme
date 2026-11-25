@@ -8,6 +8,7 @@
  * needed. To normalize the behavior, this is is applied here for cmd_io() and cmd_iov().
  */
 #include <libxnvme.h>
+#include <xnvme_cmd.h>
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
 #ifdef XNVME_PLATFORM_MACOS_ENABLED
@@ -24,32 +25,34 @@ cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf, si
 	struct xnvme_be_posix_state *state = &xnvme_be_state(ctx->dev)->posix_state;
 	ssize_t res;
 
-	switch (ctx->cmd.common.opcode) {
-	case XNVME_SPEC_NVM_OPC_FLUSH:
+	switch (xnvme_cmd_sqe_get_opc(&ctx->cmd)) {
+	case XNVME_SPEC_IO_FLUSH_OPCODE:
 	case XNVME_SPEC_FS_OPC_FLUSH:
 		res = fsync(state->fd);
-		ctx->cpl.result = res;
+		xnvme_cmd_cpl_set_dw0_1(&ctx->cpl, res);
 		if (res < 0) {
 			XNVME_DEBUG("FAILED: {fsync}(), errno: %d", errno);
-			ctx->cpl.result = 0;
-			ctx->cpl.status =
-				xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC, errno);
-			ctx->cpl.status =
-				xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT,
-					       XNVME_STATUS_CODE_TYPE_VENDOR);
+			xnvme_cmd_cpl_set_dw0_1(&ctx->cpl, 0);
+			ctx->cpl.status = xnvme_bits_set(
+				ctx->cpl.status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SC,
+				errno);
+			ctx->cpl.status = xnvme_bits_set(
+				ctx->cpl.status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SCT,
+				XNVME_SPEC_BASE_STATUS_CODE_TYPE_VENDOR_SPECIFIC);
 			return -errno;
 		}
 
 		fcntl(state->fd, F_FULLFSYNC);
-		ctx->cpl.result = res;
+		xnvme_cmd_cpl_set_dw0_1(&ctx->cpl, res);
 		if (res < 0) {
 			XNVME_DEBUG("FAILED: {F_FULLFSYNC}(), errno: %d", errno);
-			ctx->cpl.result = 0;
-			ctx->cpl.status =
-				xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC, errno);
-			ctx->cpl.status =
-				xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT,
-					       XNVME_STATUS_CODE_TYPE_VENDOR);
+			xnvme_cmd_cpl_set_dw0_1(&ctx->cpl, 0);
+			ctx->cpl.status = xnvme_bits_set(
+				ctx->cpl.status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SC,
+				errno);
+			ctx->cpl.status = xnvme_bits_set(
+				ctx->cpl.status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SCT,
+				XNVME_SPEC_BASE_STATUS_CODE_TYPE_VENDOR_SPECIFIC);
 			return -errno;
 		}
 		return 0;
@@ -65,32 +68,34 @@ cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt, size_t d
 	struct xnvme_be_posix_state *state = &xnvme_be_state(ctx->dev)->posix_state;
 	ssize_t res;
 
-	switch (ctx->cmd.common.opcode) {
-	case XNVME_SPEC_NVM_OPC_FLUSH:
+	switch (xnvme_cmd_sqe_get_opc(&ctx->cmd)) {
+	case XNVME_SPEC_IO_FLUSH_OPCODE:
 	case XNVME_SPEC_FS_OPC_FLUSH:
 		res = fsync(state->fd);
-		ctx->cpl.result = res;
+		xnvme_cmd_cpl_set_dw0_1(&ctx->cpl, res);
 		if (res < 0) {
 			XNVME_DEBUG("FAILED: {fsync}(), errno: %d", errno);
-			ctx->cpl.result = 0;
-			ctx->cpl.status =
-				xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC, errno);
-			ctx->cpl.status =
-				xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT,
-					       XNVME_STATUS_CODE_TYPE_VENDOR);
+			xnvme_cmd_cpl_set_dw0_1(&ctx->cpl, 0);
+			ctx->cpl.status = xnvme_bits_set(
+				ctx->cpl.status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SC,
+				errno);
+			ctx->cpl.status = xnvme_bits_set(
+				ctx->cpl.status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SCT,
+				XNVME_SPEC_BASE_STATUS_CODE_TYPE_VENDOR_SPECIFIC);
 			return -errno;
 		}
 
 		fcntl(state->fd, F_FULLFSYNC);
-		ctx->cpl.result = res;
+		xnvme_cmd_cpl_set_dw0_1(&ctx->cpl, res);
 		if (res < 0) {
 			XNVME_DEBUG("FAILED: {F_FULLFSYNC}(), errno: %d", errno);
-			ctx->cpl.result = 0;
-			ctx->cpl.status =
-				xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC, errno);
-			ctx->cpl.status =
-				xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT,
-					       XNVME_STATUS_CODE_TYPE_VENDOR);
+			xnvme_cmd_cpl_set_dw0_1(&ctx->cpl, 0);
+			ctx->cpl.status = xnvme_bits_set(
+				ctx->cpl.status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SC,
+				errno);
+			ctx->cpl.status = xnvme_bits_set(
+				ctx->cpl.status, XNVME_SPEC_BASE_COMPLETION_QUEUE_ENTRY_STATUS_SCT,
+				XNVME_SPEC_BASE_STATUS_CODE_TYPE_VENDOR_SPECIFIC);
 			return -errno;
 		}
 		return 0;
