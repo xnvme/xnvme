@@ -8,6 +8,8 @@ doc: |
   and out of VRAM through the kernel, and then runs the tests labelled hip
   against the controller, driven from user space with its buffers in VRAM,
   and those of io_uring_dmabuf, which does IO on VRAM through the kernel.
+  Last, it runs the tests of dma-bufs of host memory that udmabuf exports, on
+  upcie directly and through a homi server, and on io_uring_dmabuf.
 
 steps:
 - name: facts
@@ -49,4 +51,28 @@ steps:
   uses: core.testrunner
   with:
     args: 'tests/tools/test_xnvmeperf_dmabuf.py --timeout=1800 --timeout-method=thread'
+    random_order: false
+
+- name: test_dmabuf_inside
+  uses: core.testrunner
+  with:
+    args: '-k io_uring tests/logic/test_xnvme_tests_dmabuf.py --timeout=1800 --timeout-method=thread'
+    random_order: false
+
+# The udmabuf tests skip without these, here and in the steps above, so a job
+# whose image lacks them fails here
+- name: udmabuf_devices
+  run: |
+    test -c /dev/udmabuf && test -c /dev/dmabuf_import
+
+- name: test_dmabuf_upcie
+  uses: core.testrunner
+  with:
+    args: '-k "dmabuf and upcie and not hip" tests --timeout=1800 --timeout-method=thread'
+    random_order: false
+
+- name: test_dmabuf_upcie_homi
+  uses: core.testrunner
+  with:
+    args: '-k "dmabuf and upcie and not hip" tests --homi-id 42 --timeout=1800 --timeout-method=thread'
     random_order: false

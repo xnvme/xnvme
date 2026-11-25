@@ -152,6 +152,16 @@ if conf_data.get('XNVME_BE_LIBURING_ENABLED')
   tests += {'liburing.c': []}
 endif
 
+# Takes the exporting device by its vfio cdev, with uPCIe's vfio-cdev and iommufd helpers
+if is_linux and upcie_dep.found()
+  tests += {'dmabuf_vfio.c': []}
+endif
+
+# Takes /dev/udmabuf, which wraps a memfd in a dma-buf
+if is_linux
+  tests += {'dmabuf_udmabuf.c': []}
+endif
+
 tests_exe = {}
 tests_bins = []
 foreach test_source, tests_args : tests
@@ -162,7 +172,7 @@ foreach test_source, tests_args : tests
     link_with: xnvmelib,
     link_args: link_args_hardening,
     pie: get_option('hardening'),
-    dependencies: [thread_dep] + (test_source == 'liburing.c' ? [uring_dep] : []),
+    dependencies: [thread_dep] + (test_source == 'liburing.c' ? [uring_dep] : []) + (test_source == 'dmabuf_vfio.c' ? [upcie_dep] : []),
     install_rpath: xnvmelib_rpath,
     install: true,
     install_dir: xnvme_libexecdir,

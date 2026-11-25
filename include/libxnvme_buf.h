@@ -158,7 +158,39 @@ int
 xnvme_buf_register(const struct xnvme_dev *dev, void *vaddr, size_t nbytes);
 
 /**
- * Unregister memory registered with xnvme_buf_register()
+ * Register a dma-buf for use as command payload with the given device
+ *
+ * Commands and xnvme_buf_unregister() name the dma-buf by vaddr, the address of its first byte in
+ * the caller's address space; its size is that of the dma-buf. Neither registering nor a command
+ * accesses the memory with the CPU, so vaddr may name a range the caller cannot access, such as
+ * one mapped PROT_NONE or a GPU's memory. The library keeps a duplicate of fd while the dma-buf is
+ * registered, so the caller may close fd once this returns. Registering the dma-buf again at the
+ * same vaddr is counted, as xnvme_buf_register() counts memory. Through a further device, register
+ * the same dma-buf, by fd or a duplicate of it: another dma-buf of the same memory may be mapped
+ * at other addresses, and then returns `-EBUSY`.
+ *
+ * @note Unregister the dma-buf with xnvme_buf_unregister()
+ * @note vaddr and the size of the dma-buf must be multiples of the alignment given by
+ * xnvme_buf_get_alignment()
+ * @note Control plane: serialised with the other control-plane calls, not with I/O on the
+ * same device, queue or buffer; see Thread Safety in the API documentation
+ *
+ * @param dev Device handle obtained with xnvme_dev_open()
+ * @param fd File descriptor of the dma-buf
+ * @param vaddr The address that names the first byte of the dma-buf
+ *
+ * @return On success, 0 is returned. On error, negative `errno` is returned; `-ENOSYS` when the
+ * device does not register dma-bufs, and `-EBUSY` when vaddr lies inside a registered range, the
+ * dma-buf partly overlaps one, or a different dma-buf registered at vaddr through another device
+ * is mapped at other addresses.
+ *
+ * @errno
+ */
+int
+xnvme_buf_register_dmabuf(const struct xnvme_dev *dev, int fd, void *vaddr);
+
+/**
+ * Unregister memory registered with xnvme_buf_register() or xnvme_buf_register_dmabuf()
  *
  * @note Control plane: serialised with the other control-plane calls, not with I/O on the
  * same device, queue or buffer; see Thread Safety in the API documentation
