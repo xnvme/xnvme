@@ -72,6 +72,37 @@ _cuda_ctx_term(void)
 	g_upcie_cuda_rte.cu_ctx_retained = 0;
 }
 
+static int
+_cuda_heap_init(size_t heap_size)
+{
+	int err;
+
+	err = cudamem_heap_init(&g_upcie_cuda_rte.cuda_heap, heap_size,
+				&g_upcie_cuda_rte.cuda_config);
+	if (err) {
+		return err;
+	}
+	err = xnvme_buf_reg_add_xfer(&g_upcie_cuda_rte.cuda_heap,
+				     (void *)(uintptr_t)g_upcie_cuda_rte.cuda_heap.vaddr,
+				     g_upcie_cuda_rte.cuda_heap.size, 0, XNVME_BUF_XFER_CUDA);
+	if (err) {
+		cudamem_heap_term(&g_upcie_cuda_rte.cuda_heap);
+	}
+
+	return err;
+}
+
+static void
+_cuda_heap_term(void)
+{
+	struct xnvme_buf_reg *reg = xnvme_buf_reg_any(&g_upcie_cuda_rte.cuda_heap);
+
+	if (reg) {
+		xnvme_buf_reg_remove(reg);
+	}
+	cudamem_heap_term(&g_upcie_cuda_rte.cuda_heap);
+}
+
 static void
 _cuda_rte_term(void)
 {
@@ -91,7 +122,7 @@ _cuda_rte_term(void)
 		xnvme_buf_reg_remove(reg);
 	}
 	dmamem_destroy(&g_upcie_cuda_rte.dmem);
-	cudamem_heap_term(&g_upcie_cuda_rte.cuda_heap);
+	_cuda_heap_term();
 	_cuda_ctx_term();
 
 	g_upcie_cuda_rte.is_initialized = 0;
@@ -411,10 +442,9 @@ _cuda_rte_init(size_t heap_size, uint32_t gpu_id, struct xnvme_be_upcie_ctrlr *c
 		     g_upcie_cuda_rte.cuda_config.device_pagesize) *
 		    g_upcie_cuda_rte.cuda_config.device_pagesize;
 
-	err = cudamem_heap_init(&g_upcie_cuda_rte.cuda_heap, heap_size,
-				&g_upcie_cuda_rte.cuda_config);
+	err = _cuda_heap_init(heap_size);
 	if (err) {
-		XNVME_DEBUG("FAILED: cudamem_heap_init(); err(%d)", err);
+		XNVME_DEBUG("FAILED: _cuda_heap_init(); err(%d)", err);
 		_cuda_ctrlr_term(slot);
 		_cuda_ctx_term();
 		return err;
@@ -442,7 +472,7 @@ _cuda_rte_init(size_t heap_size, uint32_t gpu_id, struct xnvme_be_upcie_ctrlr *c
 			XNVME_DEBUG("FAILED: registering the CUDA heap with the server; err(%d)",
 				    err);
 			_cuda_ctrlr_term(slot);
-			cudamem_heap_term(&g_upcie_cuda_rte.cuda_heap);
+			_cuda_heap_term();
 			_cuda_ctx_term();
 			return err;
 		}
@@ -454,7 +484,7 @@ _cuda_rte_init(size_t heap_size, uint32_t gpu_id, struct xnvme_be_upcie_ctrlr *c
 		if (err) {
 			XNVME_DEBUG("FAILED: dmamem_from_cuda_registry(); err(%d)", err);
 			_cuda_ctrlr_term(slot);
-			cudamem_heap_term(&g_upcie_cuda_rte.cuda_heap);
+			_cuda_heap_term();
 			_cuda_ctx_term();
 			return err;
 		}

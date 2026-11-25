@@ -44,6 +44,14 @@ range, and registered in whole pages, with the form of
 memory does nothing. See {ref}`sec-background-memory` for what registering does
 on the other backends.
 
+A `dma-buf` from another exporter, such as `udmabuf` or a DMA heap, is
+registered with `xnvme_buf_register_dmabuf()`, given the address that names
+its first byte. Commands then name it by that address.
+
+```c
+xnvme_buf_register_dmabuf(dev, fd, buf);
+```
+
 ## Limitations
 
 | | |

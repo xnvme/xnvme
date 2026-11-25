@@ -6,6 +6,7 @@
 
 #ifdef XNVME_BE_LIBURING_DMABUF_ENABLED
 #include <errno.h>
+#include <fcntl.h>
 #include <unistd.h>
 #include <xnvme_buf.h>
 #include <xnvme_be_posix.h>
@@ -14,6 +15,7 @@
 static int
 buf_register(const struct xnvme_dev *dev, void *vaddr, size_t nbytes)
 {
+	enum xnvme_buf_xfer xfer;
 	size_t alloc_nbytes;
 	void *base;
 	int fd, err;
@@ -22,24 +24,62 @@ buf_register(const struct xnvme_dev *dev, void *vaddr, size_t nbytes)
 		return -EINVAL;
 	}
 
-	if (xnvme_buf_is_host(vaddr)) {
+	// A range inside a registered dma-buf, udmabuf host memory too, takes a reference of it
+	err = xnvme_be_liburing_dmabuf_ref(dev, vaddr, nbytes, true);
+	if (err != -ENOENT) {
+		return err;
+	}
+	xfer = xnvme_buf_xfer_probe(vaddr);
+	if (xfer == XNVME_BUF_XFER_CPU) {
 		return xnvme_buf_noreg_register(dev, vaddr, nbytes);
 	}
 
-	err = xnvme_be_liburing_dmabuf_ref(dev, vaddr, nbytes);
+	err = xnvme_buf_export_dmabuf(vaddr, xfer, &base, &alloc_nbytes, &fd);
+	if (err) {
+		return err;
+	}
+
+	err = xnvme_be_liburing_dmabuf_add(dev, base, alloc_nbytes, fd, xfer);
+	if (err) {
+		close(fd);
+		// On -EEXIST, another thread registered it first and this call took a reference
+		return (err == -EEXIST) ? 0 : err;
+	}
+
+	return 0;
+}
+
+static int
+buf_register_dmabuf(const struct xnvme_dev *dev, int fd, void *vaddr)
+{
+	off_t size;
+	size_t nbytes;
+	int own, err;
+
+	size = lseek(fd, 0, SEEK_END);
+	if (size <= 0) {
+		XNVME_DEBUG("FAILED: lseek(dma-buf), errno: %d", errno);
+		return size ? -errno : -EINVAL;
+	}
+	nbytes = (size_t)size;
+
+	// A dma-buf inside a registered one returns -EBUSY, as a reference would count its memory
+	// as the registered dma-buf's
+	err = xnvme_be_liburing_dmabuf_ref(dev, vaddr, nbytes, false);
 	if (err != -ENOENT) {
 		return err;
 	}
 
-	err = xnvme_buf_export_dmabuf(vaddr, &base, &alloc_nbytes, &fd);
-	if (err) {
-		return err;
+	own = fcntl(fd, F_DUPFD_CLOEXEC, 0);
+	if (own < 0) {
+		return -errno;
 	}
 
-	err = xnvme_be_liburing_dmabuf_add(dev, base, alloc_nbytes, fd);
+	// vaddr may name the memory of a runtime, which then moves data in it
+	err = xnvme_be_liburing_dmabuf_add(dev, vaddr, nbytes, own, xnvme_buf_xfer_probe(vaddr));
 	if (err) {
-		close(fd);
-		// Added by another thread meanwhile, which also took the reference
+		close(own);
+		// On -EEXIST, another thread registered it first and this call took a reference
 		return (err == -EEXIST) ? 0 : err;
 	}
 
@@ -49,11 +89,14 @@ buf_register(const struct xnvme_dev *dev, void *vaddr, size_t nbytes)
 static int
 buf_unregister(const struct xnvme_dev *dev, void *vaddr)
 {
-	if (xnvme_buf_is_host(vaddr)) {
+	int err;
+
+	err = xnvme_be_liburing_dmabuf_unref(dev, vaddr);
+	if ((err == -ENOENT) && (xnvme_buf_xfer_probe(vaddr) == XNVME_BUF_XFER_CPU)) {
 		return xnvme_buf_noreg_unregister(dev, vaddr);
 	}
 
-	return xnvme_be_liburing_dmabuf_unref(dev, vaddr);
+	return err;
 }
 
 static int
@@ -80,6 +123,7 @@ struct xnvme_be_mem g_xnvme_be_liburing_mem_dmabuf = {
 	.buf_free = xnvme_be_posix_mem_buf_free,
 	.buf_vtophys = xnvme_be_posix_mem_buf_vtophys,
 	.buf_register = buf_register,
+	.buf_register_dmabuf = buf_register_dmabuf,
 	.buf_unregister = buf_unregister,
 	.buf_get_alignment = buf_get_alignment,
 };
