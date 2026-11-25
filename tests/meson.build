@@ -150,7 +150,7 @@ tests = {
 
 # Issues the raw NVME_IOCTL_ADMIN64_CMD itself, bypassing xNVMe's own command
 # path, which never selects it; only built where that ioctl ABI exists
-if is_linux
+if is_linux and cc.has_header_symbol('linux/nvme_ioctl.h', 'NVME_IOCTL_ADMIN64_CMD')
   tests += {'cuse_admin64_identify.c': []}
 endif
 
