@@ -131,6 +131,44 @@ second_ctrlr_read(const char *uri, struct xnvme_opts *opts, struct xnvme_dev **d
 	return 0;
 }
 
+/*
+ * xnvme_buf_register() recorded HIP as the runtime of buf, so the buffer helpers call HIP; a load
+ * or store by the CPU there faults
+ */
+static int
+check_helpers(void *buf, size_t nbytes)
+{
+	size_t diff = 0;
+	void *zeros;
+	int err;
+
+	zeros = calloc(1, nbytes);
+	if (!zeros) {
+		return -ENOMEM;
+	}
+
+	err = xnvme_buf_fill(buf, nbytes, "rand-t");
+	err = err ? err : xnvme_buf_diff(zeros, buf, nbytes, &diff);
+	if (!err && !diff) {
+		err = -EIO;
+		xnvme_cli_perr("xnvme_buf_fill() of the registered buffer wrote no byte", err);
+	}
+	err = err ? err : xnvme_buf_clear(buf, nbytes);
+	diff = 0; // xnvme_buf_diff() adds to it
+	err = err ? err : xnvme_buf_diff(zeros, buf, nbytes, &diff);
+	if (!err && diff) {
+		err = -EIO;
+		xnvme_cli_perr("xnvme_buf_clear() of the registered buffer left bytes set", err);
+	}
+	if (err) {
+		xnvme_cli_perr("the buffer helpers on the registered buffer", err);
+	}
+
+	free(zeros);
+
+	return err;
+}
+
 int
 main(int argc, char **argv)
 {
@@ -187,6 +225,13 @@ main(int argc, char **argv)
 	}
 	mapped = 1;
 	xnvme_cli_pinf("xnvme_buf_register(%p, %zu): registered", buf, buf_nbytes);
+
+	err = check_helpers(buf, buf_nbytes);
+	if (err) {
+		goto exit;
+	}
+	xnvme_cli_pinf(
+		"OK: the buffer helpers filled, cleared and compared the registered buffer");
 
 	xnvme_dev_get_cmd_ctx(dev, &ctx);
 	err = xnvme_nvm_read(&ctx, xnvme_dev_get_nsid(dev), 0x0, nlb - 1, buf, NULL);

@@ -21,20 +21,24 @@ if thread_dep.found()
     xnvmeperf_deps += [hip_dep]
   endif
 
-  libexec_names += 'xnvme-perf'
-  xnvmeperf_bin = executable(
-    'xnvme-perf',
-    xnvmeperf_sources,
-    include_directories: [conf_inc, xnvme_inc, xnvme_priv_inc],
-    link_args: link_args_hardening,
-    pie: get_option('hardening'),
-    link_with: xnvmelib,
-    install_rpath: xnvmelib_rpath,
-    dependencies: xnvmeperf_deps,
-    cuda_args: xnvmeperf_cuda_args,
-    install: true,
-    install_dir: xnvme_libexecdir,
-  )
+  # Both programs build every source: xnvmeperf_cuda.cu calls fill_pattern() and
+  # print_intermediate_result() of xnvmeperf.c, and perf_xfer.c the GPU copy path.
+  foreach prog : [['xnvme-perf-storage', 'perf_storage.c'], ['xnvme-perf-xfer', 'perf_xfer.c']]
+    libexec_names += prog[0]
+    executable(
+      prog[0],
+      xnvmeperf_sources + files(prog[1]),
+      include_directories: [conf_inc, xnvme_inc, xnvme_priv_inc],
+      link_args: link_args_hardening,
+      pie: get_option('hardening'),
+      link_with: xnvmelib,
+      install_rpath: xnvmelib_rpath,
+      dependencies: xnvmeperf_deps,
+      cuda_args: xnvmeperf_cuda_args,
+      install: true,
+      install_dir: xnvme_libexecdir,
+    )
+  endforeach
 else
   warning('No support for threads, skipping xnvmeperf')
 endif

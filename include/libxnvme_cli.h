@@ -136,7 +136,10 @@ struct xnvme_cli_args {
 	const char *core_mask;
 	const char *iova_mode;
 
-	uint32_t gpu_id; ///< upcie-cuda/upcie-hip: GPU ordinal to use
+	uint32_t gpu_id;  ///< upcie-cuda/upcie-hip: GPU ordinal to use
+	int dmabuf_fd;    ///< A dma-buf the process inherited, for the payloads; see given[]
+	const char *mib;  ///< Sizes in MiB, separated by commas
+	const char *huge; ///< Size of the hugetlb pages of host memory: 2M or 1G
 
 	struct xnvme_opts_css css; ///< SPDK controller-setup: do command-set-selection
 
@@ -407,7 +410,13 @@ enum xnvme_cli_opt {
 
 	XNVME_CLI_OPT_COMPLETION = 145, ///< XNVME_CLI_OPT_COMPLETION
 
-	XNVME_CLI_OPT_END = 146, ///< XNVME_CLI_OPT_END
+	XNVME_CLI_OPT_DMABUF_FD = 146, ///< XNVME_CLI_OPT_DMABUF_FD
+
+	XNVME_CLI_OPT_MIB = 147, ///< XNVME_CLI_OPT_MIB
+
+	XNVME_CLI_OPT_HUGE = 148, ///< XNVME_CLI_OPT_HUGE
+
+	XNVME_CLI_OPT_END = 149, ///< XNVME_CLI_OPT_END
 };
 
 /**

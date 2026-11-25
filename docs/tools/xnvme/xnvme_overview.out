@@ -6,7 +6,8 @@ Start here:
   xnvme list               NVMe controller functions and their driver
   xnvme info <uri>         Retrieve derived information for given device
   xnvme enum               Enumerate devices on the system
-  xnvme perf               Run IO benchmarks against xNVMe devices
+  xnvme perf-storage       Run I/O benchmarks against NVMe devices
+  xnvme perf-xfer          Run data transfer benchmarks between memories
 
 Set up the host:
   xnvme env                Relevant system config and library introspection

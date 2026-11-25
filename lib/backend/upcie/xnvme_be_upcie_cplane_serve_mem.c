@@ -12,6 +12,7 @@
 
 #ifdef XNVME_BE_UPCIE_ENABLED
 #include <fcntl.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 #include <xnvme_be_upcie.h>
@@ -448,6 +449,83 @@ _registration_arithmetic(struct xnvme_be_upcie_cplane_registration *reg, int dma
 	return 0;
 }
 
+/*
+ * Dma-bufs mapped with IOMMU_IOAS_MAP_FILE. The served controllers share one IOAS, so a dma-buf
+ * registered through several of them is mapped once and unmapped with its last registration.
+ * iommufd holds the dma-buf while it is mapped, so its inode names no other dma-buf meanwhile.
+ */
+static struct _cplane_file_map {
+	dev_t st_dev;
+	ino_t st_ino;
+	uint64_t nbytes;
+	uint64_t iova;
+	uint64_t desc_offset;
+	int refs;
+} g_file_maps[XNVME_BE_UPCIE_CPLANE_REGIONS_MAX];
+
+/** Map `dmabuf_fd` into the IOAS of the served controllers with IOMMU_IOAS_MAP_FILE and describe
+ * it to the client as one arithmetic range */
+static int
+_registration_map_file(struct xnvme_be_upcie_cplane_registration *reg, int dmabuf_fd,
+		       uint64_t nbytes)
+{
+	struct _cplane_file_map *map = NULL;
+	struct hostmem_shared_desc *desc;
+	uint64_t iova = 0, offset = 0;
+	struct stat st;
+	int err;
+
+	if (fstat(dmabuf_fd, &st)) {
+		return -errno;
+	}
+	for (int i = 0; i < XNVME_BE_UPCIE_CPLANE_REGIONS_MAX; ++i) {
+		struct _cplane_file_map *cand = &g_file_maps[i];
+
+		if (cand->refs && (cand->st_dev == st.st_dev) && (cand->st_ino == st.st_ino) &&
+		    (cand->nbytes == nbytes)) {
+			cand->refs++;
+			reg->desc_offset = cand->desc_offset;
+			reg->file_map = i;
+			return 0;
+		}
+		if (!map && !cand->refs) {
+			map = cand;
+		}
+	}
+	if (!map) {
+		XNVME_DEBUG("FAILED: more than %d dma-bufs mapped",
+			    XNVME_BE_UPCIE_CPLANE_REGIONS_MAX);
+		return -ENOSPC;
+	}
+
+	err = iommufd_ioas_map_file(&g_upcie_rte.cdev.iommufd, dmabuf_fd, 0, nbytes,
+				    IOMMU_IOAS_MAP_READABLE | IOMMU_IOAS_MAP_WRITEABLE, &iova);
+	if (err) {
+		return err;
+	}
+
+	err = xnvme_be_upcie_cplane_serve_buf_alloc(sizeof(*desc), &offset);
+	if (err) {
+		XNVME_DEBUG("FAILED: no room for a description; err(%d)", err);
+		iommufd_ioas_unmap(&g_upcie_rte.cdev.iommufd, iova, nbytes);
+		return err;
+	}
+	desc = (void *)((char *)g_upcie_rte.mem.dmem.base_va + offset);
+	hostmem_shared_desc_fill_arithmetic(desc, nbytes, iova);
+
+	map->st_dev = st.st_dev;
+	map->st_ino = st.st_ino;
+	map->nbytes = nbytes;
+	map->iova = iova;
+	map->desc_offset = offset;
+	map->refs = 1;
+
+	reg->desc_offset = offset;
+	reg->file_map = (int)(map - g_file_maps);
+
+	return 0;
+}
+
 static int
 _xnvme_be_upcie_cplane_serve_register_mem(int dmabuf_fd, uint64_t nbytes, uint32_t page_size,
 					  const char *bdf,
@@ -481,6 +559,18 @@ _xnvme_be_upcie_cplane_serve_register_mem(int dmabuf_fd, uint64_t nbytes, uint32
 	memset(out, 0, sizeof(*out));
 	out->map_fd = -1;
 	out->region = -1;
+	out->file_map = -1;
+
+	if ((XNVME_BE_UPCIE_MODE_VFIO_CDEV == g_upcie_rte.mode) && g_upcie_rte.cdev.ioas_alive) {
+		err = _registration_map_file(out, dmabuf_fd, nbytes);
+		if (!err) {
+			return 0;
+		}
+		XNVME_DEBUG(
+			"INFO: IOMMU_IOAS_MAP_FILE failed for the dma-buf; err(%d); trying the "
+			"dmabuf_import and iommu_map_pa modules",
+			err);
+	}
 
 	/* Detaching closes the descriptor the import holds, and the caller still owns
 	 * dmabuf_fd; sharing one number lets the detach close whatever reused it.
@@ -552,7 +642,19 @@ _xnvme_be_upcie_cplane_serve_unregister_mem(struct xnvme_be_upcie_cplane_registr
 		return;
 	}
 
-	if (reg->region >= 0) {
+	if (reg->file_map >= 0) {
+		struct _cplane_file_map *map = &g_file_maps[reg->file_map];
+
+		if (map->refs && !--map->refs) {
+			int err = iommufd_ioas_unmap(&g_upcie_rte.cdev.iommufd, map->iova,
+						     map->nbytes);
+
+			if (err) {
+				XNVME_DEBUG("FAILED: iommufd_ioas_unmap(); err(%d)", err);
+			}
+			xnvme_be_upcie_cplane_serve_buf_free(map->desc_offset);
+		}
+	} else if (reg->region >= 0) {
 		struct _cplane_region *region = &g_regions[reg->region];
 
 		if (region->refs && !--region->refs) {
@@ -571,6 +673,7 @@ _xnvme_be_upcie_cplane_serve_unregister_mem(struct xnvme_be_upcie_cplane_registr
 	memset(reg, 0, sizeof(*reg));
 	reg->map_fd = -1;
 	reg->region = -1;
+	reg->file_map = -1;
 }
 
 void

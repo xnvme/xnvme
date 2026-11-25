@@ -1,1 +1,1 @@
-xnvme perf run --help
+xnvme perf-storage run --help
