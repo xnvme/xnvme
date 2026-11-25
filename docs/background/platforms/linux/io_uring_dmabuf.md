@@ -20,7 +20,7 @@ device is e.g. `/dev/nvme0n1`.
 Select the backend with `opts.be` or `--be`:
 
 ```bash
-xnvme perf run /dev/nvme0n1 --be io_uring_dmabuf --direct \
+xnvme perf-storage run /dev/nvme0n1 --be io_uring_dmabuf --direct \
     --iopattern randread --iosize 4096 --qdepth 32 --runtime 10 --cpumask 0x1
 ```
 
@@ -43,6 +43,14 @@ range, and registered in whole pages, with the form of
 {ref}`sec-platforms-linux-async-io_uring_dmabuf-kernel` adds. Registering host
 memory does nothing. See {ref}`sec-background-memory` for what registering does
 on the other backends.
+
+A `dma-buf` from another exporter, such as `udmabuf` or a DMA heap, is
+registered with `xnvme_buf_register_dmabuf()`, given the address that names
+its first byte. Commands then name it by that address.
+
+```c
+xnvme_buf_register_dmabuf(dev, fd, buf);
+```
 
 ## Limitations
 

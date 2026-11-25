@@ -262,7 +262,8 @@ struct cli_listed {
 };
 
 static const struct cli_listed g_cli_listed[] = {
-	{"perf", "Run IO benchmarks against xNVMe devices"},
+	{"perf-storage", "Run I/O benchmarks against NVMe devices"},
+	{"perf-xfer", "Run data transfer benchmarks between memories"},
 };
 
 static const struct cli_listed g_cli_served[] = {

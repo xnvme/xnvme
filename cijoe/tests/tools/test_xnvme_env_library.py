@@ -157,7 +157,8 @@ def test_version_flag_matches_env_library(cijoe):
         "xnvme",
         "xnvme homi",
         "xnvme qublk",
-        "xnvme perf",
+        "xnvme perf-storage",
+        "xnvme perf-xfer",
     ]:
         # qublk is only built where the ublk UAPI header is available
         if (

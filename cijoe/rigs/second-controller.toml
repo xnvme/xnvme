@@ -1,6 +1,7 @@
 # A second controller behind compute-node-emulated's switch, beside the GPU, for
 # a buffer registered through two controllers. On the switch's third downstream
-# port, so it is at 0000:05:00.0
+# port, so it is at 0000:05:00.0. Its LBAs are 512 bytes, for payloads smaller
+# than a page
 
 [rig.pcie.switches.p2p]
 downstream_ports = 3
@@ -12,5 +13,5 @@ port = "p2p_dn2"
 device = "nvme,mdts=7,ioeventfd=on"
 serial = "beef01ff"
 drives = ["id=nvme1n1,file={{ local.env.HOME }}/guests/compute-node-emulated/nvme1n1.img,format=raw,if=none,discard=on,detect-zeroes=unmap,cache=none,aio=io_uring"]
-children = ["nvme-ns,drive=nvme1n1,nsid=1,logical_block_size=4096,physical_block_size=4096"]
+children = ["nvme-ns,drive=nvme1n1,nsid=1,logical_block_size=512,physical_block_size=512"]
 image = {path = "{{ local.env.HOME }}/guests/compute-node-emulated/nvme1n1.img", size = "1G"}

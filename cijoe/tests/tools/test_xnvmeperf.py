@@ -1,6 +1,14 @@
-import pytest
+import base64
 
-from ..conftest import cijoe_config_inactive_nsid, get_homi_id, xnvme_parametrize
+import pytest
+import yaml
+
+from ..conftest import (
+    cijoe_config_inactive_nsid,
+    get_homi_id,
+    get_osname,
+    xnvme_parametrize,
+)
 
 
 @xnvme_parametrize(labels=["nvm"], opts=["be"])
@@ -9,7 +17,7 @@ def test_run_read(cijoe, device, be_opts, cli_args):
     homi_arg = f"--homi-id {homi_id}" if homi_id else ""
 
     err, _ = cijoe.run(
-        f"xnvme perf run --iopattern read --qdepth 32 --iosize 4096 --runtime 3"
+        f"xnvme perf-storage run --iopattern read --qdepth 32 --iosize 4096 --runtime 3"
         f" --cpumask 0x1 --be {be_opts['be']} {homi_arg} {device['uri']}"
     )
     assert not err
@@ -21,7 +29,7 @@ def test_run_write(cijoe, device, be_opts, cli_args):
     homi_arg = f"--homi-id {homi_id}" if homi_id else ""
 
     err, _ = cijoe.run(
-        f"xnvme perf run --iopattern write --qdepth 32 --iosize 4096 --runtime 3"
+        f"xnvme perf-storage run --iopattern write --qdepth 32 --iosize 4096 --runtime 3"
         f" --cpumask 0x1 --be {be_opts['be']} {homi_arg} {device['uri']}"
     )
     assert not err
@@ -33,7 +41,7 @@ def test_run_randread(cijoe, device, be_opts, cli_args):
     homi_arg = f"--homi-id {homi_id}" if homi_id else ""
 
     err, _ = cijoe.run(
-        f"xnvme perf run --iopattern randread --qdepth 32 --iosize 4096 --runtime 3"
+        f"xnvme perf-storage run --iopattern randread --qdepth 32 --iosize 4096 --runtime 3"
         f" --cpumask 0x1 --be {be_opts['be']} {homi_arg} {device['uri']}"
     )
     assert not err
@@ -45,7 +53,7 @@ def test_run_randwrite(cijoe, device, be_opts, cli_args):
     homi_arg = f"--homi-id {homi_id}" if homi_id else ""
 
     err, _ = cijoe.run(
-        f"xnvme perf run --iopattern randwrite --qdepth 32 --iosize 4096 --runtime 3"
+        f"xnvme perf-storage run --iopattern randwrite --qdepth 32 --iosize 4096 --runtime 3"
         f" --cpumask 0x1 --be {be_opts['be']} {homi_arg} {device['uri']}"
     )
     assert not err
@@ -59,7 +67,7 @@ def test_run_randread_reap(cijoe, device, be_opts, cli_args):
     homi_arg = f"--homi-id {homi_id}" if homi_id else ""
 
     err, state = cijoe.run(
-        f"xnvme perf run --iopattern randread --qdepth 32 --iosize 4096 --runtime 3"
+        f"xnvme perf-storage run --iopattern randread --qdepth 32 --iosize 4096 --runtime 3"
         f" --cpumask 0x1 --completion reap --be {be_opts['be']} {homi_arg}"
         f" {device['uri']}"
     )
@@ -76,7 +84,7 @@ def test_run_completion_unknown(cijoe, device, be_opts, cli_args):
     """--completion takes 'cb' or 'reap', and the run fails for anything else"""
 
     err, state = cijoe.run(
-        f"xnvme perf run --iopattern randread --qdepth 32 --iosize 4096 --runtime 1"
+        f"xnvme perf-storage run --iopattern randread --qdepth 32 --iosize 4096 --runtime 1"
         f" --cpumask 0x1 --completion nosuch --be {be_opts['be']} {device['uri']}"
     )
     assert err, "an unknown --completion was accepted"
@@ -94,7 +102,7 @@ def test_verify(cijoe, device, be_opts, cli_args):
     homi_arg = f"--homi-id {homi_id}" if homi_id else ""
 
     err, _ = cijoe.run(
-        f"xnvme perf verify --iosize 4096 --count 64"
+        f"xnvme perf-storage verify --iosize 4096 --count 64"
         f" --be {be_opts['be']} {homi_arg} {device['uri']}"
     )
     assert not err
@@ -113,7 +121,7 @@ def test_verify_reap(cijoe, device, be_opts, cli_args):
     homi_arg = f"--homi-id {homi_id}" if homi_id else ""
 
     err, _ = cijoe.run(
-        f"xnvme perf verify --iosize 4096 --count 64 --completion reap"
+        f"xnvme perf-storage verify --iosize 4096 --count 64 --completion reap"
         f" --be {be_opts['be']} {homi_arg} {device['uri']}"
     )
     assert not err
@@ -132,7 +140,7 @@ def test_verify_separate_metadata(cijoe, device, be_opts, cli_args):
     homi_arg = f"--homi-id {homi_id}" if homi_id else ""
 
     err, state = cijoe.run(
-        f"xnvme perf verify --iosize 4096 --count 16"
+        f"xnvme perf-storage verify --iosize 4096 --count 16"
         f" --be {be_opts['be']} {homi_arg} '{device['uri']}/?nsid={device['nsid']}'"
     )
     assert not err, state.output()
@@ -153,7 +161,7 @@ def _verify_gpu(cijoe, device, be_opts, iosize, extra=""):
     homi_arg = f"--homi-id {homi_id}" if homi_id else ""
 
     err, state = cijoe.run(
-        f"xnvme perf verify --iosize {iosize} --count 16 {extra}"
+        f"xnvme perf-storage verify --iosize {iosize} --count 16 {extra}"
         f" --be {be_opts['be']} {homi_arg} '{device['uri']}/?nsid={device['nsid']}'"
     )
     assert not err, state.output()
@@ -200,7 +208,7 @@ def test_run_qdepth_past_the_pool_is_refused(cijoe, device, be_opts, cli_args):
     homi_arg = f"--homi-id {homi_id}" if homi_id else ""
 
     err, _ = cijoe.run(
-        f"xnvme perf run --iopattern read --qdepth 2048 --iosize 4096 --runtime 1"
+        f"xnvme perf-storage run --iopattern read --qdepth 2048 --iosize 4096 --runtime 1"
         f" --cpumask 0x1 --be {be_opts['be']} {homi_arg} {device['uri']}"
     )
     assert err, "a queue deeper than the backend tracks was accepted"
@@ -213,7 +221,7 @@ def test_run_uri_nsid(cijoe, device, be_opts, cli_args):
     homi_id = get_homi_id()
     homi_arg = f"--homi-id {homi_id}" if homi_id else ""
     err, _ = cijoe.run(
-        f"xnvme perf run --iopattern read --qdepth 32 --iosize 4096 --runtime 3"
+        f"xnvme perf-storage run --iopattern read --qdepth 32 --iosize 4096 --runtime 3"
         f" --cpumask 0x1 --be {be_opts['be']} {homi_arg}"
         f" '{device['uri']}/?nsid={device['nsid']}'"
     )
@@ -228,7 +236,7 @@ def test_run_uri_nsid_inactive(cijoe, device, be_opts, cli_args):
     homi_arg = f"--homi-id {homi_id}" if homi_id else ""
     nsid = cijoe_config_inactive_nsid(device)
     err, state = cijoe.run(
-        f"xnvme perf run --iopattern read --qdepth 32 --iosize 4096 --runtime 3"
+        f"xnvme perf-storage run --iopattern read --qdepth 32 --iosize 4096 --runtime 3"
         f" --cpumask 0x1 --be {be_opts['be']} {homi_arg}"
         f" '{device['uri']}/?nsid={nsid}'"
     )
@@ -250,7 +258,7 @@ def test_run_polled_stop_continue(cijoe, device, be_opts, cli_args, completion):
         pytest.skip(reason="Only io_uring polls for completions with --poll_io")
 
     err, state = cijoe.run(
-        f"xnvme perf run --iopattern randread --qdepth 32 --iosize 4096 --runtime 3"
+        f"xnvme perf-storage run --iopattern randread --qdepth 32 --iosize 4096 --runtime 3"
         f" --cpumask 0x1 --poll_io 1 --direct --completion {completion}"
         f" --be {be_opts['be']} {device['uri']}"
         " > /tmp/xnvme-perf-polled.out 2>&1 & pid=$!;"
@@ -262,3 +270,195 @@ def test_run_polled_stop_continue(cijoe, device, be_opts, cli_args, completion):
     total = [line.split() for line in state.output().splitlines() if "Total:" in line]
     if total and float(total[-1][1]) == 0:
         pytest.skip(reason="No polled I/O completed; the device has no poll queues")
+
+
+@pytest.mark.parametrize("fd", ["999", "4294967296"])
+@xnvme_parametrize(labels=["nvm"], opts=["be"])
+def test_run_dmabuf_fd_not_a_dmabuf(cijoe, device, be_opts, cli_args, fd):
+    """--dmabuf-fd names no dma-buf, or no file descriptor: the run fails"""
+
+    # Descriptor 999 is not open; the shell of the Windows job has no /dev/null to redirect
+    err, state = cijoe.run(
+        f"xnvme perf-storage run --iopattern read --qdepth 32 --iosize 4096 --runtime 1"
+        f" --cpumask 0x1 --be {be_opts['be']} --dmabuf-fd {fd} {device['uri']}"
+    )
+    assert err, f"ran with --dmabuf-fd {fd}"
+    assert "--dmabuf-fd" in state.output()
+    if fd == "4294967296":
+        assert "INT_MAX" in state.output()
+
+
+# Each case: the arguments, the size of a regular file inherited as descriptor 3 (0 for none),
+# and what the error message names.
+_DMABUF_FD_ERRORS = {
+    "host-bounce": (
+        "--iosize 4096 --dmabuf-fd 999 --buf-host-bounce",
+        0,
+        "--buf-host-bounce",
+    ),
+    "not-whole-pages": ("--iosize 4096 --dmabuf-fd 3", 4097, "whole pages"),
+    "smaller-than-a-slice": ("--iosize 8192 --dmabuf-fd 3", 4096, "whole pages"),
+}
+
+
+@pytest.mark.parametrize("case", list(_DMABUF_FD_ERRORS))
+@xnvme_parametrize(labels=["nvm"], opts=["be"])
+def test_run_dmabuf_fd_errors(cijoe, device, be_opts, cli_args, case):
+    """--dmabuf-fd with --buf-host-bounce, or of a size that is not whole pages of at least a
+    slice: the run fails"""
+
+    if get_osname() != "linux":
+        pytest.skip(reason="Other platforms return -ENOTSUP for --dmabuf-fd first")
+    if be_opts["be"] == "io_uring_dmabuf":
+        pytest.skip(
+            reason="io_uring_dmabuf's payloads are its own; --dmabuf-fd fails first"
+        )
+
+    args, nbytes, expected = _DMABUF_FD_ERRORS[case]
+    cmd = (
+        f"xnvme perf-storage run --iopattern read --qdepth 32 --runtime 1 --cpumask 0x1"
+        f" --be {be_opts['be']} {args} {device['uri']}"
+    )
+    if nbytes:
+        # lseek() takes a regular file's size as it takes a dma-buf's
+        cmd = (
+            f"f=$(mktemp) && truncate -s {nbytes} $f && {cmd} 3<$f;"
+            " rc=$?; rm -f $f; exit $rc"
+        )
+
+    err, state = cijoe.run(cmd)
+    assert err, f"ran with {args}"
+    assert expected in state.output(), state.output()
+
+
+# Creates a udmabuf over a memfd and runs the command of its arguments, with @FD@
+# replaced by the number of the dma-buf, which the command inherits.
+_UDMABUF_RUN_PY = r"""
+import fcntl, os, struct, subprocess, sys
+
+nbytes = 2 * 1024 * 1024
+memfd = os.memfd_create("perf-dmabuf", os.MFD_ALLOW_SEALING)
+os.ftruncate(memfd, nbytes)
+fcntl.fcntl(memfd, fcntl.F_ADD_SEALS, fcntl.F_SEAL_SHRINK)
+udev = os.open("/dev/udmabuf", os.O_RDWR)
+create = bytearray(struct.pack("<IIQQ", memfd, 0x01, 0, nbytes))
+dmabuf = fcntl.ioctl(udev, 0x40187542, create, True)  # UDMABUF_CREATE
+args = [arg.replace("@FD@", str(dmabuf)) for arg in sys.argv[1:]]
+sys.exit(subprocess.run(args, pass_fds=(dmabuf,)).returncode)
+"""
+
+
+def _run_dmabuf_fd(cijoe, device, be_opts, iopattern, iosize):
+    """Runs I/O of iosize with its payloads in slices of a udmabuf and checks the totals
+
+    Host memory through udmabuf, so no GPU is needed, but dmabuf_import is: without
+    it the upcie interface registers no udmabuf.
+    """
+
+    if be_opts["be"] != "upcie":
+        pytest.skip(reason="xnvme_buf_register_dmabuf() of host memory is upcie's")
+
+    err, _ = cijoe.run("test -c /dev/udmabuf && test -c /dev/dmabuf_import")
+    if err:
+        pytest.skip(reason="Requires /dev/udmabuf and the dmabuf_import module")
+
+    homi_id = get_homi_id()
+    homi_arg = f"--homi-id {homi_id}" if homi_id else ""
+    if iosize == "lba":
+        err, state = cijoe.run(
+            f"xnvme info {device['uri']} --be {be_opts['be']} {homi_arg}"
+        )
+        assert not err, state.output()
+        lba = [
+            line.split()
+            for line in state.output().splitlines()
+            if "lba_nbytes:" in line
+        ]
+        assert lba, state.output()
+        iosize = lba[0][1]
+        if int(iosize) >= 4096:
+            pytest.skip(reason=f"An LBA of {iosize} bytes is no smaller than a page")
+    # Four queues on one device: four jobs, which register the dma-buf four times and
+    # each take a slice of their own
+    script = base64.b64encode(_UDMABUF_RUN_PY.encode()).decode()
+    err, state = cijoe.run(
+        f"echo {script} | base64 -d > /tmp/xnvme-perf-udmabuf.py"
+        f" && python3 /tmp/xnvme-perf-udmabuf.py xnvme perf-storage run"
+        f" --iopattern {iopattern} --qdepth 32 --iosize {iosize} --runtime 3 --cpumask 0x1"
+        f" --nqueues 4 --be {be_opts['be']} {homi_arg} --dmabuf-fd @FD@ {device['uri']}"
+    )
+    assert not err, state.output()
+    assert "payloads in dma-buf" in state.output()
+    assert "slices of 4096 bytes" in state.output()
+
+    # Total: <IOPS> <MiB/s> <failed>
+    total = [line.split() for line in state.output().splitlines() if "Total:" in line]
+    assert total, state.output()
+    assert float(total[-1][1]) > 0, "completed no I/O"
+    assert int(total[-1][3]) == 0, "I/O failed"
+
+
+@pytest.mark.parametrize("iopattern", ["randread", "randwrite"])
+@xnvme_parametrize(labels=["pcie"], opts=["be"])
+def test_run_dmabuf_fd(cijoe, device, be_opts, cli_args, iopattern):
+    """I/O with its payloads in slices of an inherited dma-buf"""
+
+    _run_dmabuf_fd(cijoe, device, be_opts, iopattern, "4096")
+
+
+@pytest.mark.parametrize("iopattern", ["randread", "randwrite"])
+@xnvme_parametrize(labels=["second_ctrlr"], opts=["be"])
+def test_run_dmabuf_fd_lba(cijoe, device, be_opts, cli_args, iopattern):
+    """I/O of one LBA in slices of a dma-buf, a page apart where the LBA is smaller
+
+    The second controller of the rig 'second-controller' has 512-byte LBAs.
+    """
+
+    _run_dmabuf_fd(cijoe, device, be_opts, iopattern, "lba")
+
+
+@pytest.mark.parametrize("count", ["0", "4294967296"])
+@xnvme_parametrize(labels=["nvm"], opts=["be"])
+def test_xfer_register_count_zero(cijoe, device, be_opts, cli_args, count):
+    """'perf-xfer register' fails for a --count of 0 or above UINT32_MAX"""
+
+    err, state = cijoe.run(
+        f"xnvme perf-xfer register {device['uri']} --be {be_opts['be']}"
+        f" --dmabuf-fd 999 --count {count}"
+    )
+    assert err, f"timed --count {count} registrations"
+    assert "--count" in state.output()
+
+
+@xnvme_parametrize(labels=["pcie"], opts=["be"])
+def test_xfer_register(cijoe, device, be_opts, cli_args):
+    """'perf-xfer register' times registering an inherited dma-buf and unregistering it
+
+    Host memory through udmabuf, as for test_run_dmabuf_fd.
+    """
+
+    if be_opts["be"] != "upcie":
+        pytest.skip(reason="xnvme_buf_register_dmabuf() of host memory is upcie's")
+
+    err, _ = cijoe.run("test -c /dev/udmabuf && test -c /dev/dmabuf_import")
+    if err:
+        pytest.skip(reason="Requires /dev/udmabuf and the dmabuf_import module")
+
+    homi_id = get_homi_id()
+    homi_arg = f"--homi-id {homi_id}" if homi_id else ""
+    script = base64.b64encode(_UDMABUF_RUN_PY.encode()).decode()
+    err, state = cijoe.run(
+        f"echo {script} | base64 -d > /tmp/xnvme-perf-udmabuf.py"
+        f" && python3 /tmp/xnvme-perf-udmabuf.py xnvme perf-xfer register {device['uri']}"
+        f" --be {be_opts['be']} {homi_arg} --dmabuf-fd @FD@ --count 16"
+    )
+    assert not err, state.output()
+
+    result = yaml.safe_load(state.output())["xnvme_perf_xfer_register"]
+    assert result["count"] == 16, state.output()
+    assert result["dmabuf_nbytes"] == 2 * 1024 * 1024, state.output()
+    assert result["first_register_usecs"] > 0, state.output()
+    assert result["first_unregister_usecs"] > 0, state.output()
+    for name in ("register_usecs", "unregister_usecs"):
+        usecs = result[name]
+        assert 0 < usecs["min"] <= usecs["median"] <= usecs["max"], state.output()

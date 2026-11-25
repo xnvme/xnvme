@@ -4,6 +4,7 @@
 
 #ifndef __INTERNAL_XNVME_BE_LIBURING_DMABUF_H
 #define __INTERNAL_XNVME_BE_LIBURING_DMABUF_H
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -14,15 +15,21 @@ struct xnvme_dev;
 struct xnvme_queue_liburing;
 struct xnvme_be_liburing_dmabuf;
 
+#include <xnvme_buf.h>
+
 // Returns 0 when the kernel can register dma-bufs with io_uring, -ENOTSUP when not
 int
 xnvme_be_liburing_dmabuf_supported(void);
 
+// With 'within' false, -EBUSY when vaddr lies inside a registration rather than at its start
 int
-xnvme_be_liburing_dmabuf_ref(const struct xnvme_dev *dev, const void *vaddr, size_t nbytes);
+xnvme_be_liburing_dmabuf_ref(const struct xnvme_dev *dev, const void *vaddr, size_t nbytes,
+			     bool within);
 
+// Records xfer for the buffer helpers while the dma-buf is registered
 int
-xnvme_be_liburing_dmabuf_add(const struct xnvme_dev *dev, void *vaddr, size_t nbytes, int fd);
+xnvme_be_liburing_dmabuf_add(const struct xnvme_dev *dev, void *vaddr, size_t nbytes, int fd,
+			     enum xnvme_buf_xfer xfer);
 
 int
 xnvme_be_liburing_dmabuf_unref(const struct xnvme_dev *dev, const void *vaddr);
