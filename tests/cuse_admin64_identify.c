@@ -12,6 +12,7 @@
 #include <linux/nvme_ioctl.h>
 
 #include <libxnvme.h>
+#include <xnvme_cli.h>
 
 // NVME_IOCTL_ADMIN64_CMD straight on a CUSE mimic: xNVMe's own command path only ever
 // issues the 32-bit NVME_IOCTL_ADMIN_CMD

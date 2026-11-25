@@ -14,6 +14,7 @@
 #include <unistd.h>
 
 #include <libxnvme.h>
+#include <xnvme_cli.h>
 
 #include "io.h"
 

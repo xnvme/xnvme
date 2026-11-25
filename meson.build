@@ -400,7 +400,6 @@ if get_option('tools')
 endif
 if get_option('examples')
   subdir('examples')
-  subdir('man/examples')
 endif
 
 # sysconfdir is /etc for the prefix /usr, and -Dsystemd_unitdir is taken as given

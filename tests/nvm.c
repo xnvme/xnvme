@@ -4,6 +4,7 @@
 
 #include <errno.h>
 #include <libxnvme.h>
+#include <xnvme_cli.h>
 
 int
 enumerate_cb(struct xnvme_dev *dev, void *cb_args)
@@ -854,7 +855,6 @@ static struct xnvme_cli_sub g_subs[] = {
 		{
 			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
 			{XNVME_CLI_OPT_SYS_URI, XNVME_CLI_LOPT},
-			{XNVME_CLI_OPT_FLAGS, XNVME_CLI_LOPT},
 
 			XNVME_CLI_CORE_OPTS,
 		},
@@ -939,7 +939,6 @@ static struct xnvme_cli_sub g_subs[] = {
 			{XNVME_CLI_OPT_NLB, XNVME_CLI_LREQ},
 			{XNVME_CLI_OPT_NSID, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_DATA_OUTPUT, XNVME_CLI_LOPT},
-			{XNVME_CLI_OPT_META_OUTPUT, XNVME_CLI_LOPT},
 
 			XNVME_CLI_SYNC_OPTS,
 		},

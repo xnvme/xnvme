@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <libxnvme.h>
+#include <xnvme_cli.h>
 
 static int
 test_mem_map_unmap(struct xnvme_cli *cli)

@@ -13,7 +13,6 @@ subdir('platform')
 subdir('core')
 subdir('nvme')
 subdir('file')
-subdir('cli')
 
 xnvmelib_source += xnvme_vcs_h
 
@@ -58,6 +57,7 @@ xnvmelib = library(
   install: true,
 )
 
+subdir('cli')
 subdir('cuse')
 
 # pkg-config -- describing how to consume the xNVMe library

@@ -48,7 +48,7 @@ read_lba0(struct xnvme_dev *dev, void *buf)
 	err = xnvme_nvm_read(&ctx, xnvme_dev_get_nsid(dev), 0x0, 0, buf, NULL);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		err = err ? err : -EIO;
-		xnvme_cli_perr("xnvme_nvm_read()", err);
+		fprintf(stderr, "xnvme_nvm_read(): %s\n", strerror(-err));
 		return err;
 	}
 
@@ -73,13 +73,13 @@ reopen_and_read(const char *uri, struct xnvme_opts *opts, struct xnvme_dev **dev
 	*dev = xnvme_dev_open(uri, opts);
 	if (!*dev) {
 		err = -errno;
-		xnvme_cli_perr("xnvme_dev_open()", err);
+		fprintf(stderr, "xnvme_dev_open(): %s\n", strerror(-err));
 		return err;
 	}
 
 	err = xnvme_buf_register(*dev, buf, nbytes);
 	if (err) {
-		xnvme_cli_perr("xnvme_buf_register()", err);
+		fprintf(stderr, "xnvme_buf_register(): %s\n", strerror(-err));
 		return err;
 	}
 	*mapped = 1;
@@ -111,13 +111,13 @@ second_ctrlr_read(const char *uri, struct xnvme_opts *opts, struct xnvme_dev **d
 	second = xnvme_dev_open(uri, opts);
 	if (!second) {
 		err = -errno;
-		xnvme_cli_perr("xnvme_dev_open()", err);
+		fprintf(stderr, "xnvme_dev_open(): %s\n", strerror(-err));
 		return err;
 	}
 
 	err = xnvme_buf_register(second, buf, nbytes);
 	if (err) {
-		xnvme_cli_perr("xnvme_buf_register()", err);
+		fprintf(stderr, "xnvme_buf_register(): %s\n", strerror(-err));
 		xnvme_dev_close(second);
 		return err;
 	}
@@ -176,7 +176,7 @@ main(int argc, char **argv)
 	dev = xnvme_dev_open(argv[1], &opts);
 	if (!dev) {
 		err = -errno;
-		xnvme_cli_perr("xnvme_dev_open()", err);
+		fprintf(stderr, "xnvme_dev_open(): %s\n", strerror(-err));
 		return err;
 	}
 
@@ -192,7 +192,7 @@ main(int argc, char **argv)
 	/* Over-allocate by one page so we can register an aligned start. */
 	cerr = cudaMalloc(&raw, buf_nbytes + UPCIE_CUDA_DEVICE_PAGESIZE);
 	if (cerr) {
-		xnvme_cli_perr("cudaMalloc(buf), cudaError_t: %d", cerr);
+		fprintf(stderr, "cudaMalloc(buf): %s\n", cudaGetErrorString(cerr));
 		err = -ENOMEM;
 		goto exit;
 	}
@@ -201,7 +201,7 @@ main(int argc, char **argv)
 
 	err = xnvme_buf_register(dev, buf, buf_nbytes);
 	if (err) {
-		xnvme_cli_perr("xnvme_buf_register()", err);
+		fprintf(stderr, "xnvme_buf_register(): %s\n", strerror(-err));
 		goto exit;
 	}
 	mapped = 1;
@@ -209,7 +209,7 @@ main(int argc, char **argv)
 	h_cmds = (union xnvme_spec_sqe *)calloc(qdepth, sizeof(*h_cmds));
 	if (!h_cmds) {
 		err = -errno;
-		xnvme_cli_perr("calloc(h_cmds)", err);
+		fprintf(stderr, "calloc(h_cmds): %s\n", strerror(-err));
 		goto exit;
 	}
 
@@ -220,7 +220,7 @@ main(int argc, char **argv)
 	for (size_t i = 0; i < qdepth; i++) {
 		err = xnvme_buf_vtophys(dev, buf + i * lba_nbytes, &phys);
 		if (err) {
-			xnvme_cli_perr("xnvme_buf_vtophys()", err);
+			fprintf(stderr, "xnvme_buf_vtophys(): %s\n", strerror(-err));
 			goto exit;
 		}
 
@@ -233,7 +233,7 @@ main(int argc, char **argv)
 
 	cerr = cudaMalloc((void **)&d_cmds, qdepth * sizeof(*d_cmds));
 	if (cerr) {
-		xnvme_cli_perr("cudaMalloc(d_cmds), cudaError_t: %d", cerr);
+		fprintf(stderr, "cudaMalloc(d_cmds): %s\n", cudaGetErrorString(cerr));
 		err = -ENOMEM;
 		goto exit;
 	}
@@ -241,7 +241,7 @@ main(int argc, char **argv)
 
 	cerr = cudaMalloc((void **)&d_errors, qdepth * sizeof(int));
 	if (cerr) {
-		xnvme_cli_perr("cudaMalloc(d_errors), cudaError_t: %d", cerr);
+		fprintf(stderr, "cudaMalloc(d_errors): %s\n", cudaGetErrorString(cerr));
 		err = -ENOMEM;
 		goto exit;
 	}
@@ -249,7 +249,7 @@ main(int argc, char **argv)
 
 	err = xnvme_cuda_queue_create(dev, qdepth, 0, &gpu_queue);
 	if (err) {
-		xnvme_cli_perr("xnvme_cuda_queue_create()", err);
+		fprintf(stderr, "xnvme_cuda_queue_create(): %s\n", strerror(-err));
 		goto exit;
 	}
 
@@ -270,7 +270,7 @@ main(int argc, char **argv)
 	h_errors = (int *)calloc(qdepth, sizeof(int));
 	if (!h_errors) {
 		err = -errno;
-		xnvme_cli_perr("calloc(h_errors)", err);
+		fprintf(stderr, "calloc(h_errors): %s\n", strerror(-err));
 		goto exit;
 	}
 	cudaMemcpy(h_errors, d_errors, qdepth * sizeof(int), cudaMemcpyDeviceToHost);

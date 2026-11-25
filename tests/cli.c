@@ -5,6 +5,7 @@
 #include <errno.h>
 #include <inttypes.h>
 #include <libxnvme.h>
+#include <xnvme_cli.h>
 
 static int
 sub_optional(struct xnvme_cli *cli)

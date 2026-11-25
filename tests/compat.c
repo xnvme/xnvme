@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <libxnvme.h>
+#include <xnvme_cli.h>
 
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cpl) == sizeof(struct xnvme_spec_cqe),
 		    "struct xnvme_spec_cpl names struct xnvme_spec_cqe")

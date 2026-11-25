@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <libxnvme.h>
+#include <xnvme_cli.h>
 
 #define SET_EVENT_TYPES ((uint8_t[]){0x0, 0x1, 0x2, 0x3, 0x80, 0x81})
 #define SET_EVENT_BUF_SIZE sizeof(SET_EVENT_TYPES)
@@ -519,7 +520,7 @@ sub_log(struct xnvme_cli *cli)
 	uint8_t lsp = cli->args.lsp;
 	uint64_t lpo_nbytes = cli->args.lpo_nbytes;
 	uint32_t nsid = cli->args.nsid;
-	uint8_t rae = cli->args.reset;
+	uint8_t rae = cli->args.rae;
 	uint32_t buf_nbytes = cli->args.data_nbytes;
 
 	void *buf = NULL;
@@ -883,7 +884,7 @@ sub_ruhu(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
 	struct xnvme_cmd_ctx ctx = {0};
-	uint32_t pi = cli->args.pi;
+	uint32_t pid = cli->args.pid;
 	uint32_t nsid = cli->args.nsid;
 	uint16_t *pid_list = NULL;
 	uint32_t npids = 1;
@@ -903,7 +904,7 @@ sub_ruhu(struct xnvme_cli *cli)
 		goto exit;
 	}
 
-	err = xnvme_buf_memcpy(pid_list, &pi, npids * 2);
+	err = xnvme_buf_memcpy(pid_list, &pid, npids * 2);
 	if (err) {
 		xnvme_cli_perr("xnvme_buf_memcpy()", err);
 		goto exit;

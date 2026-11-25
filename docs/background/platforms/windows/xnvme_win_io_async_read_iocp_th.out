@@ -1,6 +1,4 @@
-# Allocating and filling buf of nbytes: 512
-# Initializing queue and setting default callback function and arguments
-# Read uri: '\\.\PhysicalDrive0', qd: 1
-# Range: {slba: 0x0, naddrs: 1, nbytes: 512}
+Allocating buf of nbytes: 512
+Range: {slba: 0x0, naddrs: 1, nbytes: 512}, qd: 1
 wall-clock: {elapsed: 0.0002, mib: 0.00, mib_sec: 2.14}
-# cb_args: {submitted: 1, completed: 1, ecount: 0}
+cb_args: {submitted: 1, completed: 1, ecount: 0}

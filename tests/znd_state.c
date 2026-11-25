@@ -4,6 +4,7 @@
 
 #include <errno.h>
 #include <libxnvme.h>
+#include <xnvme_cli.h>
 
 struct action {
 	enum xnvme_spec_znd_cmd_mgmt_send_action action;

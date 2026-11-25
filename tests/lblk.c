@@ -4,6 +4,7 @@
 
 #include <errno.h>
 #include <libxnvme.h>
+#include <xnvme_cli.h>
 
 /**
  * Constructs an LBA range if --slba and --elba are not provided by CLI

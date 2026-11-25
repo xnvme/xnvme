@@ -28,7 +28,7 @@ Open the device at <uri> and print it
 .TP
 .B
 \fBxnvme\fP-\fIexample\fP-io-async(1)
-xNVMe: Asynchronous IO Example: write, read
+Read the LBAs [SLBA,ELBA] of the device at <uri> with asynchronous commands
 .TP
 .B
 \fBxnvme\fP-\fIexample\fP-single-async(1)
@@ -36,7 +36,7 @@ Read the first block of the device at <uri> with one asynchronous command
 .TP
 .B
 \fBxnvme\fP-\fIexample\fP-single-async-efd(1)
-xNVMe: Asynchronous IO With Eventfd Example
+Read the first block of the device at <uri> with one asynchronous command, waiting for its completion on an eventfd
 .TP
 .B
 \fBxnvme\fP-\fIexample\fP-single-async-reap(1)
@@ -48,11 +48,11 @@ Read the first block of the device at <uri> with one synchronous command
 .TP
 .B
 \fBxnvme\fP-\fIexample\fP-zoned-io-async(1)
-Asynchronous IO: read / write / append, using 4k payload at QD1
+Fill the first empty zone of the device at <uri> with asynchronous Zone Append commands
 .TP
 .B
 \fBxnvme\fP-\fIexample\fP-zoned-io-sync(1)
-Synchronous IO: read / write / append, using 4k payload at QD1
+Fill the first empty zone of the device at <uri> with synchronous write commands
 .RE
 .PP
 

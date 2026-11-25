@@ -4,6 +4,7 @@
 
 #include <errno.h>
 #include <libxnvme.h>
+#include <xnvme_cli.h>
 #include <string.h>
 
 #define QDEPTH_MAX 16

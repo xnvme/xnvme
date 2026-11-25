@@ -31,10 +31,10 @@ foreach source, tests : tools
   bin = executable(
     bin_name,
     [source, xnvme_vcs_h] + tools_extra.get(source, []),
-    include_directories: [conf_inc, xnvme_inc, xnvme_priv_inc] + (bin_cuse ? [xnvme_cuse_inc] : []),
+    include_directories: [conf_inc, xnvme_inc, xnvme_priv_inc, xnvme_cli_inc] + (bin_cuse ? [xnvme_cuse_inc] : []),
     link_args: link_args_hardening,
     pie: get_option('hardening'),
-    link_with: [xnvmelib] + (bin_cuse ? [xnvme_cuse_lib] : []),
+    link_with: [xnvmelib, xnvme_cli_lib] + (bin_cuse ? [xnvme_cuse_lib] : []),
     install_rpath: xnvmelib_rpath,
     install: true,
     install_dir: bin_name == 'xnvme' ? get_option('bindir') : xnvme_libexecdir,

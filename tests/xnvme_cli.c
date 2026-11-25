@@ -4,6 +4,7 @@
 
 #include <errno.h>
 #include <libxnvme.h>
+#include <xnvme_cli.h>
 
 int
 xnvme_cli_copy_io(struct xnvme_cli *cli)

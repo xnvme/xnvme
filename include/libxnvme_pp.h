@@ -3,8 +3,7 @@
  *
  * The printers of the API are declared here, grouped by the header defining
  * what they print, so that a binding can leave them out and print in its own
- * language. The command-line library keeps its printers in libxnvme_cli.h,
- * and the static inline timer printers stay in libxnvme_util.h. As this
+ * language. The static inline timer printers stay in libxnvme_util.h. As this
  * header names types of the others, libxnvme.h includes it after them.
  *
  * SPDX-FileCopyrightText: Samsung Electronics Co., Ltd
