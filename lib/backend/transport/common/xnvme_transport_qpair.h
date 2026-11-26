@@ -30,7 +30,6 @@ struct xnvme_spec_cpl;
 		}                                                         \
 	} while (0)
 
-
 static inline void
 xnvme_transport_qpair_flush_all_active(struct xnvme_transport_qpair *qpair);
 
