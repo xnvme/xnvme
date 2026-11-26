@@ -16,6 +16,9 @@
 #include <xnvme_be_spdk_state.h>
 #include <xnvme_be_upcie_state.h>
 #include <xnvme_be_ramdisk_state.h>
+#ifdef XNVME_BE_RDMA_ENABLED
+#include <xnvme_be_rdma_state.h>
+#endif
 
 union xnvme_be_state {
 	uint8_t raw[XNVME_BE_STATE_NBYTES];
@@ -31,6 +34,9 @@ union xnvme_be_state {
 	struct xnvme_be_spdk_state spdk_state;
 	struct xnvme_be_upcie_state upcie_state;
 	struct xnvme_be_ramdisk_state ramdisk_state;
+#ifdef XNVME_BE_RDMA_ENABLED
+	struct xnvme_be_rdma_state rdma_state;
+#endif
 };
 XNVME_STATIC_ASSERT(sizeof(union xnvme_be_state) == XNVME_BE_STATE_NBYTES, "Incorrect size")
 

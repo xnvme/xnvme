@@ -71,6 +71,7 @@ The valid combinations of interfaces and platforms are listed below:
 spdk/index
 libvfn/index
 upcie/index
+rdma/index
 xnvme_be_macos
 common/index
 common/interface/index

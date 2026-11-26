@@ -383,7 +383,9 @@ xnvme_hex_digit_val(char c)
 		    TWOORMORE, TWOORMORE, TWOORMORE, ONE, throwaway)
 #define SELECT_10TH(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, ...) a10
 
+#define XNVME_DEBUG_UNUSED(x) x
 #else
 #define XNVME_DEBUG(...)
 #define XNVME_DEBUG_FCALL(x)
+#define XNVME_DEBUG_UNUSED(x)
 #endif

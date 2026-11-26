@@ -44,6 +44,8 @@
 - changed-files:
   - any-glob-to-any-file:
     - 'lib/backend/spdk/**'
+    - 'lib/backend/transport/**'
+    - 'include/libxnvme_spec_transports.h'
     - '**/*rdma*'
     - '**/*fabrics*'
 

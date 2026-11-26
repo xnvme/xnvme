@@ -1,0 +1,7 @@
+Red-black tree source code from "Sorting and Searching Algorithms: A Cookbook"
+by Thomas Niemann.
+
+Disclosure from the author's main page:
+
+    Source code when part of a software project may be used freely
+    without reference to the author.
